@@ -4,14 +4,17 @@ defmodule Indexer.Transform.AddressCoinBalancesTransactionsTest do
   use ExUnit.Case
 
   alias Explorer.Factory
+  alias Indexer.Fetcher.InternalTransaction
   alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
   alias Indexer.Transform.AddressCoinBalances
 
   setup do
+    initial_fetcher_env = Application.get_env(:indexer, InternalTransaction)
     initial_supervisor_env = Application.get_env(:indexer, InternalTransactionSupervisor)
     initial_trace_block_ranges = Application.get_env(:indexer, :trace_block_ranges)
 
     on_exit(fn ->
+      Application.put_env(:indexer, InternalTransaction, initial_fetcher_env)
       Application.put_env(:indexer, InternalTransactionSupervisor, initial_supervisor_env)
       Application.put_env(:indexer, :trace_block_ranges, initial_trace_block_ranges)
     end)
@@ -34,8 +37,8 @@ defmodule Indexer.Transform.AddressCoinBalancesTransactionsTest do
   end
 
   defp set_internal_transactions_fetcher(disabled?) do
-    initial = Application.get_env(:indexer, InternalTransactionSupervisor)
-    Application.put_env(:indexer, InternalTransactionSupervisor, Keyword.merge(initial || [], disabled?: disabled?))
+    initial = Application.get_env(:indexer, InternalTransaction)
+    Application.put_env(:indexer, InternalTransaction, Keyword.merge(initial || [], disabled?: disabled?))
   end
 
   describe "params_set/1 with transactions" do
@@ -64,6 +67,24 @@ defmodule Indexer.Transform.AddressCoinBalancesTransactionsTest do
       from: from,
       to: to
     } do
+      set_internal_transactions_fetcher(true)
+
+      assert AddressCoinBalances.params_set(%{transactions_params: [transaction_params]}) == MapSet.new([from, to])
+    end
+
+    test "extracts the recipient when the fetcher is disabled although its supervisor is not", %{
+      transaction_params: transaction_params,
+      from: from,
+      to: to
+    } do
+      initial_supervisor_env = Application.get_env(:indexer, InternalTransactionSupervisor)
+
+      Application.put_env(
+        :indexer,
+        InternalTransactionSupervisor,
+        Keyword.merge(initial_supervisor_env || [], disabled?: false)
+      )
+
       set_internal_transactions_fetcher(true)
 
       assert AddressCoinBalances.params_set(%{transactions_params: [transaction_params]}) == MapSet.new([from, to])

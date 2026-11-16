@@ -11,7 +11,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
   use Utils.RuntimeEnvHelper,
     chain_type: [:explorer, :chain_type],
     arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]],
-    internal_transactions_fetcher_disabled?: [:indexer, [Indexer.Fetcher.InternalTransaction.Supervisor, :disabled?]]
+    internal_transactions_fetcher_disabled?: [:indexer, [Indexer.Fetcher.InternalTransaction, :disabled?]]
 
   import Explorer.Helper, only: [truncate_address_hash: 1]
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
@@ -241,9 +241,11 @@ defmodule Indexer.Transform.AddressCoinBalances do
   defp to_address_balance_may_change?(_transaction_params, _block_number), do: true
 
   # Internal transactions are fetched only when the fetcher is enabled and the
-  # block is inside the trace block ranges.
+  # block is inside the trace block ranges. The fetcher's own flag is used, the
+  # same one `Indexer.Fetcher.InternalTransaction.async_fetch/4` checks: it is set
+  # both when there is no trace URL and when the fetcher is disabled explicitly.
   defp internal_transactions_indexed?(block_number) do
-    not internal_transactions_fetcher_disabled?() and RangesHelper.traceable_block_number?(block_number)
+    internal_transactions_fetcher_disabled?() != true and RangesHelper.traceable_block_number?(block_number)
   end
 
   if @chain_identity == {:optimism, :celo} do

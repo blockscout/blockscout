@@ -7,14 +7,14 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
   alias Explorer.Chain.Import.Runner.Address.CoinBalances
   alias Explorer.Chain.Wei
   alias Explorer.Utility.MissingBlockRange
-  alias Indexer.Fetcher.InternalTransaction.Supervisor, as: InternalTransactionSupervisor
+  alias Indexer.Fetcher.InternalTransaction
 
   setup do
-    initial_supervisor_env = Application.get_env(:indexer, InternalTransactionSupervisor)
+    initial_fetcher_env = Application.get_env(:indexer, InternalTransaction)
     initial_json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
 
     on_exit(fn ->
-      Application.put_env(:indexer, InternalTransactionSupervisor, initial_supervisor_env)
+      Application.put_env(:indexer, InternalTransaction, initial_fetcher_env)
       Application.put_env(:explorer, :json_rpc_named_arguments, initial_json_rpc_named_arguments)
     end)
 
@@ -24,8 +24,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
   end
 
   defp set_internal_transactions_fetcher(disabled?) do
-    initial = Application.get_env(:indexer, InternalTransactionSupervisor)
-    Application.put_env(:indexer, InternalTransactionSupervisor, Keyword.merge(initial || [], disabled?: disabled?))
+    initial = Application.get_env(:indexer, InternalTransaction)
+    Application.put_env(:indexer, InternalTransaction, Keyword.merge(initial || [], disabled?: disabled?))
   end
 
   defp set_json_rpc_variant(variant) do
@@ -106,6 +106,48 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
                [2, 4]
 
       assert stored(address_hash) == [{1, 100}, {2, 200}, {4, 300}]
+    end
+
+    test "compares with a row the same batch inserts between the stored row and the candidate", %{
+      address_hash: address_hash
+    } do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 3)
+
+      # block 2 has no row yet, e.g. a historical on-demand fetch
+      assert run([fetched(address_hash, 2, 200), fetched(address_hash, 3, 100)]) == [2, 3]
+      assert stored(address_hash) == [{1, 100}, {2, 200}, {3, 100}]
+    end
+
+    test "keeps the row when the same batch re-fetches the previous row with another value", %{
+      address_hash: address_hash
+    } do
+      insert(:fetched_balance,
+        address_hash: address_hash,
+        block_number: 1,
+        value: 100,
+        value_fetched_at: DateTime.add(DateTime.utc_now(), -60)
+      )
+
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 2)
+
+      assert run([fetched(address_hash, 1, 200), fetched(address_hash, 2, 100)]) == [1, 2]
+      assert stored(address_hash) == [{1, 200}, {2, 100}]
+    end
+
+    test "keeps the row when the same batch inserts a placeholder before it", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 3)
+
+      assert run([%{address_hash: address_hash, block_number: 2}, fetched(address_hash, 3, 100)]) == [2, 3]
+      assert stored(address_hash) == [{1, 100}, {2, nil}, {3, 100}]
+    end
+
+    test "drops repeated values of an address that has no stored rows yet", %{address_hash: address_hash} do
+      assert run([fetched(address_hash, 1, 100), fetched(address_hash, 2, 100), fetched(address_hash, 3, 150)]) ==
+               [1, 3]
+
+      assert stored(address_hash) == [{1, 100}, {3, 150}]
     end
 
     test "keeps the row when the previous row is an unfetched placeholder", %{address_hash: address_hash} do

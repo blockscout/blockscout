@@ -115,7 +115,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
     if fetched_changes == [] or not unchanged_rejection_enabled?() do
       changes_list
     else
-      unchanged_keys = unchanged_keys(repo, fetched_changes, timeout)
+      unchanged_keys = unchanged_keys(repo, changes_list, fetched_changes, timeout)
 
       if MapSet.size(unchanged_keys) == 0 do
         changes_list
@@ -139,26 +139,33 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
     internal_transactions_fetcher_disabled?() or PendingOperationsHelper.pending_operations_type() == "blocks"
   end
 
+  # The fetcher's own flag is the effective one: it is set when there is no trace
+  # URL and when the fetcher is disabled explicitly, and it is the flag checked
+  # before internal transactions are scheduled for fetching.
   defp internal_transactions_fetcher_disabled? do
-    Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction.Supervisor)[:disabled?] == true
+    Application.get_env(:indexer, Indexer.Fetcher.InternalTransaction, [])[:disabled?] == true
   end
 
-  defp unchanged_keys(repo, fetched_changes, timeout) do
+  defp unchanged_keys(repo, changes_list, fetched_changes, timeout) do
     existing_values = lock_existing_rows(repo, fetched_changes, timeout)
+    batch_values = batch_values(changes_list)
+    batch_block_numbers = batch_block_numbers(batch_values)
 
-    # a row that already has a value is being re-fetched and goes through the upsert
-    candidates = Enum.filter(fetched_changes, &is_nil(Map.get(existing_values, key(&1))))
-
-    batch_values = Map.new(fetched_changes, &{key(&1), &1.value})
+    # A row that already has a value is being re-fetched and goes through the upsert.
+    # A key that comes with different values in one batch is left to the upsert too.
+    candidates =
+      fetched_changes
+      |> Enum.uniq_by(&key/1)
+      |> Enum.filter(fn change ->
+        key = key(change)
+        is_nil(Map.get(existing_values, key)) and Map.fetch!(batch_values, key) != :ambiguous
+      end)
 
     repo
     |> previous_rows(candidates, timeout)
     |> Enum.reduce(MapSet.new(), fn previous_row, acc ->
       key = {previous_row.address_hash, previous_row.block_number}
-      previous_key = {previous_row.address_hash, previous_row.previous_block_number}
-
-      # the previous row may be a placeholder that is filled in by this very batch
-      previous_value = previous_row.previous_value || Map.get(batch_values, previous_key)
+      previous_value = effective_previous_value(previous_row, batch_values, batch_block_numbers)
 
       if not previous_row.unsettled? and same_value?(Map.fetch!(batch_values, key), previous_value) do
         MapSet.put(acc, key)
@@ -166,6 +173,63 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
         acc
       end
     end)
+  end
+
+  # The value every key of the batch is going to have: `nil` for a placeholder,
+  # `:ambiguous` when the batch has different values for one key.
+  defp batch_values(changes_list) do
+    Enum.reduce(changes_list, %{}, fn change, acc ->
+      value = Map.get(change, :value)
+
+      Map.update(acc, key(change), value, fn
+        :ambiguous -> :ambiguous
+        nil -> value
+        existing when is_nil(value) -> existing
+        existing -> if same_value?(value, existing), do: existing, else: :ambiguous
+      end)
+    end)
+  end
+
+  # Block numbers of the batch by address, newest first.
+  defp batch_block_numbers(batch_values) do
+    batch_values
+    |> Map.keys()
+    |> Enum.group_by(fn {address_hash, _block_number} -> address_hash end, fn {_address_hash, block_number} ->
+      block_number
+    end)
+    |> Map.new(fn {address_hash, block_numbers} -> {address_hash, Enum.sort(block_numbers, :desc)} end)
+  end
+
+  # The value the nearest older row of the address is going to have once the batch
+  # is written, or `nil` when it is not known. The nearest older row is either the
+  # stored one or a row of the batch itself: the batch can insert a row between the
+  # stored one and the candidate, and it can change the stored one.
+  defp effective_previous_value(previous_row, batch_values, batch_block_numbers) do
+    stored_block_number = previous_row.previous_block_number
+    stored_value = previous_row.previous_value
+
+    batch_block_number =
+      batch_block_numbers
+      |> Map.get(previous_row.address_hash, [])
+      |> Enum.find(&(&1 < previous_row.block_number))
+
+    batch_value =
+      case batch_block_number && Map.fetch!(batch_values, {previous_row.address_hash, batch_block_number}) do
+        :ambiguous -> nil
+        value -> value
+      end
+
+    cond do
+      is_nil(batch_block_number) -> stored_value
+      is_nil(stored_block_number) or batch_block_number > stored_block_number -> batch_value
+      batch_block_number < stored_block_number -> stored_value
+      # the batch touches the stored row itself
+      is_nil(batch_value) -> stored_value
+      is_nil(stored_value) -> batch_value
+      # a re-fetch of the stored row: which value wins is decided by the upsert
+      same_value?(batch_value, stored_value) -> stored_value
+      true -> nil
+    end
   end
 
   # Locks the rows of the batch that already exist, in the ShareLocks order, and
@@ -194,8 +258,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
     |> Map.new(fn {address_hash, block_number, value} -> {{address_hash.bytes, block_number}, value} end)
   end
 
-  # For every candidate returns the nearest older row of the address and whether
-  # the block range between the two is still unsettled.
+  # For every candidate returns the nearest older stored row of the address, if
+  # any, and whether the block range between the two is still unsettled. Without
+  # a stored row the whole range below the candidate is checked.
   defp previous_rows(_repo, [], _timeout), do: []
 
   defp previous_rows(repo, candidates, timeout) do
@@ -209,7 +274,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
             cb.block_number < parent_as(:pair).block_number,
         order_by: [desc: cb.block_number],
         limit: 1,
-        select: %{address_hash: cb.address_hash, block_number: cb.block_number, value: cb.value}
+        select: %{block_number: cb.block_number, value: cb.value}
       )
 
     query =
@@ -220,10 +285,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
           type(^block_numbers, {:array, :integer})
         ),
         as: :pair,
-        inner_lateral_join: previous in subquery(previous_row_query),
+        left_lateral_join: previous in subquery(previous_row_query),
         on: true,
         select: %{
-          address_hash: previous.address_hash,
+          address_hash: type(pair.address_hash, Hash.Address),
           block_number: type(pair.block_number, :integer),
           previous_block_number: previous.block_number,
           previous_value: previous.value,
@@ -232,11 +297,11 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
               """
               EXISTS (
                 SELECT 1 FROM missing_block_ranges AS mbr
-                WHERE mbr.to_number < ? AND mbr.from_number > ?
+                WHERE mbr.to_number < ? AND mbr.from_number > COALESCE(?, -1)
               ) OR (
                 ? AND EXISTS (
                   SELECT 1 FROM pending_block_operations AS pbo
-                  WHERE pbo.block_number > ? AND pbo.block_number < ?
+                  WHERE pbo.block_number > COALESCE(?, -1) AND pbo.block_number < ?
                 )
               )
               """,
