@@ -87,9 +87,7 @@ defmodule Indexer.Fetcher.Token do
         |> MultichainSearch.send_token_info_to_queue(:metadata)
 
         maybe_convert_to_erc404(token, token_params)
-        # the metadata retriever leaves the token uncataloged when it failed to
-        # tell whether the token is an ERC-404 one, so that it is asked again
-        {:ok, _} = Token.update(token, Map.put_new(token_params, :cataloged, true))
+        {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
         :ok
     end
   end

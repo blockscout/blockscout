@@ -56,9 +56,6 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
   # the process dictionary key of the candidates found on start
   @candidates_key :sanitize_erc404_tokens_candidates
 
-  # milliseconds
-  @erc404_calls_retry_interval 1_000
-
   @impl FillingMigration
   def migration_name, do: @migration_name
 
@@ -170,13 +167,13 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
   defp to_convert?(contract_address_hash, @by_calls) do
     case Repo.get_by(Token, contract_address_hash: contract_address_hash) do
       %Token{type: "ERC-404"} -> Erc404.conversion_pending?(contract_address_hash)
-      %Token{type: "ERC-721"} -> erc404?(contract_address_hash, erc404_calls_max_retries())
+      %Token{type: "ERC-721"} -> erc404?(contract_address_hash)
       _ -> false
     end
   end
 
-  defp erc404?(contract_address_hash, retries_left) do
-    case MetadataRetriever.erc404_support(contract_address_hash) do
+  defp erc404?(contract_address_hash) do
+    case MetadataRetriever.erc404_support(contract_address_hash, erc404_calls_attempts()) do
       {:ok, true} ->
         true
 
@@ -187,10 +184,6 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
         )
 
         false
-
-      :error when retries_left > 1 ->
-        Process.sleep(@erc404_calls_retry_interval)
-        erc404?(contract_address_hash, retries_left - 1)
 
       :error ->
         Logger.warning(
@@ -212,7 +205,7 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
     end)
   end
 
-  defp erc404_calls_max_retries do
+  defp erc404_calls_attempts do
     max(Application.get_env(:explorer, :token_functions_reader_max_retries) || 1, 1)
   end
 

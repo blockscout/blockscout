@@ -128,6 +128,9 @@ defmodule Explorer.Token.MetadataRetriever do
 
   # 313ce567 = keccak256(decimals())
   @decimals_signature "313ce567"
+
+  # milliseconds
+  @erc404_support_retry_interval 500
   # 06fdde03 = keccak256(name())
   @name_signature "06fdde03"
   # 95d89b41 = keccak256(symbol())
@@ -511,10 +514,22 @@ defmodule Explorer.Token.MetadataRetriever do
 
   Returns `{:ok, true}` or `{:ok, false}` when the contract answered — a revert
   counts as an answer — and `:error` when the node did not, so that the caller
-  can tell a failed lookup apart from a denied claim.
+  can tell a failed lookup apart from a denied claim. The getters are asked up
+  to `attempts` times while the node fails to answer.
   """
-  @spec erc404_support(String.t() | Hash.Address.t()) :: {:ok, boolean()} | :error
-  def erc404_support(contract_address_hash) do
+  @spec erc404_support(String.t() | Hash.Address.t(), pos_integer()) :: {:ok, boolean()} | :error
+  def erc404_support(contract_address_hash, attempts \\ 1) do
+    case ask_erc404_getters(contract_address_hash) do
+      :error when attempts > 1 ->
+        Process.sleep(@erc404_support_retry_interval)
+        erc404_support(contract_address_hash, attempts - 1)
+
+      result ->
+        result
+    end
+  end
+
+  defp ask_erc404_getters(contract_address_hash) do
     results =
       contract_address_hash
       |> to_string()
@@ -537,27 +552,48 @@ defmodule Explorer.Token.MetadataRetriever do
   # A newly seen ERC-404 token that emits the standard `Transfer` event for both
   # of its legs is resolved to ERC-721 from its logs. Such a token is only worth
   # asking when it answered `decimals()`, which an ordinary ERC-721 contract
-  # doesn't implement, so that ordinary NFT collections cost no extra calls.
+  # doesn't implement, so that ordinary NFT collections cost no extra calls. It
+  # is asked as well when the node failed to answer `decimals()`.
   #
-  # When the node fails to answer either `decimals()` or the ERC-404 getters, the
-  # token is left uncataloged, so that the token fetcher asks again instead of
-  # keeping the ERC-721 type for good. A token without any metadata is not
-  # cataloged anyway.
-  defp maybe_put_erc404_type(%{decimals: decimals} = metadata, contract_address_hash, "ERC-721", _decimals_result)
-       when not is_nil(decimals) do
-    case erc404_support(contract_address_hash) do
-      {:ok, true} -> Map.put(metadata, :type, "ERC-404")
-      {:ok, false} -> metadata
-      :error -> Map.put(metadata, :cataloged, false)
+  # The token is cataloged even when the node keeps failing to answer the
+  # ERC-404 getters: an uncataloged token would be picked up by the token fetcher
+  # again right away, with no backoff. Such a token is left to the
+  # `Explorer.Migrator.SanitizeErc404Tokens` migration.
+  defp maybe_put_erc404_type(metadata, contract_address_hash, "ERC-721", decimals_result) do
+    if erc404_candidate?(metadata, decimals_result) do
+      case erc404_support(contract_address_hash, erc404_support_attempts()) do
+        {:ok, true} ->
+          Map.put(metadata, :type, "ERC-404")
+
+        {:ok, false} ->
+          metadata
+
+        :error ->
+          Logger.warning(
+            "Failed to call erc20TotalSupply() and erc721TotalSupply() of #{contract_address_hash}, " <>
+              "the token is kept as an ERC-721 one"
+          )
+
+          metadata
+      end
+    else
+      metadata
     end
   end
 
-  defp maybe_put_erc404_type(metadata, _contract_address_hash, "ERC-721", {:error, _reason} = decimals_result)
-       when map_size(metadata) > 0 do
-    if call_denied?(decimals_result), do: metadata, else: Map.put(metadata, :cataloged, false)
-  end
-
   defp maybe_put_erc404_type(metadata, _contract_address_hash, _type, _decimals_result), do: metadata
+
+  # A token without any metadata is not cataloged anyway, see `get_functions_of/2`.
+  defp erc404_candidate?(%{decimals: decimals}, _decimals_result) when not is_nil(decimals), do: true
+
+  defp erc404_candidate?(metadata, {:error, _reason} = decimals_result) when map_size(metadata) > 0,
+    do: not call_denied?(decimals_result)
+
+  defp erc404_candidate?(_metadata, _decimals_result), do: false
+
+  defp erc404_support_attempts do
+    max(Application.get_env(:explorer, :token_functions_reader_max_retries) || 1, 1)
+  end
 
   @doc """
   Reads the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier of a

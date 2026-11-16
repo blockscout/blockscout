@@ -52,6 +52,13 @@ defmodule Explorer.Chain.Import.Runner.TokensTest do
       end
     end
 
+    test "returns a cataloged ERC-20 token upgraded to ERC-721, so that the token fetcher catalogs it again" do
+      %Token{contract_address_hash: contract_address_hash} = insert(:token, type: "ERC-20", cataloged: true)
+
+      assert {:ok, %{tokens: [%Token{contract_address_hash: ^contract_address_hash, type: "ERC-721"}]}} =
+               run_changes(%{contract_address_hash: contract_address_hash, type: "ERC-721"})
+    end
+
     test "still upgrades a legacy token type" do
       %Token{contract_address_hash: contract_address_hash} = insert(:token, type: "ERC-721")
 

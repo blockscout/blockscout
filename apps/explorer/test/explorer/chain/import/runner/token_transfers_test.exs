@@ -111,6 +111,15 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfersTest do
       assert Decimal.equal?(token_id, 7)
     end
 
+    test "gives the ERC-404 shape to a legacy ERC-20 leg without an amount", context do
+      token = insert(:token, type: "ERC-404")
+
+      import_transfers([context |> erc20_leg(token, 0, 5) |> Map.delete(:amount)])
+
+      assert [%TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [nil]}] =
+               Repo.all(TokenTransfer)
+    end
+
     test "leaves the transfers of tokens with a legacy type untouched", context do
       token = insert(:token, type: "ERC-721")
 

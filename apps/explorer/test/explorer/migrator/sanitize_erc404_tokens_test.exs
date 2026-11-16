@@ -101,13 +101,26 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
       assert %TokenTransfer{token_type: "ERC-404", amount: nil} = reload_transfer(erc20_transfer)
     end
 
-    test "completes a conversion interrupted in the transfer sweep of a token without fungible balances" do
+    test "completes an interrupted conversion of a token without legacy current balances" do
       %{token: token, erc20_transfer: erc20_transfer} = insert_mixed_transfers_token()
+      token_address = Repo.preload(token, :contract_address).contract_address
 
-      Repo.delete_all(CurrentTokenBalance)
+      # the current balances were updated by imports after the retyping, and an
+      # older block was imported with the ERC-404 shape meanwhile
+      Repo.update_all(CurrentTokenBalance, set: [token_type: "ERC-404"])
 
       Repo.update_all(from(t in Token, where: t.contract_address_hash == ^token.contract_address_hash),
         set: [type: "ERC-404"]
+      )
+
+      insert(:token_transfer,
+        from_address: insert(:address),
+        token_contract_address: token_address,
+        block_number: 0,
+        token_type: "ERC-404",
+        amount: nil,
+        amounts: [Decimal.new(5)],
+        token_ids: []
       )
 
       run_migration()
@@ -118,32 +131,31 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
     test "leaves the tokens with a complete conversion untouched" do
       token = insert(:token, type: "ERC-404", decimals: 18)
       token_address = Repo.preload(token, :contract_address).contract_address
+      holder = insert(:address)
 
-      insert(:token_transfer,
-        from_address: insert(:address),
-        token_contract_address: token_address,
-        block_number: 1,
-        token_type: "ERC-404",
-        amount: nil,
-        amounts: [Decimal.new(5)],
-        token_ids: []
-      )
-
-      # an interrupted sweep never leaves a legacy transfer newer than a
-      # converted one, so this one tells whether the conversion ran
-      legacy_transfer =
+      transfer =
         insert(:token_transfer,
           from_address: insert(:address),
+          to_address: holder,
           token_contract_address: token_address,
-          block_number: 2,
-          token_type: "ERC-20",
-          amount: Decimal.new(5),
-          token_ids: nil
+          token_type: "ERC-404",
+          amount: nil,
+          amounts: [Decimal.new(5)],
+          token_ids: []
         )
+
+      # the conversion would retype it, so it tells whether the conversion ran
+      insert(:token_balance,
+        address: holder,
+        token_contract_address_hash: token.contract_address_hash,
+        block_number: transfer.block_number,
+        token_type: "ERC-20",
+        value: 5
+      )
 
       run_migration()
 
-      assert %TokenTransfer{token_type: "ERC-20"} = reload_transfer(legacy_transfer)
+      assert %TokenBalance{token_type: "ERC-20"} = Repo.get_by(TokenBalance, address_hash: holder.hash)
     end
 
     test "resumes after the last processed candidate" do

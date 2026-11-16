@@ -182,7 +182,14 @@ defmodule Explorer.Chain.Token.Erc404 do
   """
   @spec to_erc404_transfer(map()) :: map()
   def to_erc404_transfer(%{token_type: "ERC-20"} = token_transfer),
-    do: Map.merge(token_transfer, %{token_type: @erc404, amount: nil, token_ids: [], amounts: [token_transfer.amount]})
+    do:
+      Map.merge(token_transfer, %{
+        token_type: @erc404,
+        amount: nil,
+        token_ids: [],
+        # the changes of a changeset lack the key of a nil amount
+        amounts: [Map.get(token_transfer, :amount)]
+      })
 
   def to_erc404_transfer(%{token_type: "ERC-721"} = token_transfer),
     do: Map.merge(token_transfer, %{token_type: @erc404, amount: nil, amounts: []})
@@ -193,12 +200,19 @@ defmodule Explorer.Chain.Token.Erc404 do
   Whether the conversion of a token which is already stored as an ERC-404 one
   is incomplete.
 
-  `convert/2` sweeps the token transfers from the newest block to the oldest
-  one and retypes the current token balances last, so an interrupted
-  conversion leaves behind either the legacy oldest transfer or legacy current
-  token balances. Both are found through indexes, without scanning the whole
-  history of the token. A token detected as ERC-404 from its dedicated events
-  has none of them, so nothing is converted for it.
+  An interrupted conversion leaves behind legacy token transfers or, when it
+  stopped after the transfer sweep, legacy current token balances, which are
+  retyped last. No single row tells that the conversion is complete: the rows
+  imported meanwhile get the ERC-404 shape anyway, whatever their block, and
+  may update the legacy current token balances. So the remaining legacy rows
+  themselves are looked for.
+
+  The current token balances are checked first, they are few. A token whose
+  conversion is complete has all its transfers read through the index on the
+  token address. Callers only ask about the tokens which are converted once: an
+  uncataloged token, usually a new one detected from its dedicated events, which
+  has nothing to convert, and the candidates of the
+  `Explorer.Migrator.SanitizeErc404Tokens` migration.
   """
   @spec conversion_pending?(Hash.Address.t()) :: boolean()
   def conversion_pending?(contract_address_hash) do
@@ -208,19 +222,14 @@ defmodule Explorer.Chain.Token.Erc404 do
         where: is_nil(ctb.token_id) and ctb.token_type in ^@legacy_types
       ),
       timeout: :infinity
-    ) or oldest_token_transfer_type(contract_address_hash) in @legacy_types
-  end
-
-  defp oldest_token_transfer_type(contract_address_hash) do
-    Repo.one(
-      from(tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^contract_address_hash,
-        order_by: [asc: tt.block_number, asc: tt.log_index],
-        limit: 1,
-        select: tt.token_type
-      ),
-      timeout: :infinity
-    )
+    ) or
+      Repo.exists?(
+        from(tt in TokenTransfer,
+          where: tt.token_contract_address_hash == ^contract_address_hash,
+          where: tt.token_type in ^@legacy_types
+        ),
+        timeout: :infinity
+      )
   end
 
   # Returns the tokens of the legacy-typed changes which are stored as ERC-404
@@ -336,7 +345,7 @@ defmodule Explorer.Chain.Token.Erc404 do
     |> Repo.update_all([], timeout: :infinity)
   end
 
-  # Runs last, so that `conversion_pending?/1` tells an interrupted conversion.
+  # Runs last, see `conversion_pending?/1`.
   defp retype_current_token_balances(contract_address_hash) do
     Repo.update_all(
       from(ctb in CurrentTokenBalance,
