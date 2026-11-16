@@ -194,17 +194,22 @@ defmodule Explorer.Chain.Address.CoinBalance do
   - `options`: keyword list with paging and API mode options.
 
   ## Returns
-  - `[t()]` - List of coin balance records sorted by block number in descending
-    order, with interpolated timestamps, or empty list if paging key is `{0}` or
-    no balances exist.
+  - `{coin_balances, scan_continuation}` where `coin_balances` is the list of
+    coin balance changes sorted by block number in descending order, with
+    interpolated timestamps (empty if paging key is `{0}` or no balances exist),
+    and `scan_continuation` is the block number to use as the next paging key
+    when the scan budget ran out before the page was filled, or `nil` otherwise.
+    `scan_continuation` is only meaningful when `coin_balances` holds fewer
+    items than the page size.
   """
-  @spec address_hash_to_coin_balances(Hash.Address.t(), [Chain.paging_options() | Chain.api?()]) :: [t()]
+  @spec address_hash_to_coin_balances(Hash.Address.t(), [Chain.paging_options() | Chain.api?()]) ::
+          {[t()], non_neg_integer() | nil}
   def address_hash_to_coin_balances(address_hash, options) do
     paging_options = Keyword.get(options, :paging_options, PagingOptions.default_paging_options())
 
     case paging_options do
       %PagingOptions{key: {0}} ->
-        []
+        {[], nil}
 
       _ ->
         address_hash_to_coin_balances_internal(address_hash, options, paging_options)
@@ -212,13 +217,24 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   defp address_hash_to_coin_balances_internal(address_hash, options, paging_options) do
-    balances_raw =
+    # A row with `nil` delta is the scan boundary (see `fetch_coin_balances/3`):
+    # it is returned only when the scan budget ran out before the page was filled.
+    {boundary, balances_raw} =
       address_hash
       |> fetch_coin_balances(paging_options)
-      |> page_coin_balances(paging_options)
       |> Chain.select_repo(options).all()
-      |> preload_transactions(options)
+      |> Enum.split_with(&is_nil(&1.delta))
 
+    scan_continuation =
+      case boundary do
+        [%__MODULE__{block_number: block_number}] -> block_number + 1
+        _ -> nil
+      end
+
+    {balances_raw |> preload_transactions(options) |> add_block_timestamps(options), scan_continuation}
+  end
+
+  defp add_block_timestamps(balances_raw, options) do
     if Enum.empty?(balances_raw) do
       balances_raw
     else
@@ -442,26 +458,65 @@ defmodule Explorer.Chain.Address.CoinBalance do
     )
   end
 
-  @doc false
-  def fetch_coin_balances(address_hash, %PagingOptions{page_size: page_size}) do
-    query =
+  @doc """
+  Builds a query returning up to `page_size` coin balance changes (rows whose
+  `delta` against the previous fetched balance is non-zero) for `address_hash`,
+  newest first, starting below the paging key.
+
+  The scan is bounded to `scan_limit` balance rows. Hot contracts (e.g. USDT)
+  get a coin balance row in nearly every block while their native balance
+  rarely changes, so an unbounded search for `page_size` changes walks millions
+  of rows. If the budget runs out before the page is filled, the oldest scanned
+  row (number `scan_limit + 1`, used only as the `lead()` neighbour of row
+  `scan_limit`) is returned with a `nil` delta as the boundary to continue from.
+  """
+  @spec fetch_coin_balances(Hash.Address.t(), PagingOptions.t(), pos_integer()) :: Ecto.Query.t()
+  def fetch_coin_balances(
+        address_hash,
+        %PagingOptions{page_size: page_size} = paging_options,
+        scan_limit \\ history_scan_limit()
+      ) do
+    # The paging key must be applied here, below the window function: filtering on
+    # `block_number` outside of it cannot be pushed down by Postgres, so every next
+    # page would rescan the address history from the latest block.
+    scanned_query =
       from(
         cb in CoinBalance,
         where: cb.address_hash == ^address_hash,
         where: not is_nil(cb.value),
-        order_by: [desc: :block_number],
+        order_by: [desc: cb.block_number],
+        limit: ^(scan_limit + 1)
+      )
+      |> page_coin_balances(paging_options)
+
+    delta_query =
+      from(
+        cb in subquery(scanned_query),
         select_merge: %{
-          delta: fragment("? - coalesce(lead(?, 1) over (order by ? desc), 0)", cb.value, cb.value, cb.block_number)
+          delta:
+            fragment(
+              "CASE WHEN row_number() OVER (ORDER BY ? DESC) <= ? THEN ? - coalesce(lead(?, 1) OVER (ORDER BY ? DESC), 0) END",
+              cb.block_number,
+              ^scan_limit,
+              cb.value,
+              cb.value,
+              cb.block_number
+            )
         }
       )
 
-    from(balance in subquery(query),
-      where: balance.delta != 0,
+    from(balance in subquery(delta_query),
+      where: is_nil(balance.delta) or balance.delta != 0,
+      order_by: [desc: balance.block_number],
       limit: ^page_size,
       select_merge: %{
         transaction_hash: nil
       }
     )
+  end
+
+  defp history_scan_limit do
+    Application.get_env(:explorer, __MODULE__)[:history_scan_limit]
   end
 
   @doc false

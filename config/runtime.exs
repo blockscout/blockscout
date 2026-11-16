@@ -714,6 +714,9 @@ config :explorer, Explorer.Chain.Cache.Accounts.Refresher, update_interval: top_
 config :explorer, Explorer.Chain.Address,
   excluded_top_addresses: ConfigHelper.parse_address_list_env_var("TOP_ADDRESSES_EXCLUDED_ADDRESSES")
 
+config :explorer, Explorer.Chain.Address.CoinBalance,
+  history_scan_limit: ConfigHelper.parse_integer_env_var("COIN_BALANCE_HISTORY_SCAN_LIMIT", 10_000)
+
 config :explorer, Explorer.Chain.Cache.Uncles,
   ttl_check_interval: false,
   global_ttl: nil

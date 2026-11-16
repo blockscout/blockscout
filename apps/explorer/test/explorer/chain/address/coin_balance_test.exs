@@ -155,6 +155,88 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       expected_deltas = [600, -300, 800, 500, -700] |> Enum.map(&Decimal.new(&1))
       assert(deltas == expected_deltas)
     end
+
+    test "applies the paging key before computing deltas" do
+      address = insert(:address)
+
+      [b1, b2, b3, b4] =
+        [1000, 2200, 1500, 2000]
+        |> Enum.map(fn value ->
+          block = insert(:block)
+          insert(:fetched_balance, address_hash: address.hash, value: value, block_number: block.number)
+          block.number
+        end)
+
+      result =
+        address.hash
+        |> CoinBalance.fetch_coin_balances(%PagingOptions{page_size: 50, key: {b4}})
+        |> Repo.all()
+
+      assert Enum.map(result, & &1.block_number) == [b3, b2, b1]
+      assert Enum.map(result, & &1.delta) == Enum.map([-700, 1200, 1000], &Decimal.new/1)
+    end
+
+    test "skips unchanged balances and returns the boundary row when the scan limit is reached" do
+      address = insert(:address)
+
+      # newest first: 3000 (change), 2000 x 4 (only the oldest of them is a change), 1000
+      [b1, b2, _b3, _b4, _b5, b6] =
+        [1000, 2000, 2000, 2000, 2000, 3000]
+        |> Enum.map(fn value ->
+          block = insert(:block)
+          insert(:fetched_balance, address_hash: address.hash, value: value, block_number: block.number)
+          block.number
+        end)
+
+      # scans b6..b3, b2 is the lead() neighbour of b3 and is returned as the boundary
+      result =
+        address.hash
+        |> CoinBalance.fetch_coin_balances(%PagingOptions{page_size: 50}, 4)
+        |> Repo.all()
+
+      assert [%{block_number: ^b6, delta: delta}, %{block_number: ^b2, delta: nil}] = result
+      assert delta == Decimal.new(1000)
+
+      # continuing from the boundary finds the remaining changes
+      result =
+        address.hash
+        |> CoinBalance.fetch_coin_balances(%PagingOptions{page_size: 50, key: {b2 + 1}}, 4)
+        |> Repo.all()
+
+      assert Enum.map(result, &{&1.block_number, &1.delta}) == [{b2, Decimal.new(1000)}, {b1, Decimal.new(1000)}]
+    end
+  end
+
+  describe "address_hash_to_coin_balances/2" do
+    setup do
+      initial = Application.get_env(:explorer, CoinBalance)
+      Application.put_env(:explorer, CoinBalance, Keyword.merge(initial || [], history_scan_limit: 3))
+      on_exit(fn -> Application.put_env(:explorer, CoinBalance, initial) end)
+    end
+
+    test "returns a scan continuation when the scan limit is reached before the page is filled" do
+      address = insert(:address)
+
+      [b1, b2, _b3, _b4, b5] =
+        [1000, 2000, 2000, 2000, 3000]
+        |> Enum.map(fn value ->
+          block = insert(:block)
+          insert(:fetched_balance, address_hash: address.hash, value: value, block_number: block.number)
+          block.number
+        end)
+
+      assert {[%CoinBalance{block_number: ^b5}], continuation} =
+               CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 51})
+
+      assert continuation == b2 + 1
+
+      assert {balances, nil} =
+               CoinBalance.address_hash_to_coin_balances(address.hash,
+                 paging_options: %PagingOptions{page_size: 51, key: {continuation}}
+               )
+
+      assert Enum.map(balances, & &1.block_number) == [b2, b1]
+    end
   end
 
   describe "balances_by_day/1" do
@@ -366,7 +448,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
 
-        [coin_balance] =
+        {[coin_balance], nil} =
           CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert coin_balance.transaction_hash == token_transfer.transaction_hash
@@ -401,7 +483,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
 
-        [coin_balance] =
+        {[coin_balance], nil} =
           CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert coin_balance.transaction_hash == regular_transaction.hash
@@ -429,7 +511,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: block.number)
 
-        [coin_balance] =
+        {[coin_balance], nil} =
           CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert is_nil(coin_balance.transaction_hash)
@@ -459,7 +541,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
         insert(:fetched_balance, address_hash: address.hash, value: 100, block_number: balance_block.number)
 
-        [coin_balance] =
+        {[coin_balance], nil} =
           CoinBalance.address_hash_to_coin_balances(address.hash, paging_options: %PagingOptions{page_size: 50})
 
         assert is_nil(coin_balance.transaction_hash)
