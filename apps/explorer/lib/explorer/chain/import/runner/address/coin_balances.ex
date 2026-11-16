@@ -307,6 +307,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   # For every candidate returns the nearest older stored row of the address, if
   # any, and whether the block range between the two is still unsettled. Without
   # a stored row the whole range below the candidate is checked.
+  #
+  # A missing block range `[to_number, from_number]` overlaps the gap either when
+  # its upper bound is inside the gap, or when it starts inside the gap and ends
+  # at or above the candidate. Both cases are probed through the `from_number`
+  # index with bounds on both sides: a single condition on `to_number` and
+  # `from_number` has no upper bound for the index and reads the whole table for
+  # every candidate whose gap is settled, and there are chains with hundreds of
+  # thousands of ranges. The second probe looks only at the lowest range at or
+  # above the candidate, which is enough because the ranges do not overlap.
   defp previous_rows(_repo, [], _timeout), do: []
 
   defp previous_rows(repo, candidates, timeout) do
@@ -343,16 +352,23 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
               """
               EXISTS (
                 SELECT 1 FROM missing_block_ranges AS mbr
-                WHERE mbr.to_number < ? AND mbr.from_number > COALESCE(?, -1)
-              ) OR (
+                WHERE mbr.from_number > COALESCE(?, -1) AND mbr.from_number < ?
+              ) OR COALESCE((
+                SELECT mbr.to_number < ? FROM missing_block_ranges AS mbr
+                WHERE mbr.from_number >= ?
+                ORDER BY mbr.from_number ASC
+                LIMIT 1
+              ), FALSE) OR (
                 ? AND EXISTS (
                   SELECT 1 FROM pending_block_operations AS pbo
                   WHERE pbo.block_number > COALESCE(?, -1) AND pbo.block_number < ?
                 )
               )
               """,
-              pair.block_number,
               previous.block_number,
+              pair.block_number,
+              pair.block_number,
+              pair.block_number,
               ^check_pending_block_operations?,
               previous.block_number,
               pair.block_number

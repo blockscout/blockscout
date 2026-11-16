@@ -179,6 +179,27 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
       assert stored(address_hash) == [{1, 100}, {5, 100}]
     end
 
+    test "keeps the row when a missing block range starts in the gap and ends above it", %{
+      address_hash: address_hash
+    } do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 5)
+      Repo.insert!(%MissingBlockRange{from_number: 2, to_number: 0})
+      Repo.insert!(%MissingBlockRange{from_number: 7, to_number: 4})
+
+      assert run([fetched(address_hash, 5, 100)]) == [5]
+      assert stored(address_hash) == [{1, 100}, {5, 100}]
+    end
+
+    test "ignores a missing block range that starts at the candidate block", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 5)
+      Repo.insert!(%MissingBlockRange{from_number: 8, to_number: 5})
+
+      assert run([fetched(address_hash, 5, 100)]) == []
+      assert stored(address_hash) == [{3, 100}]
+    end
+
     test "ignores missing block ranges outside the gap", %{address_hash: address_hash} do
       insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
       insert(:unfetched_balance, address_hash: address_hash, block_number: 5)
