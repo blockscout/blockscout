@@ -76,6 +76,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def verify(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:check_verified_status, false} <-
+           {:check_verified_status, SmartContract.verified_with_full_match?(casted_address_hash)},
          {:params, external_libraries} <-
            {:params, fetch_external_libraries(params)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
@@ -113,6 +115,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
         end)
 
         render(conn, :error, error: "#{@smth_went_wrong}: #{inspect(error.errors)}")
+
+      {:check_verified_status, true} ->
+        render(conn, :error, error: @verified)
 
       {:format, :error} ->
         render(conn, :error, error: @invalid_address)
@@ -447,6 +452,8 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
   def verify_vyper_contract(conn, %{"addressHash" => address_hash} = params) do
     with {:params, {:ok, fetched_params}} <- {:params, fetch_vyper_verify_params(params)},
          {:format, {:ok, casted_address_hash}} <- to_address_hash(address_hash),
+         {:check_verified_status, false} <-
+           {:check_verified_status, SmartContract.verified_with_full_match?(casted_address_hash)},
          {:not_a_smart_contract, {:ok, _bytecode}} <-
            {:not_a_smart_contract,
             conn
@@ -474,6 +481,9 @@ defmodule BlockScoutWeb.API.RPC.ContractController do
 
       {:publish, _} ->
         render(conn, :error, error: @smth_went_wrong)
+
+      {:check_verified_status, true} ->
+        render(conn, :error, error: @verified)
 
       {:format, :error} ->
         render(conn, :error, error: @invalid_address)

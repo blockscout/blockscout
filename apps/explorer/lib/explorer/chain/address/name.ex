@@ -72,7 +72,11 @@ defmodule Explorer.Chain.Address.Name do
   end
 
   @doc """
-  Creates primary address name for the given address hash
+  Creates primary address name for the given address hash.
+
+  If a name with the same value already exists for the address (e.g. it was the
+  primary name of a previous verification, or it was stored as a token name), the
+  existing row is promoted to primary instead of being silently skipped.
   """
   @spec create_primary_address_name(Repo.t(), String.t(), Hash.Address.t()) ::
           {:ok, [__MODULE__.t()]} | {:error, [Changeset.t()]}
@@ -85,7 +89,7 @@ defmodule Explorer.Chain.Address.Name do
 
     %__MODULE__{}
     |> changeset(params)
-    |> repo.insert(on_conflict: :nothing, conflict_target: [:address_hash, :name])
+    |> repo.insert(on_conflict: {:replace, [:primary, :updated_at]}, conflict_target: [:address_hash, :name])
   end
 
   defp trim_name(%Changeset{valid?: false} = changeset), do: changeset

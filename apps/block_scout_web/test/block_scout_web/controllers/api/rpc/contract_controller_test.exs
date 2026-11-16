@@ -1035,6 +1035,56 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
   # end
   # end
 
+  describe "verify & verify_vyper_contract with a fully verified contract" do
+    setup do
+      smart_contract = insert(:smart_contract, partially_verified: false, name: "FullMatch")
+      {:ok, smart_contract: smart_contract}
+    end
+
+    test "verify rejects re-verification and keeps the full match", %{conn: conn, smart_contract: smart_contract} do
+      params = %{
+        "module" => "contract",
+        "action" => "verify",
+        "addressHash" => to_string(smart_contract.address_hash),
+        "name" => "PartialMatch",
+        "compilerVersion" => "v0.8.19+commit.7dd6d404",
+        "optimization" => "false",
+        "contractSourceCode" => "pragma solidity ^0.8.0; contract PartialMatch {}"
+      }
+
+      assert_already_verified(conn, params, smart_contract)
+    end
+
+    test "verify_vyper_contract rejects re-verification and keeps the full match", %{
+      conn: conn,
+      smart_contract: smart_contract
+    } do
+      params = %{
+        "module" => "contract",
+        "action" => "verify_vyper_contract",
+        "addressHash" => to_string(smart_contract.address_hash),
+        "name" => "PartialMatch",
+        "compilerVersion" => "v0.3.10+commit.91361694",
+        "contractSourceCode" => "# @version ^0.3.10"
+      }
+
+      assert_already_verified(conn, params, smart_contract)
+    end
+
+    defp assert_already_verified(conn, params, smart_contract) do
+      response =
+        conn
+        |> post("/api", params)
+        |> json_response(200)
+
+      assert response["message"] == "Smart-contract already verified."
+      assert response["status"] == "0"
+
+      assert %SmartContract{name: "FullMatch", partially_verified: false} =
+               Repo.get_by(SmartContract, address_hash: smart_contract.address_hash)
+    end
+  end
+
   describe "getcontractcreation" do
     setup do
       %{params: %{"module" => "contract", "action" => "getcontractcreation"}}
