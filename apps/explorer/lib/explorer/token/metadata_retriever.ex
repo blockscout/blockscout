@@ -280,7 +280,7 @@ defmodule Explorer.Token.MetadataRetriever do
     metadata =
       base_metadata
       |> try_to_fetch_erc_1155_name(contract_address_hash, type)
-      |> maybe_put_erc404_type(contract_address_hash, type)
+      |> maybe_put_erc404_type(contract_address_hash, type, raw_metadata[@decimals_signature])
 
     if Enum.empty?(metadata) && set_skip_metadata do
       Map.put(
@@ -524,23 +524,26 @@ defmodule Explorer.Token.MetadataRetriever do
 
     cond do
       Enum.all?(answers, &match?({:ok, [value]} when is_integer(value), &1)) -> {:ok, true}
-      Enum.any?(answers, &erc404_getter_denied?/1) -> {:ok, false}
+      Enum.any?(answers, &call_denied?/1) -> {:ok, false}
       true -> :error
     end
   end
 
-  defp erc404_getter_denied?({:error, :invalid_data}), do: true
-  defp erc404_getter_denied?({:error, _reason} = error), do: contract_failure?(error)
-  defp erc404_getter_denied?(_answer), do: false
+  # whether the contract itself answered the call with a failure
+  defp call_denied?({:error, :invalid_data}), do: true
+  defp call_denied?({:error, _reason} = error), do: contract_failure?(error)
+  defp call_denied?(_answer), do: false
 
   # A newly seen ERC-404 token that emits the standard `Transfer` event for both
   # of its legs is resolved to ERC-721 from its logs. Such a token is only worth
   # asking when it answered `decimals()`, which an ordinary ERC-721 contract
   # doesn't implement, so that ordinary NFT collections cost no extra calls.
   #
-  # When the node fails to answer, the token is left uncataloged, so that the
-  # token fetcher asks again instead of keeping the ERC-721 type for good.
-  defp maybe_put_erc404_type(%{decimals: decimals} = metadata, contract_address_hash, "ERC-721")
+  # When the node fails to answer either `decimals()` or the ERC-404 getters, the
+  # token is left uncataloged, so that the token fetcher asks again instead of
+  # keeping the ERC-721 type for good. A token without any metadata is not
+  # cataloged anyway.
+  defp maybe_put_erc404_type(%{decimals: decimals} = metadata, contract_address_hash, "ERC-721", _decimals_result)
        when not is_nil(decimals) do
     case erc404_support(contract_address_hash) do
       {:ok, true} -> Map.put(metadata, :type, "ERC-404")
@@ -549,7 +552,12 @@ defmodule Explorer.Token.MetadataRetriever do
     end
   end
 
-  defp maybe_put_erc404_type(metadata, _contract_address_hash, _type), do: metadata
+  defp maybe_put_erc404_type(metadata, _contract_address_hash, "ERC-721", {:error, _reason} = decimals_result)
+       when map_size(metadata) > 0 do
+    if call_denied?(decimals_result), do: metadata, else: Map.put(metadata, :cataloged, false)
+  end
+
+  defp maybe_put_erc404_type(metadata, _contract_address_hash, _type, _decimals_result), do: metadata
 
   @doc """
   Reads the [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) multiplier of a

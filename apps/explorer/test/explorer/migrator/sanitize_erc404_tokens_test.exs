@@ -101,15 +101,41 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
       assert %TokenTransfer{token_type: "ERC-404", amount: nil} = reload_transfer(erc20_transfer)
     end
 
+    test "completes a conversion interrupted in the transfer sweep of a token without fungible balances" do
+      %{token: token, erc20_transfer: erc20_transfer} = insert_mixed_transfers_token()
+
+      Repo.delete_all(CurrentTokenBalance)
+
+      Repo.update_all(from(t in Token, where: t.contract_address_hash == ^token.contract_address_hash),
+        set: [type: "ERC-404"]
+      )
+
+      run_migration()
+
+      assert %TokenTransfer{token_type: "ERC-404", amount: nil} = reload_transfer(erc20_transfer)
+    end
+
     test "leaves the tokens with a complete conversion untouched" do
       token = insert(:token, type: "ERC-404", decimals: 18)
       token_address = Repo.preload(token, :contract_address).contract_address
 
-      # no legacy current token balances, so nothing is left to convert
-      erc20_transfer =
+      insert(:token_transfer,
+        from_address: insert(:address),
+        token_contract_address: token_address,
+        block_number: 1,
+        token_type: "ERC-404",
+        amount: nil,
+        amounts: [Decimal.new(5)],
+        token_ids: []
+      )
+
+      # an interrupted sweep never leaves a legacy transfer newer than a
+      # converted one, so this one tells whether the conversion ran
+      legacy_transfer =
         insert(:token_transfer,
           from_address: insert(:address),
           token_contract_address: token_address,
+          block_number: 2,
           token_type: "ERC-20",
           amount: Decimal.new(5),
           token_ids: nil
@@ -117,7 +143,7 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
 
       run_migration()
 
-      assert %TokenTransfer{token_type: "ERC-20"} = reload_transfer(erc20_transfer)
+      assert %TokenTransfer{token_type: "ERC-20"} = reload_transfer(legacy_transfer)
     end
 
     test "resumes after the last processed candidate" do

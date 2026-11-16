@@ -193,10 +193,12 @@ defmodule Explorer.Chain.Token.Erc404 do
   Whether the conversion of a token which is already stored as an ERC-404 one
   is incomplete.
 
-  The current token balances are retyped last by `convert/2`, so the legacy
-  ones are left behind by an interrupted conversion only. A token detected as
-  ERC-404 from its dedicated events has none of them, so nothing is converted
-  for it.
+  `convert/2` sweeps the token transfers from the newest block to the oldest
+  one and retypes the current token balances last, so an interrupted
+  conversion leaves behind either the legacy oldest transfer or legacy current
+  token balances. Both are found through indexes, without scanning the whole
+  history of the token. A token detected as ERC-404 from its dedicated events
+  has none of them, so nothing is converted for it.
   """
   @spec conversion_pending?(Hash.Address.t()) :: boolean()
   def conversion_pending?(contract_address_hash) do
@@ -204,6 +206,18 @@ defmodule Explorer.Chain.Token.Erc404 do
       from(ctb in CurrentTokenBalance,
         where: ctb.token_contract_address_hash == ^contract_address_hash,
         where: is_nil(ctb.token_id) and ctb.token_type in ^@legacy_types
+      ),
+      timeout: :infinity
+    ) or oldest_token_transfer_type(contract_address_hash) in @legacy_types
+  end
+
+  defp oldest_token_transfer_type(contract_address_hash) do
+    Repo.one(
+      from(tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^contract_address_hash,
+        order_by: [asc: tt.block_number, asc: tt.log_index],
+        limit: 1,
+        select: tt.token_type
       ),
       timeout: :infinity
     )

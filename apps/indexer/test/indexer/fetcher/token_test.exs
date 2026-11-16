@@ -188,5 +188,71 @@ defmodule Indexer.Fetcher.TokenTest do
         assert TokenFetcher.init([], &[&1 | &2], json_rpc_named_arguments) == [contract_address_hash]
       end
     end
+
+    test "leaves an ERC-721 token uncataloged when the node fails decimals()", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      token = insert(:token, type: "ERC-721", name: nil, decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # the metadata getters, then two retries of `decimals()`
+        expect(EthereumJSONRPC.Mox, :json_rpc, 3, fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, params: [%{data: "0x313ce567"}, _]} ->
+               %{id: id, error: %{code: -32000, message: "header not found"}, jsonrpc: "2.0"}
+
+             %{id: id, params: [%{data: "0x18160ddd"}, _]} ->
+               %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000012"}
+
+             %{id: id} ->
+               %{
+                 id: id,
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
+               }
+           end)}
+        end)
+
+        assert TokenFetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
+
+        assert {:ok, %Token{type: "ERC-721", name: "Bancor", decimals: nil, cataloged: false}} =
+                 Chain.token_from_address_hash(contract_address_hash)
+      end
+    end
+
+    test "catalogs an ERC-721 token whose contract reverts decimals()", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      token = insert(:token, type: "ERC-721", name: nil, decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # the metadata getters, then two retries of `decimals()`; no ERC-404 getters
+        expect(EthereumJSONRPC.Mox, :json_rpc, 3, fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, params: [%{data: "0x313ce567"}, _]} ->
+               %{id: id, error: %{code: -32015, data: "0x", message: "execution reverted"}, jsonrpc: "2.0"}
+
+             %{id: id, params: [%{data: "0x18160ddd"}, _]} ->
+               %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000012"}
+
+             %{id: id} ->
+               %{
+                 id: id,
+                 result:
+                   "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000642616e636f720000000000000000000000000000000000000000000000000000"
+               }
+           end)}
+        end)
+
+        assert TokenFetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
+
+        assert {:ok, %Token{type: "ERC-721", name: "Bancor", cataloged: true}} =
+                 Chain.token_from_address_hash(contract_address_hash)
+      end
+    end
   end
 end
