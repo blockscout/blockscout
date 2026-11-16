@@ -213,7 +213,7 @@ defmodule Explorer.Chain do
 
         query =
           Log
-          |> Log.address_match_query(address_hash)
+          |> Log.address_match_query(address_hash, options)
           |> join(:inner, [log], block in Block, on: block.number == log.block_number)
           |> where([_l, block], block.consensus == true)
           |> page_logs(paging_options)

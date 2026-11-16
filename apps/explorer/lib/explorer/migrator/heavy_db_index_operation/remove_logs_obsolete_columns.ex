@@ -11,9 +11,19 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns do
 
   require Logger
 
-  alias Explorer.Migrator.{FillLogsCompressedData, FillLogsOptimizedFields, HeavyDbIndexOperation}
+  alias Explorer.Migrator.{
+    DeleteNonConsensusLogs,
+    FillLogsCompressedData,
+    FillLogsOptimizedFields,
+    HeavyDbIndexOperation
+  }
 
   alias Explorer.Migrator.HeavyDbIndexOperation.{
+    CreateLogsAddressHashBlockNumberDescIndexDescIndex,
+    CreateLogsAddressHashFirstTopicBlockNumberIndexIndex,
+    CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
+    CreateLogsBlockHashIndex,
+    CreateLogsDepositsWithdrawalsIndex,
     DropLogsAddressHashFirstTopicSecondTopicBlockNumberIndex,
     DropLogsDepositsWithdrawalsIndex,
     UpdateLogsPrimaryKey
@@ -25,12 +35,26 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns do
   @index_name "logs_remove_obsolete_columns"
   @operation_type :create
 
+  # The lock wait of each step, in milliseconds. While an `ACCESS EXCLUSIVE` lock request waits for
+  # a long-running query, every other query on the table queues behind it, so the wait is bounded:
+  # on a timeout the step's transaction is rolled back and the operation is retried later.
+  @lock_timeout 5_000
+
+  # Besides the migrations filling the new columns, the operation waits for all the migrations which
+  # read the removed columns or create indexes on them: otherwise such a migration started after the
+  # removal would fail, and its "started" status would block the other heavy operations on `logs`.
   @impl HeavyDbIndexOperation
   def dependent_from_migrations,
     do: [
       FillLogsOptimizedFields.migration_name(),
       FillLogsCompressedData.migration_name(),
       UpdateLogsPrimaryKey.migration_name(),
+      DeleteNonConsensusLogs.migration_name(),
+      CreateLogsBlockHashIndex.migration_name(),
+      CreateLogsAddressHashBlockNumberDescIndexDescIndex.migration_name(),
+      CreateLogsAddressHashFirstTopicBlockNumberIndexIndex.migration_name(),
+      CreateLogsAddressHashFirstTopicSecondTopicBlockNumberIndex.migration_name(),
+      CreateLogsDepositsWithdrawalsIndex.migration_name(),
       DropLogsAddressHashFirstTopicSecondTopicBlockNumberIndex.migration_name(),
       DropLogsDepositsWithdrawalsIndex.migration_name()
     ]
@@ -42,7 +66,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns do
 
     with {:ok, _} <- drop_blocks_foreign_key(),
          {:ok, _} <- drop_transactions_foreign_key(),
-         {:ok, _} <- Repo.query(drop_columns_query_string(), [], timeout: :infinity) do
+         {:ok, _} <- drop_columns() do
       Logger.info("Migration RemoveLogsObsoleteColumns finished")
       :ok
     else
@@ -106,7 +130,8 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns do
   defp do_drop_blocks_foreign_key do
     Repo.transaction(
       fn ->
-        with {:ok, _} <- Repo.query(lock_blocks_query_string(), [], timeout: :infinity),
+        with {:ok, _} <- Repo.query(set_lock_timeout_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(lock_blocks_query_string(), [], timeout: :infinity),
              {:ok, _} <- Repo.query(drop_blocks_foreign_key_query_string(), [], timeout: :infinity) do
           Logger.info("Migration RemoveLogsObsoleteColumns finished blocks")
           :ok
@@ -131,10 +156,26 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns do
   defp do_drop_transactions_foreign_key do
     Repo.transaction(
       fn ->
-        with {:ok, _} <- Repo.query(lock_logs_query_string(), [], timeout: :infinity),
+        with {:ok, _} <- Repo.query(set_lock_timeout_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(lock_logs_query_string(), [], timeout: :infinity),
              {:ok, _} <- Repo.query(lock_transactions_query_string(), [], timeout: :infinity),
              {:ok, _} <- Repo.query(drop_transactions_foreign_key_query_string(), [], timeout: :infinity) do
           Logger.info("Migration RemoveLogsObsoleteColumns finished transactions")
+          :ok
+        else
+          {:error, error} -> Repo.rollback(error)
+        end
+      end,
+      timeout: :infinity
+    )
+  end
+
+  # sobelow_skip ["SQL"]
+  defp drop_columns do
+    Repo.transaction(
+      fn ->
+        with {:ok, _} <- Repo.query(set_lock_timeout_query_string(), [], timeout: :infinity),
+             {:ok, _} <- Repo.query(drop_columns_query_string(), [], timeout: :infinity) do
           :ok
         else
           {:error, error} -> Repo.rollback(error)
@@ -156,6 +197,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.RemoveLogsObsoleteColumns do
       """)
 
     exists?
+  end
+
+  defp set_lock_timeout_query_string do
+    """
+    SET LOCAL lock_timeout = #{@lock_timeout};
+    """
   end
 
   defp lock_blocks_query_string do
