@@ -209,14 +209,12 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
 
     test "transaction payload skips enrichment when DISABLE_TRANSACTION_BROADCAST_ENRICHMENT is set", %{
       address: address,
-      topic: topic,
-      bypass: bypass
+      topic: topic
     } do
       Application.put_env(:block_scout_web, Notifier, transaction_broadcast_enrichment_disabled: true)
 
-      # No Bypass.expect calls: any request to the microservices fails the test
-      Bypass.pass(bypass)
-
+      # No expectations are set on `bypass`: any request to the microservices
+      # is an unknown route and fails the test when Bypass verifies on exit
       transaction =
         :transaction
         |> insert(to_address: address)
