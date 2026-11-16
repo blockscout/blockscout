@@ -557,8 +557,10 @@ defmodule Explorer.Token.MetadataRetriever do
   #
   # The token is cataloged even when the node keeps failing to answer the
   # ERC-404 getters: an uncataloged token would be picked up by the token fetcher
-  # again right away, with no backoff. Such a token is left to the
-  # `Explorer.Migrator.SanitizeErc404Tokens` migration.
+  # again right away, with no backoff. A token with decimals is then left to the
+  # `Explorer.Migrator.SanitizeErc404Tokens` migration. A token whose decimals
+  # are unknown too is handed back to the token fetcher by
+  # `Indexer.Fetcher.TokenUpdater` once it reads them.
   defp maybe_put_erc404_type(metadata, contract_address_hash, "ERC-721", decimals_result) do
     if erc404_candidate?(metadata, decimals_result) do
       case erc404_support(contract_address_hash, erc404_support_attempts()) do

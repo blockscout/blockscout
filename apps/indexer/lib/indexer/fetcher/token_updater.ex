@@ -100,10 +100,25 @@ defmodule Indexer.Fetcher.TokenUpdater do
   end
 
   def update_metadata(%Token{} = token, metadata) do
+    erc404_recheck? = erc404_recheck?(token, metadata)
+
     metadata_with_metadata_updated_at =
       metadata
       |> Map.put(:metadata_updated_at, DateTime.utc_now())
+      |> then(&if(erc404_recheck?, do: Map.put(&1, :cataloged, false), else: &1))
 
     Token.update(token, metadata_with_metadata_updated_at, false, :metadata_update)
   end
+
+  # An ERC-721 token is told apart from an ERC-404 one emitting the standard
+  # `Transfer` event for both legs only when it answers `decimals()`, see
+  # `Explorer.Token.MetadataRetriever.get_functions_of/2`. A token cataloged while
+  # the node failed that call is marked as uncataloged once its decimals are read
+  # here, so that `Indexer.Fetcher.Token`, which streams the uncataloged tokens
+  # whenever its queue drains, catalogs it again and asks the ERC-404 getters.
+  # This happens once: the decimals are stored by then.
+  defp erc404_recheck?(%Token{type: "ERC-721", decimals: nil}, %{decimals: decimals}) when not is_nil(decimals),
+    do: true
+
+  defp erc404_recheck?(_token, _metadata), do: false
 end
