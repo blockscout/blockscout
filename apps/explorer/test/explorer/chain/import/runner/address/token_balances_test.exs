@@ -263,7 +263,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
              run_changes_list(changes_list, options)
   end
 
-  test "keeps the ERC-404 type of a converted balance when a legacy balance is imported afterwards" do
+  test "rejects legacy balances imported for a converted balance, which stays eligible for the refetch" do
     address = insert(:address)
     token = insert(:token, type: "ERC-721")
 
@@ -299,16 +299,33 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
     assert %TokenBalance{token_type: "ERC-404"} = Repo.get_by(TokenBalance, address_hash: address.hash)
 
     for legacy_type <- ["ERC-721", "ERC-20"] do
-      assert {:ok, _} = run_changes(%{legacy_changes | token_type: legacy_type}, options)
-      assert %TokenBalance{token_type: "ERC-404"} = Repo.get_by(TokenBalance, address_hash: address.hash)
+      # a placeholder and a value fetched for the legacy type
+      for legacy_value <- [{nil, nil}, {Decimal.new(3), DateTime.utc_now()}] do
+        {value, value_fetched_at} = legacy_value
+
+        assert {:ok, _} =
+                 run_changes(
+                   %{legacy_changes | token_type: legacy_type, value: value, value_fetched_at: value_fetched_at},
+                   options
+                 )
+
+        assert %TokenBalance{token_type: "ERC-404", value: nil, value_fetched_at: nil} =
+                 Repo.get_by(TokenBalance, address_hash: address.hash)
+      end
     end
 
-    # the other conflict behaviour stays: a fetched value still replaces the placeholder
+    assert [%{address_hash: address_hash}] = TokenBalance.unfetched_token_balances() |> Repo.all()
+    assert address_hash == address.hash
+
+    # the value fetched for the ERC-404 type replaces the converted balance; the
+    # changeset drops the nil token id of a fungible balance
     value_fetched_at = DateTime.utc_now()
 
     assert {:ok, _} =
              run_changes(
-               %{legacy_changes | value: Decimal.new(5), value_fetched_at: value_fetched_at},
+               legacy_changes
+               |> Map.delete(:token_id)
+               |> Map.merge(%{token_type: "ERC-404", value: Decimal.new(5), value_fetched_at: value_fetched_at}),
                options
              )
 

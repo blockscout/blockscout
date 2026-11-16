@@ -26,7 +26,7 @@ defmodule Explorer.Chain.Token.Erc404 do
     `amounts: []`;
   * its fungible token balances (the ones without a token id) get the ERC-404
     type and are marked as unfetched, so that the token balance fetcher reads
-    their ERC-20 value instead of the NFT count read for an ERC-721 token.
+    them again as ERC-404 balances.
 
   Blocks with uncataloged `ERC20Transfer` and `ERC721Transfer` logs are not
   handled here, see `uncataloged_log_block_numbers/2`.
