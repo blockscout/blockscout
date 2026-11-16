@@ -1417,6 +1417,9 @@ config :indexer, Indexer.Fetcher.TokenUIMultiplierUpdater,
 config :indexer, Indexer.Fetcher.TokenCountersUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
+config :indexer, Indexer.Fetcher.CoinBalance.Compactor.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_COIN_BALANCES_COMPACTOR")
+
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER")
 
@@ -1488,6 +1491,11 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   interval: ConfigHelper.parse_time_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_INTERVAL", "10s"),
   head_offset: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_HEAD_OFFSET", 1000)
 
+config :indexer, Indexer.Fetcher.CoinBalance.Compactor,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_BATCH_SIZE", 100, min: 1),
+  interval: ConfigHelper.parse_time_env_var("INDEXER_COIN_BALANCES_COMPACTOR_INTERVAL", "1s"),
+  head_offset: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_HEAD_OFFSET", 1000, min: 0)
+
 config :indexer, Indexer.Block.Realtime.Fetcher,
   max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1_000),
   polling_period: ConfigHelper.parse_time_env_var("INDEXER_REALTIME_FETCHER_POLLING_PERIOD")
@@ -1552,10 +1560,6 @@ config :indexer, Indexer.Fetcher.InternalTransaction.DeleteQueue,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_BATCH_SIZE", 100),
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_CONCURRENCY", 1),
   threshold: ConfigHelper.parse_time_env_var("INDEXER_INTERNAL_TRANSACTIONS_DELETE_QUEUE_THRESHOLD", "0s")
-
-config :explorer, Explorer.Chain.Import.Runner.Address.CoinBalances,
-  unchanged_head_margin:
-    ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_UNCHANGED_HEAD_MARGIN", 1_000, min: 0)
 
 coin_balances_batch_size = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_BATCH_SIZE", 100)
 coin_balances_concurrency = ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_CONCURRENCY", 10)

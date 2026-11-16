@@ -183,6 +183,96 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   @doc """
+  Deletes the coin balances of the given block range whose value is the same as
+  in the previous coin balance of the address, so that the table keeps only
+  balance changes.
+
+  A coin balance is written for every block an address is touched in, whether or
+  not its balance changes there. Such a row can be deleted once no row can show
+  up between it and the previous one anymore: a row that arrives later with
+  another value would otherwise become the latest known balance for the deleted
+  block. So a row is left in place when
+
+    * the previous row is not fetched yet;
+    * a missing block range overlaps the blocks between the two rows;
+    * a block between the two rows has a pending block operation: its internal
+      transactions are not fetched, and they can bring a balance change that is
+      not known yet;
+    * there is any pending transaction operation: those are not bound to a
+      block number, so the blocks between the two rows cannot be checked.
+
+  The pending operations are checked regardless of whether the internal
+  transactions fetcher is enabled: they are the only evidence that the balance
+  changes of a block are all known.
+
+  A missing block range `[to_number, from_number]` overlaps the blocks between
+  the rows either when its upper bound is among them, or when it starts among
+  them and ends at or above the row. Both cases are probed through the
+  `from_number` index with bounds on both sides. The second probe looks only at
+  the lowest range at or above the row, which is enough because the ranges do
+  not overlap.
+
+  The caller is responsible for passing only the blocks that are far enough from
+  the chain head: head blocks are imported concurrently and out of order, and a
+  block that is still being imported has neither coin balances, nor a pending
+  block operation, nor a missing block range yet.
+
+  ## Parameters
+  - `from_block_number`: the lowest block number of the range, inclusive.
+  - `to_block_number`: the highest block number of the range, inclusive.
+  - `options`: `:timeout` of the statement, `:infinity` by default.
+
+  ## Returns
+  - The number of the deleted rows.
+  """
+  @spec delete_unchanged(Block.block_number(), Block.block_number(), keyword()) :: non_neg_integer()
+  def delete_unchanged(from_block_number, to_block_number, options \\ [])
+      when is_integer(from_block_number) and is_integer(to_block_number) do
+    # Enforce CoinBalance ShareLocks order (see docs: sharelocks.md)
+    sql = """
+    WITH unchanged AS (
+      SELECT cb.address_hash, cb.block_number
+      FROM address_coin_balances AS cb
+      CROSS JOIN LATERAL (
+        SELECT p.block_number, p.value
+        FROM address_coin_balances AS p
+        WHERE p.address_hash = cb.address_hash AND p.block_number < cb.block_number
+        ORDER BY p.block_number DESC
+        LIMIT 1
+      ) AS previous
+      WHERE cb.block_number BETWEEN $1 AND $2
+        AND cb.value IS NOT NULL
+        AND previous.value = cb.value
+        AND NOT EXISTS (SELECT 1 FROM pending_transaction_operations)
+        AND NOT EXISTS (
+          SELECT 1 FROM missing_block_ranges AS mbr
+          WHERE mbr.from_number > previous.block_number AND mbr.from_number < cb.block_number
+        )
+        AND NOT COALESCE((
+          SELECT mbr.to_number < cb.block_number FROM missing_block_ranges AS mbr
+          WHERE mbr.from_number >= cb.block_number
+          ORDER BY mbr.from_number ASC
+          LIMIT 1
+        ), FALSE)
+        AND NOT EXISTS (
+          SELECT 1 FROM pending_block_operations AS pbo
+          WHERE pbo.block_number > previous.block_number AND pbo.block_number < cb.block_number
+        )
+      ORDER BY cb.address_hash ASC, cb.block_number ASC
+      FOR UPDATE OF cb
+    )
+    DELETE FROM address_coin_balances AS cb
+    USING unchanged
+    WHERE cb.address_hash = unchanged.address_hash AND cb.block_number = unchanged.block_number
+    """
+
+    %{num_rows: deleted_count} =
+      Repo.query!(sql, [from_block_number, to_block_number], timeout: Keyword.get(options, :timeout, :infinity))
+
+    deleted_count
+  end
+
+  @doc """
   Retrieves paginated coin balance records for a given address hash with timestamp interpolation.
 
   Fetches coin balance history for an address, applying pagination and performing
