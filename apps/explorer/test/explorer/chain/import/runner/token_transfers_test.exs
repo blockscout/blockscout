@@ -3,8 +3,8 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfersTest do
   use Explorer.DataCase
 
   alias Explorer.Chain
+  alias Explorer.Chain.{Token, TokenTransfer}
   alias Explorer.Chain.Token.Erc404
-  alias Explorer.Chain.TokenTransfer
 
   describe "run/3" do
     test "does not insert the token transfers of the blocks that are not consensus anymore" do
@@ -78,6 +78,27 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfersTest do
       import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
 
       Erc404.convert(token.contract_address_hash)
+
+      import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
+
+      assert [
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [amount]},
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [token_id], amounts: []}
+             ] = Repo.all(from(tt in TokenTransfer, order_by: tt.log_index))
+
+      assert Decimal.equal?(amount, 5)
+      assert Decimal.equal?(token_id, 7)
+    end
+
+    test "gives the ERC-404 shape to legacy rows re-imported between the retyping and the sweep", context do
+      token = insert(:token, type: "ERC-721")
+
+      import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
+
+      # the token is retyped, but the conversion sweep hasn't reached its transfers yet
+      Repo.update_all(from(t in Token, where: t.contract_address_hash == ^token.contract_address_hash),
+        set: [type: "ERC-404"]
+      )
 
       import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
 
