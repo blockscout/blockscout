@@ -316,6 +316,30 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert current_token_balance.value == Decimal.new(200)
     end
 
+    test "gives the ERC-404 type to a new legacy balance of a token retyped to ERC-404", %{
+      address: address,
+      options: options
+    } do
+      token = insert(:token, type: "ERC-404")
+
+      # the block fetcher read the token as an ERC-721 one before it was retyped
+      run_changes(
+        %{
+          address_hash: address.hash,
+          block_number: 2,
+          token_contract_address_hash: token.contract_address_hash,
+          token_id: 5,
+          token_type: "ERC-721",
+          value: Decimal.new(200),
+          value_fetched_at: DateTime.utc_now()
+        },
+        options
+      )
+
+      assert [%CurrentTokenBalance{token_type: "ERC-404", token_id: nil, block_number: 2}] =
+               Repo.all(CurrentTokenBalance)
+    end
+
     test "updates NFT when the new block number is greater", %{
       address: address,
       token: token,

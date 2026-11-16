@@ -87,7 +87,9 @@ defmodule Indexer.Fetcher.Token do
         |> MultichainSearch.send_token_info_to_queue(:metadata)
 
         maybe_convert_to_erc404(token, token_params)
-        {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
+        # the metadata retriever leaves the token uncataloged when it failed to
+        # tell whether the token is an ERC-404 one, so that it is asked again
+        {:ok, _} = Token.update(token, Map.put_new(token_params, :cataloged, true))
         :ok
     end
   end
@@ -101,6 +103,8 @@ defmodule Indexer.Fetcher.Token do
   # token first, so a failed attempt leaves an uncataloged ERC-404 token behind,
   # which is converted again on the next attempt to catalog it. Re-running the
   # conversion is safe, it only touches the rows which are not converted yet.
+  # Tokens detected as ERC-404 from their dedicated events have nothing to
+  # convert, see `Erc404.conversion_pending?/1`.
   defp maybe_convert_to_erc404(%Token{contract_address_hash: contract_address_hash}, %{type: "ERC-404"}) do
     Erc404.convert(contract_address_hash)
   end
@@ -110,7 +114,7 @@ defmodule Indexer.Fetcher.Token do
          _token_params
        )
        when cataloged != true do
-    Erc404.convert(contract_address_hash)
+    if Erc404.conversion_pending?(contract_address_hash), do: Erc404.convert(contract_address_hash), else: :ok
   end
 
   defp maybe_convert_to_erc404(_token, _token_params), do: :ok

@@ -757,7 +757,7 @@ defmodule Indexer.Transform.TokenTransfersTest do
 
       assert [erc20_transfer] = Enum.filter(token_transfers, &(&1.log_index == 8))
       assert %{token_type: "ERC-404", token_ids: [], amounts: [amount]} = erc20_transfer
-      refute Map.has_key?(erc20_transfer, :amount)
+      assert is_nil(erc20_transfer.amount)
       assert Decimal.equal?(amount, Decimal.new(17_000_000_000_000_000_000))
 
       assert [%{token_type: "ERC-404", token_ids: [7], amounts: []}] =

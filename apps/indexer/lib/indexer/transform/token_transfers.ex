@@ -16,7 +16,7 @@ defmodule Indexer.Transform.TokenTransfers do
   import Explorer.Helper, only: [decode_data: 2, truncate_address_hash: 1]
 
   alias Explorer.Chain.{Hash, Token, TokenTransfer}
-  alias Explorer.Chain.Token.ScaledUIAmount
+  alias Explorer.Chain.Token.{Erc404, ScaledUIAmount}
   alias Explorer.Repo
   alias Indexer.Fetcher.{TokenTotalSupplyUpdater, TokenUIMultiplierUpdater}
 
@@ -231,25 +231,11 @@ defmodule Indexer.Transform.TokenTransfers do
     Enum.map(token_transfers, fn token_transfer ->
       case token_types_map[token_transfer.token_contract_address_hash] do
         "ERC-8056" -> %{token_transfer | token_type: "ERC-8056"}
-        "ERC-404" -> to_erc404_transfer(token_transfer)
+        "ERC-404" -> Erc404.to_erc404_transfer(token_transfer)
         _ -> token_transfer
       end
     end)
   end
-
-  defp to_erc404_transfer(%{token_type: "ERC-20", amount: amount} = token_transfer) do
-    token_transfer
-    |> Map.delete(:amount)
-    |> Map.merge(%{token_type: "ERC-404", token_ids: [], amounts: [amount]})
-  end
-
-  defp to_erc404_transfer(%{token_type: "ERC-721"} = token_transfer) do
-    token_transfer
-    |> Map.delete(:amount)
-    |> Map.merge(%{token_type: "ERC-404", amounts: []})
-  end
-
-  defp to_erc404_transfer(token_transfer), do: token_transfer
 
   defp define_token_type(token_transfers) do
     Enum.reduce(token_transfers, nil, fn %{token_type: token_type}, acc ->

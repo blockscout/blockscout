@@ -4,30 +4,32 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
   Finds ERC-404 tokens which were indexed as ERC-721 or ERC-20 ones and converts
   their stored data with `Explorer.Chain.Token.Erc404.convert/2`.
 
-  Candidates are collected once, when the migration starts:
+  The candidates are:
 
   * tokens which emitted the dedicated `ERC20Transfer` or `ERC721Transfer`
     events. Only ERC-404 tokens emit them, so these candidates are converted
     without further checks. Blocks with such logs that have no token transfer
     yet are added to the missing block ranges, so that they are re-fetched and
     the logs get cataloged;
-  * ERC-721 (or already ERC-404) tokens which have `decimals` and ERC-20 token
-    transfers, i.e. tokens emitting the standard `Transfer` event both with 3 and
-    with 4 topics. That alone doesn't prove a token is ERC-404, so these
-    candidates are converted only when the contract answers both
-    `erc20TotalSupply()` and `erc721TotalSupply()`, see
+  * ERC-721 tokens which have `decimals`, which an ordinary ERC-721 contract
+    doesn't implement. These candidates are converted only when the contract
+    answers both `erc20TotalSupply()` and `erc721TotalSupply()`, see
     `Explorer.Token.MetadataRetriever.erc404_support/1`. Candidates which don't
-    are logged and left untouched.
+    are logged and left untouched. The tokens of this kind which were already
+    retyped to ERC-404 are candidates as well, so that an interrupted conversion
+    is completed, see `Explorer.Chain.Token.Erc404.conversion_pending?/1`.
 
-  The pending candidates are kept in the migration state, so an interrupted
-  migration resumes from the token it stopped at. A token whose contract call
-  failed on the node side is skipped as well: to re-run the migration, delete the
-  `sanitize_erc404_tokens` record from the `migration_status` table.
+  The candidates are found again whenever the migration starts, in the same
+  order, and the migration state keeps the last processed one, so an
+  interrupted migration resumes from the token it stopped at. A token whose
+  contract calls kept failing on the node side is skipped: to re-run the
+  migration, delete the `sanitize_erc404_tokens` record from the
+  `migration_status` table.
 
-  When all candidates are processed, the conversion is repeated for every
-  converted token. It only touches rows which are not converted yet, so the
-  repetition picks up the transfers imported while the token was being converted,
-  with its old type.
+  The transfers and balances imported while a token is being converted get the
+  ERC-404 shape on import, see
+  `Explorer.Chain.Token.Erc404.normalize_imported_token_transfers/2`, so the
+  conversion needs no second pass.
 
   The migration is disabled by default, since ERC-404 tokens exist on a few
   chains only.
@@ -37,9 +39,9 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
 
   require Logger
 
-  alias Explorer.Chain.{Hash, Log, Token, TokenTransfer}
+  alias Explorer.Chain.{Hash, Log, Token}
   alias Explorer.Chain.Token.Erc404
-  alias Explorer.Migrator.{FillingMigration, MigrationStatus}
+  alias Explorer.Migrator.FillingMigration
   alias Explorer.Repo
   alias Explorer.Token.MetadataRetriever
   alias Explorer.Utility.MissingBlockRange
@@ -51,32 +53,34 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
   # candidates which have to be confirmed by the contract calls
   @by_calls "calls"
 
+  # the process dictionary key of the candidates found on start
+  @candidates_key :sanitize_erc404_tokens_candidates
+
+  # milliseconds
+  @erc404_calls_retry_interval 1_000
+
   @impl FillingMigration
   def migration_name, do: @migration_name
 
   @impl FillingMigration
   def unprocessed_data_query, do: nil
 
+  # The candidate list is kept in memory rather than in the migration state,
+  # which is saved after every batch: the state keeps the last processed
+  # candidate only.
   @impl FillingMigration
-  def last_unprocessed_identifiers(%{"pending" => pending} = state) do
-    {identifiers, rest} = Enum.split(pending, batch_size() * concurrency())
-
-    {identifiers, %{state | "pending" => rest}}
-  end
-
   def last_unprocessed_identifiers(state) do
-    candidates = candidates()
+    cursor = state["last_processed"]
 
-    Logger.info("SanitizeErc404Tokens found #{Enum.count(candidates)} candidate tokens")
+    {identifiers, _rest} =
+      candidates()
+      |> Enum.drop_while(&(not is_nil(cursor) and order_key(&1) <= order_key(cursor)))
+      |> Enum.split(batch_size() * concurrency())
 
-    state = Map.merge(state, %{"pending" => candidates, "candidates" => candidates})
-
-    # The state is otherwise saved only after the first batch is processed. A
-    # token converted in an interrupted first batch may no longer be found by the
-    # candidate queries, so the whole list is saved before the conversion starts.
-    MigrationStatus.update_meta(@migration_name, state)
-
-    last_unprocessed_identifiers(state)
+    case List.last(identifiers) do
+      nil -> {[], state}
+      last_identifier -> {identifiers, Map.put(state, "last_processed", last_identifier)}
+    end
   end
 
   @impl FillingMigration
@@ -84,9 +88,12 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
     Enum.count(identifiers, fn [contract_address_hash_string, source] ->
       {:ok, contract_address_hash} = Hash.Address.cast(contract_address_hash_string)
 
-      erc404?(contract_address_hash, source) && convert(contract_address_hash, source)
+      to_convert?(contract_address_hash, source) && convert(contract_address_hash, source)
     end)
   end
+
+  @impl FillingMigration
+  def update_cache, do: :ok
 
   defp convert(contract_address_hash, source) do
     converted_count = Erc404.convert(contract_address_hash, blocks_batch_size())
@@ -100,33 +107,29 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
     true
   end
 
-  @impl FillingMigration
-  def on_finish do
-    candidates =
-      case MigrationStatus.fetch(@migration_name) do
-        %{meta: %{"candidates" => candidates}} -> candidates
-        _ -> []
-      end
+  defp candidates do
+    case Process.get(@candidates_key) do
+      nil ->
+        candidates = find_candidates()
+        Logger.info("SanitizeErc404Tokens found #{Enum.count(candidates)} candidate tokens")
+        Process.put(@candidates_key, candidates)
+        candidates
 
-    hashes = Enum.map(candidates, fn [contract_address_hash_string, _source] -> contract_address_hash_string end)
-
-    Token
-    |> where([t], t.contract_address_hash in ^hashes and t.type == "ERC-404")
-    |> select([t], t.contract_address_hash)
-    |> Repo.all(timeout: :infinity)
-    |> Enum.each(&Erc404.convert(&1, blocks_batch_size()))
-
-    :ok
+      candidates ->
+        candidates
+    end
   end
 
-  @impl FillingMigration
-  def update_cache, do: :ok
+  # The candidates found by the events go first, each group is ordered by the
+  # token address. The lowercase hex strings sort the same way as the addresses.
+  defp order_key([contract_address_hash_string, @by_events]), do: {0, contract_address_hash_string}
+  defp order_key([contract_address_hash_string, @by_calls]), do: {1, contract_address_hash_string}
 
-  defp candidates do
+  defp find_candidates do
     by_events = tokens_by_events()
     by_events_set = MapSet.new(by_events)
 
-    by_calls = Enum.reject(tokens_by_transfers(), &MapSet.member?(by_events_set, &1))
+    by_calls = Enum.reject(tokens_with_decimals(), &MapSet.member?(by_events_set, &1))
 
     Enum.map(by_events, &[to_string(&1), @by_events]) ++ Enum.map(by_calls, &[to_string(&1), @by_calls])
   end
@@ -151,27 +154,28 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
   end
 
   # A contract implementing `decimals()` is rare among ERC-721 tokens, so the
-  # costly check for ERC-20 transfers runs for a handful of tokens only.
-  defp tokens_by_transfers do
+  # contract calls are made for a handful of tokens only. Their transfers are not
+  # looked at: no index tells the ERC-20 transfers of a token apart.
+  defp tokens_with_decimals do
     from(t in Token,
-      as: :token,
       where: t.type in ["ERC-721", "ERC-404"] and not is_nil(t.decimals),
-      where:
-        exists(
-          from(tt in TokenTransfer,
-            where: tt.token_contract_address_hash == parent_as(:token).contract_address_hash,
-            where: tt.token_type == "ERC-20"
-          )
-        ),
       order_by: t.contract_address_hash,
       select: t.contract_address_hash
     )
     |> Repo.all(timeout: :infinity)
   end
 
-  defp erc404?(_contract_address_hash, @by_events), do: true
+  defp to_convert?(_contract_address_hash, @by_events), do: true
 
-  defp erc404?(contract_address_hash, @by_calls) do
+  defp to_convert?(contract_address_hash, @by_calls) do
+    case Repo.get_by(Token, contract_address_hash: contract_address_hash) do
+      %Token{type: "ERC-404"} -> Erc404.conversion_pending?(contract_address_hash)
+      %Token{type: "ERC-721"} -> erc404?(contract_address_hash, erc404_calls_max_retries())
+      _ -> false
+    end
+  end
+
+  defp erc404?(contract_address_hash, retries_left) do
     case MetadataRetriever.erc404_support(contract_address_hash) do
       {:ok, true} ->
         true
@@ -183,6 +187,10 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
         )
 
         false
+
+      :error when retries_left > 1 ->
+        Process.sleep(@erc404_calls_retry_interval)
+        erc404?(contract_address_hash, retries_left - 1)
 
       :error ->
         Logger.warning(
@@ -202,6 +210,10 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
       MissingBlockRange.add_ranges_by_block_numbers(block_numbers)
       acc + Enum.count(block_numbers)
     end)
+  end
+
+  defp erc404_calls_max_retries do
+    max(Application.get_env(:explorer, :token_functions_reader_max_retries) || 1, 1)
   end
 
   defp blocks_batch_size do

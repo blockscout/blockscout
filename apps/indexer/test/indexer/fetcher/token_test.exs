@@ -6,6 +6,7 @@ defmodule Indexer.Fetcher.TokenTest do
   import Mox
 
   alias Explorer.Chain
+  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.{Token, TokenTransfer}
   alias Explorer.Repo
   alias Indexer.Fetcher.Token, as: TokenFetcher
@@ -126,6 +127,13 @@ defmodule Indexer.Fetcher.TokenTest do
           token_ids: nil
         )
 
+      # the current token balances are retyped last
+      insert(:address_current_token_balance,
+        token_contract_address_hash: contract_address_hash,
+        token_type: "ERC-721",
+        value: 1
+      )
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _opts ->
           {:ok,
@@ -146,6 +154,38 @@ defmodule Indexer.Fetcher.TokenTest do
                  )
 
         assert Decimal.equal?(amount, 5)
+
+        assert [%CurrentTokenBalance{token_type: "ERC-404"}] = Repo.all(CurrentTokenBalance)
+      end
+    end
+
+    test "leaves an ERC-721 token with decimals uncataloged when the node fails the ERC-404 getters", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      token = insert(:token, type: "ERC-721", decimals: nil, cataloged: false)
+      contract_address_hash = token.contract_address_hash
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # the metadata getters, then `erc20TotalSupply()` and `erc721TotalSupply()`
+        expect(EthereumJSONRPC.Mox, :json_rpc, 2, fn requests, _opts ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, params: [%{data: data}, _]} when data in ["0x89fb4c66", "0xc5ab3ba6"] ->
+               %{id: id, error: %{code: -32000, message: "header not found"}, jsonrpc: "2.0"}
+
+             %{id: id} ->
+               %{id: id, result: "0x0000000000000000000000000000000000000000000000000000000000000012"}
+           end)}
+        end)
+
+        assert TokenFetcher.run([contract_address_hash], json_rpc_named_arguments) == :ok
+
+        decimals = Decimal.new(18)
+
+        assert {:ok, %Token{type: "ERC-721", decimals: ^decimals, cataloged: false}} =
+                 Chain.token_from_address_hash(contract_address_hash)
+
+        assert TokenFetcher.init([], &[&1 | &2], json_rpc_named_arguments) == [contract_address_hash]
       end
     end
   end

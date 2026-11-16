@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Import
+  alias Explorer.Chain.Token.Erc404
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingBalanceOfToken
 
@@ -55,7 +56,12 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     end)
     |> Multi.run(:address_token_balances, fn repo, %{filter_placeholders: filtered_changes_list} ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, filtered_changes_list, insert_options) end,
+        fn ->
+          # the legacy-typed balances of a token retyped to ERC-404, see the function docs
+          repo
+          |> Erc404.normalize_imported_token_balances(filtered_changes_list)
+          |> then(&insert(repo, &1, insert_options))
+        end,
         :block_referencing,
         :token_balances,
         :address_token_balances
@@ -156,17 +162,8 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
         ]
       ],
       where:
-        (is_nil(token_balance.value_fetched_at) or fragment("EXCLUDED.value_fetched_at IS NULL") or
-           fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at)) and
-          fragment(
-            # the block fetcher and the token balance fetcher derive the type from
-            # the one they read before the import, so it may still be the legacy
-            # type of a token retyped to ERC-404 meanwhile, see
-            # `Explorer.Chain.Token.Erc404`; such an update is rejected and the
-            # converted balance stays eligible for the refetch as an ERC-404 one
-            "NOT (? = 'ERC-404' AND EXCLUDED.token_type IN ('ERC-20', 'ERC-721'))",
-            token_balance.token_type
-          )
+        is_nil(token_balance.value_fetched_at) or fragment("EXCLUDED.value_fetched_at IS NULL") or
+          fragment("? < EXCLUDED.value_fetched_at", token_balance.value_fetched_at)
     )
   end
 end

@@ -537,11 +537,15 @@ defmodule Explorer.Token.MetadataRetriever do
   # of its legs is resolved to ERC-721 from its logs. Such a token is only worth
   # asking when it answered `decimals()`, which an ordinary ERC-721 contract
   # doesn't implement, so that ordinary NFT collections cost no extra calls.
+  #
+  # When the node fails to answer, the token is left uncataloged, so that the
+  # token fetcher asks again instead of keeping the ERC-721 type for good.
   defp maybe_put_erc404_type(%{decimals: decimals} = metadata, contract_address_hash, "ERC-721")
        when not is_nil(decimals) do
     case erc404_support(contract_address_hash) do
       {:ok, true} -> Map.put(metadata, :type, "ERC-404")
-      _ -> metadata
+      {:ok, false} -> metadata
+      :error -> Map.put(metadata, :cataloged, false)
     end
   end
 

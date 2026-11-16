@@ -51,11 +51,13 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
 
       assert Decimal.equal?(nft_id, 7)
 
-      assert %TokenBalance{token_type: "ERC-404", value_fetched_at: nil} =
+      assert %TokenBalance{token_type: "ERC-404", value: balance_value} =
                Repo.get_by(TokenBalance,
                  address_hash: holder.hash,
                  token_contract_address_hash: token.contract_address_hash
                )
+
+      assert Decimal.equal?(balance_value, 4)
 
       assert %CurrentTokenBalance{token_type: "ERC-404"} =
                Repo.get_by(CurrentTokenBalance,
@@ -73,6 +75,73 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
 
       assert %Token{type: "ERC-721"} = Repo.get_by(Token, contract_address_hash: token.contract_address_hash)
       assert %TokenTransfer{token_type: "ERC-20", amounts: nil} = reload_transfer(erc20_transfer)
+    end
+
+    test "retries the ERC-404 getters when the node fails to answer" do
+      %{token: token} = insert_mixed_transfers_token()
+
+      expect_erc404_calls(%{error: %{code: -32000, message: "header not found"}, jsonrpc: "2.0"})
+      expect_erc404_calls(%{result: @uint_one})
+
+      run_migration()
+
+      assert %Token{type: "ERC-404"} = Repo.get_by(Token, contract_address_hash: token.contract_address_hash)
+    end
+
+    test "completes an interrupted conversion without calls" do
+      %{token: token, erc20_transfer: erc20_transfer} = insert_mixed_transfers_token()
+
+      # the token was retyped, but its transfers and balances weren't converted
+      Repo.update_all(from(t in Token, where: t.contract_address_hash == ^token.contract_address_hash),
+        set: [type: "ERC-404"]
+      )
+
+      run_migration()
+
+      assert %TokenTransfer{token_type: "ERC-404", amount: nil} = reload_transfer(erc20_transfer)
+    end
+
+    test "leaves the tokens with a complete conversion untouched" do
+      token = insert(:token, type: "ERC-404", decimals: 18)
+      token_address = Repo.preload(token, :contract_address).contract_address
+
+      # no legacy current token balances, so nothing is left to convert
+      erc20_transfer =
+        insert(:token_transfer,
+          from_address: insert(:address),
+          token_contract_address: token_address,
+          token_type: "ERC-20",
+          amount: Decimal.new(5),
+          token_ids: nil
+        )
+
+      run_migration()
+
+      assert %TokenTransfer{token_type: "ERC-20"} = reload_transfer(erc20_transfer)
+    end
+
+    test "resumes after the last processed candidate" do
+      %{token: token_a} = insert_mixed_transfers_token()
+      %{token: token_b} = insert_mixed_transfers_token()
+
+      [processed_token, pending_token] = Enum.sort_by([token_a, token_b], &to_string(&1.contract_address_hash))
+
+      MigrationStatus.set_status(@migration_name, "started")
+
+      MigrationStatus.update_meta(@migration_name, %{
+        "last_processed" => [to_string(processed_token.contract_address_hash), "calls"]
+      })
+
+      expect_erc404_calls(%{result: @uint_one})
+
+      SanitizeErc404Tokens.start_link([])
+
+      assert wait_for_status("completed", 5_000) == "completed"
+
+      assert %Token{type: "ERC-721"} =
+               Repo.get_by(Token, contract_address_hash: processed_token.contract_address_hash)
+
+      assert %Token{type: "ERC-404"} = Repo.get_by(Token, contract_address_hash: pending_token.contract_address_hash)
     end
 
     test "doesn't call ERC-721 tokens without decimals" do
@@ -152,7 +221,7 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
       token_contract_address_hash: token.contract_address_hash,
       block_number: erc20_transfer.block_number,
       token_type: "ERC-721",
-      value: 0
+      value: 4
     )
 
     insert(:address_current_token_balance,

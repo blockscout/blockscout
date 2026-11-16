@@ -25,8 +25,9 @@ defmodule Explorer.Chain.Token.Erc404 do
     `token_ids: []`, its ERC-721 transfers become ERC-404 ones with
     `amounts: []`;
   * its fungible token balances (the ones without a token id) get the ERC-404
-    type and are marked as unfetched, so that the token balance fetcher reads
-    them again as ERC-404 balances.
+    type. Their values are kept: the fungible balance of an ERC-404 token is
+    read with the same `balanceOf(address)` call as the one of an ERC-20 or an
+    ERC-721 token.
 
   Blocks with uncataloged `ERC20Transfer` and `ERC721Transfer` logs are not
   handled here, see `uncataloged_log_block_numbers/2`.
@@ -78,7 +79,7 @@ defmodule Explorer.Chain.Token.Erc404 do
           |> Enum.reduce(0, fn to_block_number, acc ->
             from_block_number = max(to_block_number - blocks_batch_size + 1, min_block_number)
 
-            reset_token_balances(contract_address_hash, from_block_number, to_block_number)
+            retype_token_balances(contract_address_hash, from_block_number, to_block_number)
             acc + convert_token_transfers(contract_address_hash, from_block_number, to_block_number)
           end)
 
@@ -133,14 +134,90 @@ defmodule Explorer.Chain.Token.Erc404 do
   conversion swept the token, or would revert its converted transfers on
   conflict.
 
-  Must be called inside the import transaction, right before the insert. The
-  token types are re-read under the shared advisory lock, which the retyping
-  takes exclusively: either the retyping waits for the import to commit, and the
-  following conversion sweep converts the imported transfers, or the import
-  waits for the retyping and sees the ERC-404 type here.
+  Must be called inside the import transaction, right before the insert, see
+  `legacy_erc404_token_hashes/2`.
   """
   @spec normalize_imported_token_transfers(module(), [map()]) :: [map()]
   def normalize_imported_token_transfers(repo, changes_list) do
+    erc404_token_hashes = legacy_erc404_token_hashes(repo, changes_list)
+
+    Enum.map(changes_list, fn changes ->
+      if MapSet.member?(erc404_token_hashes, changes.token_contract_address_hash),
+        do: to_erc404_transfer(changes),
+        else: changes
+    end)
+  end
+
+  @doc """
+  Gives the ERC-404 type to the imported historical and current token balances
+  of the tokens which are stored as ERC-404 ones.
+
+  The balances arrive with the legacy type for the same reason as the token
+  transfers do, see `normalize_imported_token_transfers/2`. Legacy balances are
+  fungible ones: the token id an ERC-721 balance carries is the one of the
+  transfer it comes from, so it is dropped.
+
+  Must be called inside the import transaction, right before the insert, see
+  `legacy_erc404_token_hashes/2`.
+  """
+  @spec normalize_imported_token_balances(module(), [map()]) :: [map()]
+  def normalize_imported_token_balances(repo, changes_list) do
+    erc404_token_hashes = legacy_erc404_token_hashes(repo, changes_list)
+
+    Enum.map(changes_list, fn changes ->
+      if MapSet.member?(erc404_token_hashes, changes.token_contract_address_hash) and
+           changes[:token_type] in @legacy_types,
+         do: changes |> Map.delete(:token_id) |> Map.put(:token_type, @erc404),
+         else: changes
+    end)
+  end
+
+  @doc """
+  Gives the ERC-404 shape to an ERC-20 or ERC-721 leg of an ERC-404 token
+  transfer: the fungible amount goes to `amounts`, `amount` is not used at all,
+  the same way as for the transfers parsed from the dedicated ERC-404 events.
+  Other transfers are returned as they are.
+
+  The stored transfers are converted by the same rule in SQL, see `convert/2`.
+  """
+  @spec to_erc404_transfer(map()) :: map()
+  def to_erc404_transfer(%{token_type: "ERC-20"} = token_transfer),
+    do: Map.merge(token_transfer, %{token_type: @erc404, amount: nil, token_ids: [], amounts: [token_transfer.amount]})
+
+  def to_erc404_transfer(%{token_type: "ERC-721"} = token_transfer),
+    do: Map.merge(token_transfer, %{token_type: @erc404, amount: nil, amounts: []})
+
+  def to_erc404_transfer(token_transfer), do: token_transfer
+
+  @doc """
+  Whether the conversion of a token which is already stored as an ERC-404 one
+  is incomplete.
+
+  The current token balances are retyped last by `convert/2`, so the legacy
+  ones are left behind by an interrupted conversion only. A token detected as
+  ERC-404 from its dedicated events has none of them, so nothing is converted
+  for it.
+  """
+  @spec conversion_pending?(Hash.Address.t()) :: boolean()
+  def conversion_pending?(contract_address_hash) do
+    Repo.exists?(
+      from(ctb in CurrentTokenBalance,
+        where: ctb.token_contract_address_hash == ^contract_address_hash,
+        where: is_nil(ctb.token_id) and ctb.token_type in ^@legacy_types
+      ),
+      timeout: :infinity
+    )
+  end
+
+  # Returns the tokens of the legacy-typed changes which are stored as ERC-404
+  # ones. The token types are re-read under the shared advisory lock, which the
+  # retyping takes exclusively: either the retyping waits for the import to
+  # commit, and the following conversion sweep converts the imported rows, or
+  # the import waits for the retyping and sees the ERC-404 type here.
+  #
+  # The lock is taken before any row lock of the import transaction, the same
+  # way as by the retyping.
+  defp legacy_erc404_token_hashes(repo, changes_list) do
     legacy_token_hashes =
       changes_list
       |> Enum.filter(&(&1[:token_type] in @legacy_types))
@@ -148,51 +225,37 @@ defmodule Explorer.Chain.Token.Erc404 do
       |> Enum.uniq()
 
     if legacy_token_hashes == [] do
-      changes_list
+      MapSet.new()
     else
       repo.query!("SELECT pg_advisory_xact_lock_shared($1)", [@retype_advisory_lock_key])
 
-      erc404_token_hashes =
-        from(t in Token,
-          where: t.contract_address_hash in ^legacy_token_hashes and t.type == ^@erc404,
-          select: t.contract_address_hash
-        )
-        |> repo.all()
-        |> MapSet.new()
-
-      Enum.map(changes_list, &maybe_to_erc404_shape(&1, erc404_token_hashes))
+      from(t in Token,
+        where: t.contract_address_hash in ^legacy_token_hashes and t.type == ^@erc404,
+        select: t.contract_address_hash
+      )
+      |> repo.all()
+      |> MapSet.new()
     end
   end
 
-  defp maybe_to_erc404_shape(%{token_type: token_type} = changes, erc404_token_hashes)
-       when token_type in @legacy_types do
-    if MapSet.member?(erc404_token_hashes, changes.token_contract_address_hash),
-      do: to_erc404_shape(changes),
-      else: changes
-  end
-
-  defp maybe_to_erc404_shape(changes, _erc404_token_hashes), do: changes
-
-  defp to_erc404_shape(%{token_type: "ERC-20"} = changes),
-    do: Map.merge(changes, %{token_type: @erc404, amount: nil, token_ids: [], amounts: [changes[:amount]]})
-
-  defp to_erc404_shape(changes), do: Map.merge(changes, %{token_type: @erc404, amount: nil, amounts: []})
-
-  # The exclusive advisory lock waits for the imports of token transfers which
-  # might have read the old token type, see `normalize_imported_token_transfers/2`.
+  # The exclusive advisory lock waits for the imports which might have read the
+  # old token type, see `legacy_erc404_token_hashes/2`, and holds back the new
+  # ones meanwhile. It is taken only when there is a legacy type to change: the
+  # imports of a token already stored as ERC-404 one read the right type.
   defp retype_token(contract_address_hash) do
-    {:ok, _} =
-      Repo.transaction(
-        fn ->
-          Repo.query!("SELECT pg_advisory_xact_lock($1)", [@retype_advisory_lock_key])
+    legacy_token_query =
+      from(t in Token, where: t.contract_address_hash == ^contract_address_hash and t.type in ^@legacy_types)
 
-          Repo.update_all(
-            from(t in Token, where: t.contract_address_hash == ^contract_address_hash and t.type in ^@legacy_types),
-            set: [type: @erc404, updated_at: DateTime.utc_now()]
-          )
-        end,
-        timeout: :infinity
-      )
+    if Repo.exists?(legacy_token_query) do
+      {:ok, _} =
+        Repo.transaction(
+          fn ->
+            Repo.query!("SELECT pg_advisory_xact_lock($1)", [@retype_advisory_lock_key])
+            Repo.update_all(legacy_token_query, set: [type: @erc404, updated_at: DateTime.utc_now()])
+          end,
+          timeout: :infinity
+        )
+    end
   end
 
   defp token_transfers_block_range(contract_address_hash) do
@@ -205,9 +268,7 @@ defmodule Explorer.Chain.Token.Erc404 do
     )
   end
 
-  # The legs of ERC-404 tokens are stored the same way as the transfers parsed
-  # from the dedicated ERC-404 events: the fungible amount goes to `amounts`,
-  # `amount` is not used at all.
+  # The same rule as the one of `to_erc404_transfer/1`.
   defp convert_token_transfers(contract_address_hash, from_block_number, to_block_number) do
     {count, _} =
       from(tt in TokenTransfer,
@@ -237,7 +298,7 @@ defmodule Explorer.Chain.Token.Erc404 do
   # Token balances are found through the token transfers of the window: there is
   # no index on `address_token_balances` leading with the token address, while
   # the unique one leads with the holder address and the token address.
-  defp reset_token_balances(contract_address_hash, from_block_number, to_block_number) do
+  defp retype_token_balances(contract_address_hash, from_block_number, to_block_number) do
     holders_query =
       from(tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^contract_address_hash,
@@ -255,21 +316,13 @@ defmodule Explorer.Chain.Token.Erc404 do
       where: tb.token_contract_address_hash == ^contract_address_hash,
       where: is_nil(tb.token_id) and tb.token_type in ^@legacy_types,
       update: [
-        set: [
-          token_type: @erc404,
-          value_fetched_at: nil,
-          refetch_after: nil,
-          retries_count: nil,
-          updated_at: ^DateTime.utc_now()
-        ]
+        set: [token_type: @erc404, updated_at: ^DateTime.utc_now()]
       ]
     )
     |> Repo.update_all([], timeout: :infinity)
   end
 
-  # The values themselves are replaced as soon as the token balance fetcher reads
-  # the reset token balances: their `value_fetched_at` is newer than the one of
-  # the current token balances.
+  # Runs last, so that `conversion_pending?/1` tells an interrupted conversion.
   defp retype_current_token_balances(contract_address_hash) do
     Repo.update_all(
       from(ctb in CurrentTokenBalance,
