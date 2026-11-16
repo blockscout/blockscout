@@ -2,6 +2,8 @@
 defmodule Explorer.ApplicationTest do
   use ExUnit.Case, async: false
 
+  alias Explorer.Utility.AddressIdToAddressHash
+
   describe "children/0" do
     # Regression test: a mode-gated child spec placed in a list that is not
     # flattened reaches the supervisor as a bare `[]` outside its mode and
@@ -19,6 +21,22 @@ defmodule Explorer.ApplicationTest do
         assert {:ok, {_flags, specs}} = Supervisor.init(children, strategy: :one_for_one)
         assert length(specs) == length(children)
       end
+    end
+
+    test "the address id cache is a child only when its size limit is positive" do
+      initial_config = Application.get_env(:explorer, AddressIdToAddressHash)
+
+      on_exit(fn ->
+        if initial_config,
+          do: Application.put_env(:explorer, AddressIdToAddressHash, initial_config),
+          else: Application.delete_env(:explorer, AddressIdToAddressHash)
+      end)
+
+      Application.put_env(:explorer, AddressIdToAddressHash, Keyword.merge(initial_config || [], cache_max_size: 1))
+      assert AddressIdToAddressHash.Cache in Explorer.Application.children()
+
+      Application.put_env(:explorer, AddressIdToAddressHash, Keyword.merge(initial_config || [], cache_max_size: 0))
+      refute AddressIdToAddressHash.Cache in Explorer.Application.children()
     end
   end
 end

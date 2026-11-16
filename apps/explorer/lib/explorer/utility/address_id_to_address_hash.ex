@@ -2,6 +2,10 @@
 defmodule Explorer.Utility.AddressIdToAddressHash do
   @moduledoc """
   Module is responsible for keeping the address_id to address_hash correspondence.
+
+  Lookups and `find_or_create_multiple/2` are answered from
+  `Explorer.Utility.AddressIdToAddressHash.Cache` first, and only the mappings
+  missing there are read from or created in the database.
   """
 
   use Explorer.Schema
@@ -9,6 +13,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   alias Explorer.Chain
   alias Explorer.Chain.{Address, Hash}
   alias Explorer.Repo
+  alias Explorer.Utility.AddressIdToAddressHash.Cache
 
   @primary_key false
   typed_schema "address_ids_to_address_hashes" do
@@ -51,8 +56,9 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   Finds or creates mappings for the given address hashes in bulk.
 
   The input is normalized by removing `nil` values, deduplicating hashes, and
-  casting each hash to `Hash.Address`. Missing mappings are inserted with
-  `on_conflict: :nothing`, so existing mappings are preserved.
+  casting each hash to `Hash.Address`. Cached mappings are returned without
+  touching the database. The rest are inserted with `on_conflict: :nothing`, so
+  existing mappings are preserved, and then read back and cached.
 
   ## Parameters
   - `address_hashes`: A list of address hashes to resolve
@@ -78,18 +84,39 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
       end)
       |> Enum.sort()
 
+    {cached_ids, missing_address_hashes} = Cache.get_ids(filtered_address_hashes)
+    records = find_or_create_missing(missing_address_hashes)
+
+    if to_map? do
+      cached_ids
+      |> Map.new(fn {address_hash, address_id} -> {to_string(address_hash), address_id} end)
+      |> Map.merge(Map.new(records, &{to_string(&1.address_hash), &1.address_id}))
+    else
+      cached_ids
+      |> Enum.map(fn {address_hash, address_id} ->
+        Ecto.put_meta(%__MODULE__{address_id: address_id, address_hash: address_hash}, state: :loaded)
+      end)
+      |> Enum.concat(records)
+    end
+  end
+
+  defp find_or_create_missing([]), do: []
+
+  defp find_or_create_missing(address_hashes) do
     Repo.safe_insert_all(
       __MODULE__,
-      Enum.map(filtered_address_hashes, &%{address_hash: &1}),
+      Enum.map(address_hashes, &%{address_hash: &1}),
       on_conflict: :nothing
     )
 
-    __MODULE__
-    |> where([a], a.address_hash in ^filtered_address_hashes)
-    |> Repo.all()
-    |> then(fn records ->
-      if to_map?, do: Map.new(records, &{to_string(&1.address_hash), &1.address_id}), else: records
-    end)
+    records =
+      __MODULE__
+      |> where([a], a.address_hash in ^address_hashes)
+      |> Repo.all()
+
+    Cache.put(Enum.map(records, &{&1.address_id, &1.address_hash}), Repo)
+
+    records
   end
 
   @doc """
@@ -114,6 +141,9 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   @doc """
   Retrieves all address ids for the given address hashes.
 
+  Cached mappings are taken from the cache, the rest are read from the database
+  and cached.
+
   ## Parameters
   - `hashes`: A list of address hashes to look up
 
@@ -122,10 +152,25 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   """
   @spec hashes_to_ids([Hash.Address.t()], [Chain.api?()]) :: [integer()]
   def hashes_to_ids(hashes, options \\ []) do
-    __MODULE__
-    |> where([a], a.address_hash in ^hashes)
-    |> select([a], a.address_id)
-    |> Chain.select_repo(options).all()
+    {cached_ids, missing_hashes} =
+      hashes
+      |> Enum.map(&cast_address_hash/1)
+      |> Enum.uniq()
+      |> Cache.get_ids()
+
+    fetched_ids =
+      missing_hashes
+      |> fetch_mappings(:address_hash, options)
+      |> Enum.map(fn {address_id, _address_hash} -> address_id end)
+
+    Map.values(cached_ids) ++ fetched_ids
+  end
+
+  defp cast_address_hash(value) do
+    case Hash.Address.cast(value) do
+      {:ok, address_hash} -> address_hash
+      :error -> value
+    end
   end
 
   @doc """
@@ -155,6 +200,9 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   @doc """
   Retrieves all address hashes for the given address ids.
 
+  Cached mappings are taken from the cache, the rest are read from the database
+  and cached.
+
   ## Parameters
   - `ids`: A list of address ids to look up
 
@@ -167,10 +215,32 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   def ids_to_hashes([], _options), do: []
 
   def ids_to_hashes(ids, options) do
-    __MODULE__
-    |> where([a], a.address_id in ^ids)
-    |> select([a], a.address_hash)
-    |> Chain.select_repo(options).all()
+    {cached_hashes, missing_ids} = ids |> Enum.uniq() |> Cache.get_hashes()
+
+    fetched_hashes =
+      missing_ids
+      |> fetch_mappings(:address_id, options)
+      |> Enum.map(fn {_address_id, address_hash} -> address_hash end)
+
+    Map.values(cached_hashes) ++ fetched_hashes
+  end
+
+  # Reads the `{address_id, address_hash}` mappings whose `field` is one of
+  # `values`, and caches them.
+  defp fetch_mappings([], _field, _options), do: []
+
+  defp fetch_mappings(values, field, options) do
+    repo = Chain.select_repo(options)
+
+    mappings =
+      __MODULE__
+      |> where([a], field(a, ^field) in ^values)
+      |> select([a], {a.address_id, a.address_hash})
+      |> repo.all()
+
+    Cache.put(mappings, repo)
+
+    mappings
   end
 
   @doc """
