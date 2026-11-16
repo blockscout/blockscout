@@ -181,13 +181,16 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
     Enum.reduce(changes_list, %{}, fn change, acc ->
       value = Map.get(change, :value)
 
-      Map.update(acc, key(change), value, fn
-        :ambiguous -> :ambiguous
-        nil -> value
-        existing when is_nil(value) -> existing
-        existing -> if same_value?(value, existing), do: existing, else: :ambiguous
-      end)
+      Map.update(acc, key(change), value, &merge_batch_value(&1, value))
     end)
+  end
+
+  defp merge_batch_value(:ambiguous, _value), do: :ambiguous
+  defp merge_batch_value(nil, value), do: value
+  defp merge_batch_value(existing, nil), do: existing
+
+  defp merge_batch_value(existing, value) do
+    if same_value?(value, existing), do: existing, else: :ambiguous
   end
 
   # Block numbers of the batch by address, newest first.
@@ -205,31 +208,47 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   # stored one or a row of the batch itself: the batch can insert a row between the
   # stored one and the candidate, and it can change the stored one.
   defp effective_previous_value(previous_row, batch_values, batch_block_numbers) do
-    stored_block_number = previous_row.previous_block_number
-    stored_value = previous_row.previous_value
+    stored_previous = {previous_row.previous_block_number, previous_row.previous_value}
+    batch_previous = batch_previous(previous_row, batch_values, batch_block_numbers)
 
-    batch_block_number =
-      batch_block_numbers
-      |> Map.get(previous_row.address_hash, [])
-      |> Enum.find(&(&1 < previous_row.block_number))
+    pick_previous_value(stored_previous, batch_previous)
+  end
 
-    batch_value =
-      case batch_block_number && Map.fetch!(batch_values, {previous_row.address_hash, batch_block_number}) do
-        :ambiguous -> nil
-        value -> value
-      end
+  # The nearest older row of the batch itself as `{block_number, value}`, if any.
+  defp batch_previous(previous_row, batch_values, batch_block_numbers) do
+    batch_block_numbers
+    |> Map.get(previous_row.address_hash, [])
+    |> Enum.find(&(&1 < previous_row.block_number))
+    |> case do
+      nil ->
+        nil
 
-    cond do
-      is_nil(batch_block_number) -> stored_value
-      is_nil(stored_block_number) or batch_block_number > stored_block_number -> batch_value
-      batch_block_number < stored_block_number -> stored_value
-      # the batch touches the stored row itself
-      is_nil(batch_value) -> stored_value
-      is_nil(stored_value) -> batch_value
-      # a re-fetch of the stored row: which value wins is decided by the upsert
-      same_value?(batch_value, stored_value) -> stored_value
-      true -> nil
+      block_number ->
+        case Map.fetch!(batch_values, {previous_row.address_hash, block_number}) do
+          :ambiguous -> {block_number, nil}
+          value -> {block_number, value}
+        end
     end
+  end
+
+  defp pick_previous_value({_block_number, stored_value}, nil), do: stored_value
+  defp pick_previous_value({nil, _value}, {_block_number, batch_value}), do: batch_value
+
+  defp pick_previous_value({stored_block_number, _stored_value}, {batch_block_number, batch_value})
+       when batch_block_number > stored_block_number,
+       do: batch_value
+
+  defp pick_previous_value({stored_block_number, stored_value}, {batch_block_number, _batch_value})
+       when batch_block_number < stored_block_number,
+       do: stored_value
+
+  # the batch touches the stored row itself
+  defp pick_previous_value({_block_number, stored_value}, {_same_block_number, nil}), do: stored_value
+  defp pick_previous_value({_block_number, nil}, {_same_block_number, batch_value}), do: batch_value
+
+  # a re-fetch of the stored row: which value wins is decided by the upsert
+  defp pick_previous_value({_block_number, stored_value}, {_same_block_number, batch_value}) do
+    if same_value?(batch_value, stored_value), do: stored_value, else: nil
   end
 
   # Locks the rows of the batch that already exist, in the ShareLocks order, and
