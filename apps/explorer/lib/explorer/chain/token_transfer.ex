@@ -153,7 +153,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{DenormalizationHelper, Hash, Log, Token, TokenTransfer}
+  alias Explorer.Chain.{DenormalizationHelper, Hash, Log, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{PagingOptions, QueryHelper, Repo}
@@ -788,19 +788,27 @@ defmodule Explorer.Chain.TokenTransfer do
 
   # Builds a query to check if a token transfer exists for a given log.
   #
-  # Logs are stored for consensus blocks only and the log index is unique within
-  # a block, so the token transfer is matched by `block_number` and `log_index`.
-  # This also covers Celo epoch logs, which are not linked to a transaction.
-  # Token transfers of the blocks which lost consensus are kept with
-  # `block_consensus` set to `false`, so they are skipped: otherwise a token
-  # transfer of a replaced block could be taken for the one of the consensus
-  # block at the same height.
+  # Logs are stored for consensus blocks only, so the token transfer is matched
+  # by `block_number`, `log_index` and the position of its transaction in the
+  # block: logs of different transactions can share an index within a block
+  # (see `Explorer.Chain.Log.Schema`), so the index alone doesn't identify the
+  # log. Celo epoch logs and their token transfers are not linked to a
+  # transaction.
+  # Token transfers of the blocks which lost consensus are kept, so only the
+  # consensus ones are matched (in both denormalization states, see
+  # `only_consensus_transfers_query/0`): otherwise a token transfer of a
+  # replaced block could be taken for the one of the consensus block at the
+  # same height.
   @spec token_transfer_exists_query() :: Ecto.Query.t()
   defp token_transfer_exists_query do
-    from(tt in TokenTransfer,
+    from(tt in only_consensus_transfers_query(),
+      left_join: t in Transaction,
+      on: t.hash == tt.transaction_hash,
       where: tt.block_number == parent_as(:log).block_number,
       where: tt.log_index == parent_as(:log).index,
-      where: tt.block_consensus == true
+      where:
+        t.index == parent_as(:log).transaction_index or
+          (is_nil(tt.transaction_hash) and is_nil(parent_as(:log).transaction_index))
     )
   end
 

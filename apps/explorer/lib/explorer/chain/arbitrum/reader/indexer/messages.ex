@@ -342,9 +342,11 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.Messages do
     |> where([log, msg], log.block_number >= ^start_block and log.block_number <= ^end_block)
     |> order_by(desc: :block_number, desc: :index)
     |> select([log], log)
+    |> select_merge([transaction: transaction], %{
+      transaction_hash: transaction.hash,
+      block_hash: transaction.block_hash
+    })
     |> Repo.all()
-    |> Log.preload_block()
-    |> Log.preload_transaction()
     |> Log.prepare_optimized_fields()
   end
 

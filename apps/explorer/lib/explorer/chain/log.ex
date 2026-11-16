@@ -839,21 +839,28 @@ defmodule Explorer.Chain.Log do
   Filters logs by one or multiple address hashes.
 
   Address hashes are converted to address ids and matched through `address_id`.
+  The ids are looked up when the query is built, with the repo selected by
+  `options` (the replica with `api?: true`).
   """
-  @spec address_match_query(Ecto.Queryable.t(), Hash.Address.t() | [Hash.Address.t()] | binary() | [binary()]) ::
-          Ecto.Query.t()
-  def address_match_query(query, address_hashes) when is_list(address_hashes) do
+  @spec address_match_query(
+          Ecto.Queryable.t(),
+          Hash.Address.t() | [Hash.Address.t()] | binary() | [binary()],
+          [Chain.api?()]
+        ) :: Ecto.Query.t()
+  def address_match_query(query, address_hashes, options \\ [])
+
+  def address_match_query(query, address_hashes, options) when is_list(address_hashes) do
     address_ids =
       address_hashes
       |> Enum.map(&cast_address_hash/1)
       |> Enum.reject(&is_nil/1)
-      |> AddressIdToAddressHash.hashes_to_ids()
+      |> AddressIdToAddressHash.hashes_to_ids(options)
 
     where(query, [l], l.address_id in ^address_ids)
   end
 
-  def address_match_query(query, address_hash) do
-    where(query, ^address_match_dynamic(address_hash))
+  def address_match_query(query, address_hash, options) do
+    where(query, ^address_match_dynamic(address_hash, options))
   end
 
   @doc """
@@ -861,11 +868,12 @@ defmodule Explorer.Chain.Log do
 
   The address hash is converted to the address id and matched through
   `address_id`. An address missing from `address_ids_to_address_hashes`
-  doesn't match any log.
+  doesn't match any log. The id is looked up with the repo selected by
+  `options` (the replica with `api?: true`).
   """
-  @spec address_match_dynamic(Hash.Address.t() | binary()) :: Ecto.Query.dynamic_expr()
-  def address_match_dynamic(address_hash) do
-    case address_hash |> cast_address_hash() |> AddressIdToAddressHash.hash_to_id() do
+  @spec address_match_dynamic(Hash.Address.t() | binary(), [Chain.api?()]) :: Ecto.Query.dynamic_expr()
+  def address_match_dynamic(address_hash, options \\ []) do
+    case address_hash |> cast_address_hash() |> AddressIdToAddressHash.hash_to_id(options) do
       nil -> dynamic(false)
       address_id -> dynamic([l], l.address_id == ^address_id)
     end

@@ -7,6 +7,7 @@ defmodule Explorer.Chain.TokenTransferTest do
 
   import Explorer.Factory
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.TokenTransfer
   alias Explorer.PagingOptions
   alias Explorer.Utility.LogFirstTopic
@@ -466,14 +467,61 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
     end
+
+    test "matches token transfers by the block consensus while the token transfers denormalization is in progress" do
+      initial_tt_denormalization_finished = BackgroundMigrations.get_tt_denormalization_finished()
+      BackgroundMigrations.set_tt_denormalization_finished(false)
+      on_exit(fn -> BackgroundMigrations.set_tt_denormalization_finished(initial_tt_denormalization_finished) end)
+
+      transaction = :transaction |> insert() |> with_block()
+      log = insert(:token_transfer_log, transaction: transaction, block: transaction.block)
+
+      # `block_consensus` of the token transfers is filled by the denormalization
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        block_consensus: nil,
+        log_index: log.index
+      )
+
+      block_number = transaction.block_number
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+    end
+
+    # on Celo the log index is unique within a block, it is a part of the primary key
+    if @chain_identity != {:optimism, :celo} do
+      test "matches token transfers by the transaction when logs of a block share an index" do
+        block = insert(:block)
+
+        transaction_1 = :transaction |> insert() |> with_block(block, index: 0)
+        transaction_2 = :transaction |> insert() |> with_block(block, index: 1)
+
+        # some nodes return logs of different transactions with the same index
+        for transaction <- [transaction_1, transaction_2] do
+          insert(:token_transfer_log, transaction: transaction, block: block, index: 0)
+        end
+
+        insert(:token_transfer, transaction: transaction_1, block: block, block_number: block.number, log_index: 0)
+
+        block_number = block.number
+        assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+
+        insert(:token_transfer, transaction: transaction_2, block: block, block_number: block.number, log_index: 0)
+
+        assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+      end
+    end
   end
 
   if @chain_identity == {:optimism, :celo} do
     test "returns block numbers for Celo epoch blocks with nil transaction_hash" do
+      # epoch logs are not linked to a transaction, see `Indexer.Fetcher.Celo.EpochLogs`
       log =
         insert(:token_transfer_log,
           transaction: nil,
-          transaction_hash: nil
+          transaction_hash: nil,
+          transaction_index: nil
         )
 
       block_number = log.block_number
@@ -481,10 +529,12 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
 
     test "does not return block numbers when matching token transfer exists for Celo epoch blocks" do
+      # epoch logs are not linked to a transaction, see `Indexer.Fetcher.Celo.EpochLogs`
       log =
         insert(:token_transfer_log,
           transaction: nil,
-          transaction_hash: nil
+          transaction_hash: nil,
+          transaction_index: nil
         )
 
       from_address_hash =

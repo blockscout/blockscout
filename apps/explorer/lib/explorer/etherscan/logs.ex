@@ -86,7 +86,7 @@ defmodule Explorer.Etherscan.Logs do
     # only affect its first branch, and a combination can only be ordered
     # through a subquery.
     Log
-    |> Log.address_match_query(address_hash)
+    |> Log.address_match_query(address_hash, api?: true)
     |> where([log], log.block_number >= ^prepared_filter.from_block)
     |> where([log], log.block_number <= ^prepared_filter.to_block)
     |> join_consensus_transaction()
