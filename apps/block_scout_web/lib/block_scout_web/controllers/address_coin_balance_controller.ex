@@ -28,16 +28,8 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
       {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one)
 
-      next_page_params =
-        if next_page == [] and not is_nil(scan_continuation) do
-          # the scan budget ran out before the page was filled: continue below the scanned range
-          next_page_params([:scan_limit_reached], coin_balances, params, fn _ -> %{block_number: scan_continuation} end)
-        else
-          next_page_params(next_page, coin_balances, params)
-        end
-
       next_page_url =
-        case next_page_params do
+        case coin_balances_next_page_params(next_page, coin_balances, params, scan_continuation) do
           nil ->
             nil
 
@@ -128,4 +120,13 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         unprocessable_entity(conn)
     end
   end
+
+  # The scan budget ran out before the page was filled: continue below the scanned range.
+  defp coin_balances_next_page_params([], coin_balances, params, scan_continuation)
+       when not is_nil(scan_continuation),
+       do:
+         next_page_params([:scan_limit_reached], coin_balances, params, fn _ -> %{block_number: scan_continuation} end)
+
+  defp coin_balances_next_page_params(next_page, coin_balances, params, _scan_continuation),
+    do: next_page_params(next_page, coin_balances, params)
 end

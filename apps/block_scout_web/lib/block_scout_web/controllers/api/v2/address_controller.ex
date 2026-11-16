@@ -893,14 +893,9 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           {results_plus_one, scan_continuation} = CoinBalance.address_hash_to_coin_balances(address_hash, full_options)
 
           {coin_balances, next_page_params} =
-            case paginate_list(results_plus_one, params, full_options[:paging_options]) do
-              # the scan budget ran out before the page was filled: continue below the scanned range
-              {coin_balances, nil} when not is_nil(scan_continuation) ->
-                {coin_balances, next_page_params_from_paging_params(params, %{block_number: scan_continuation})}
-
-              result ->
-                result
-            end
+            results_plus_one
+            |> paginate_list(params, full_options[:paging_options])
+            |> maybe_put_coin_balances_scan_continuation(params, scan_continuation)
 
           conn
           |> put_status(200)
@@ -913,6 +908,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
       end
     end
   end
+
+  # The scan budget ran out before the page was filled: continue below the scanned range.
+  defp maybe_put_coin_balances_scan_continuation({coin_balances, nil}, params, scan_continuation)
+       when not is_nil(scan_continuation),
+       do: {coin_balances, next_page_params_from_paging_params(params, %{block_number: scan_continuation})}
+
+  defp maybe_put_coin_balances_scan_continuation(paginated, _params, _scan_continuation), do: paginated
 
   operation :coin_balance_history_by_day,
     summary: "Get daily native coin balance snapshots for an address from previous 10 days",
