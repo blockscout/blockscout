@@ -35,6 +35,29 @@ defmodule Explorer.Chain.Import.Runner.TokensTest do
       assert {:ok, %{tokens: [%Token{holder_count: ^holder_count}]}} =
                run_changes(%{contract_address_hash: contract_address_hash, type: type, name: name <> "name"})
     end
+
+    test "keeps the ERC-404 type of a token imported with a legacy type read before its retyping" do
+      %Token{contract_address_hash: contract_address_hash, name: name} = insert(:token, type: "ERC-404")
+
+      for legacy_type <- ["ERC-721", "ERC-20"] do
+        assert {:ok, _} =
+                 run_changes(%{
+                   contract_address_hash: contract_address_hash,
+                   type: legacy_type,
+                   name: name <> legacy_type
+                 })
+
+        assert %Token{type: "ERC-404", name: updated_name} = Repo.get(Token, contract_address_hash)
+        assert updated_name == name <> legacy_type
+      end
+    end
+
+    test "still upgrades a legacy token type" do
+      %Token{contract_address_hash: contract_address_hash} = insert(:token, type: "ERC-721")
+
+      assert {:ok, _} = run_changes(%{contract_address_hash: contract_address_hash, type: "ERC-404"})
+      assert %Token{type: "ERC-404"} = Repo.get(Token, contract_address_hash)
+    end
   end
 
   defp run_changes(changes) when is_map(changes) do

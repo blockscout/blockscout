@@ -45,6 +45,10 @@ defmodule Explorer.Chain.Token.Erc404 do
   @legacy_types ["ERC-20", "ERC-721"]
   @default_blocks_batch_size 10_000
 
+  # arbitrary constant identifying the retyping of tokens to ERC-404 among
+  # `pg_advisory_xact_lock` users
+  @retype_advisory_lock_key 7_235_622_386_404
+
   @doc """
   Returns the first topics of the events only ERC-404 tokens emit.
   """
@@ -119,12 +123,76 @@ defmodule Explorer.Chain.Token.Erc404 do
     |> Repo.all(timeout: :infinity)
   end
 
+  @doc """
+  Gives the ERC-404 shape to the imported token transfers of the tokens which
+  are stored as ERC-404 ones.
+
+  The block fetcher derives the token transfer types from the token types it
+  read before the import, so the transfers of a token retyped in the meantime
+  arrive with the ERC-20 and ERC-721 shapes. They would be inserted after the
+  conversion swept the token, or would revert its converted transfers on
+  conflict.
+
+  Must be called inside the import transaction, right before the insert. The
+  token types are re-read under the shared advisory lock, which the retyping
+  takes exclusively: either the retyping waits for the import to commit, and the
+  following conversion sweep converts the imported transfers, or the import
+  waits for the retyping and sees the ERC-404 type here.
+  """
+  @spec normalize_imported_token_transfers(module(), [map()]) :: [map()]
+  def normalize_imported_token_transfers(repo, changes_list) do
+    legacy_token_hashes =
+      changes_list
+      |> Enum.filter(&(&1[:token_type] in @legacy_types))
+      |> Enum.map(& &1.token_contract_address_hash)
+      |> Enum.uniq()
+
+    if legacy_token_hashes == [] do
+      changes_list
+    else
+      repo.query!("SELECT pg_advisory_xact_lock_shared($1)", [@retype_advisory_lock_key])
+
+      erc404_token_hashes =
+        from(t in Token,
+          where: t.contract_address_hash in ^legacy_token_hashes and t.type == ^@erc404,
+          select: t.contract_address_hash
+        )
+        |> repo.all()
+        |> MapSet.new()
+
+      Enum.map(changes_list, &maybe_to_erc404_shape(&1, erc404_token_hashes))
+    end
+  end
+
+  defp maybe_to_erc404_shape(%{token_type: token_type} = changes, erc404_token_hashes)
+       when token_type in @legacy_types do
+    if MapSet.member?(erc404_token_hashes, changes.token_contract_address_hash),
+      do: to_erc404_shape(changes),
+      else: changes
+  end
+
+  defp maybe_to_erc404_shape(changes, _erc404_token_hashes), do: changes
+
+  defp to_erc404_shape(%{token_type: "ERC-20"} = changes),
+    do: Map.merge(changes, %{token_type: @erc404, amount: nil, token_ids: [], amounts: [changes[:amount]]})
+
+  defp to_erc404_shape(changes), do: Map.merge(changes, %{token_type: @erc404, amount: nil, amounts: []})
+
+  # The exclusive advisory lock waits for the imports of token transfers which
+  # might have read the old token type, see `normalize_imported_token_transfers/2`.
   defp retype_token(contract_address_hash) do
-    Repo.update_all(
-      from(t in Token, where: t.contract_address_hash == ^contract_address_hash and t.type in ^@legacy_types),
-      [set: [type: @erc404, updated_at: DateTime.utc_now()]],
-      timeout: :infinity
-    )
+    {:ok, _} =
+      Repo.transaction(
+        fn ->
+          Repo.query!("SELECT pg_advisory_xact_lock($1)", [@retype_advisory_lock_key])
+
+          Repo.update_all(
+            from(t in Token, where: t.contract_address_hash == ^contract_address_hash and t.type in ^@legacy_types),
+            set: [type: @erc404, updated_at: DateTime.utc_now()]
+          )
+        end,
+        timeout: :infinity
+      )
   end
 
   defp token_transfers_block_range(contract_address_hash) do
