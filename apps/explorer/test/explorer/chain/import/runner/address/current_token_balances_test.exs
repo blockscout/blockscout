@@ -8,6 +8,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
   alias Explorer.Chain.{Address, Token}
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Import.Runner.Address.CurrentTokenBalances
+  alias Explorer.Chain.Token.Erc404
   alias Explorer.Repo
 
   describe "run/2" do
@@ -272,6 +273,45 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
 
+      assert current_token_balance.block_number == 2
+      assert current_token_balance.value == Decimal.new(200)
+    end
+
+    test "keeps the ERC-404 type of a converted balance when a legacy balance of a newer block is imported", %{
+      address: address,
+      options: options
+    } do
+      token = insert(:token, type: "ERC-721")
+
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-721",
+        value: 100
+      )
+
+      Erc404.convert(token.contract_address_hash)
+
+      assert %CurrentTokenBalance{token_type: "ERC-404"} =
+               Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+
+      run_changes(
+        %{
+          address_hash: address.hash,
+          block_number: 2,
+          token_contract_address_hash: token.contract_address_hash,
+          token_type: "ERC-721",
+          value: Decimal.new(200),
+          value_fetched_at: DateTime.utc_now()
+        },
+        options
+      )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address.hash)
+
+      assert current_token_balance.token_type == "ERC-404"
       assert current_token_balance.block_number == 2
       assert current_token_balance.value == Decimal.new(200)
     end

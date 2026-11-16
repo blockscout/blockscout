@@ -469,7 +469,15 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           value: fragment("COALESCE(EXCLUDED.value, ?)", current_token_balance.value),
           value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
           old_value: current_token_balance.value,
-          token_type: fragment("EXCLUDED.token_type"),
+          # the block fetcher derives the type from the one it read before the
+          # import, so it may still be the legacy type of a token retyped to
+          # ERC-404 meanwhile, see `Explorer.Chain.Token.Erc404`
+          token_type:
+            fragment(
+              "CASE WHEN ? = 'ERC-404' AND EXCLUDED.token_type IN ('ERC-20', 'ERC-721') THEN ? ELSE EXCLUDED.token_type END",
+              current_token_balance.token_type,
+              current_token_balance.token_type
+            ),
           refetch_after: fragment("EXCLUDED.refetch_after"),
           retries_count: fragment("EXCLUDED.retries_count"),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", current_token_balance.inserted_at),

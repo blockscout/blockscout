@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
   alias Ecto.Multi
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Import.Runner.Address.TokenBalances
+  alias Explorer.Chain.Token.Erc404
 
   describe "run/2" do
     test "inserts token balance" do
@@ -260,6 +261,61 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalancesTest do
 
     assert {:ok, %{address_token_balances: [%{block_number: ^next_block_number}]}} =
              run_changes_list(changes_list, options)
+  end
+
+  test "keeps the ERC-404 type of a converted balance when a legacy balance is imported afterwards" do
+    address = insert(:address)
+    token = insert(:token, type: "ERC-721")
+
+    options = %{
+      timeout: :infinity,
+      timestamps: %{inserted_at: DateTime.utc_now(), updated_at: DateTime.utc_now()}
+    }
+
+    legacy_changes = %{
+      address_hash: address.hash,
+      block_number: 1,
+      token_contract_address_hash: token.contract_address_hash,
+      value: nil,
+      value_fetched_at: nil,
+      token_id: nil,
+      token_type: "ERC-721"
+    }
+
+    insert(:token_transfer,
+      from_address: insert(:address),
+      to_address: address,
+      token_contract_address: Repo.preload(token, :contract_address).contract_address,
+      block_number: 1,
+      token_type: "ERC-721",
+      amount: nil,
+      token_ids: [1]
+    )
+
+    assert {:ok, _} = run_changes(legacy_changes, options)
+
+    Erc404.convert(token.contract_address_hash)
+
+    assert %TokenBalance{token_type: "ERC-404"} = Repo.get_by(TokenBalance, address_hash: address.hash)
+
+    for legacy_type <- ["ERC-721", "ERC-20"] do
+      assert {:ok, _} = run_changes(%{legacy_changes | token_type: legacy_type}, options)
+      assert %TokenBalance{token_type: "ERC-404"} = Repo.get_by(TokenBalance, address_hash: address.hash)
+    end
+
+    # the other conflict behaviour stays: a fetched value still replaces the placeholder
+    value_fetched_at = DateTime.utc_now()
+
+    assert {:ok, _} =
+             run_changes(
+               %{legacy_changes | value: Decimal.new(5), value_fetched_at: value_fetched_at},
+               options
+             )
+
+    assert %TokenBalance{token_type: "ERC-404", value: value, value_fetched_at: ^value_fetched_at} =
+             Repo.get_by(TokenBalance, address_hash: address.hash)
+
+    assert Decimal.equal?(value, 5)
   end
 
   defp run_changes(changes, options) when is_map(changes) do
