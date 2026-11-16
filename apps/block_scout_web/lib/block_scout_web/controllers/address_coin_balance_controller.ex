@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
 
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
   import BlockScoutWeb.Chain, only: [paging_options: 1]
-  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, next_page_params: 4, split_list_by_page: 1]
+  import BlockScoutWeb.LegacyPagingHelper, only: [next_page_params: 3, split_list_by_page: 1]
   import BlockScoutWeb.Models.GetAddressTags, only: [get_address_tags: 2]
 
   alias BlockScoutWeb.{AccessHelper, AddressCoinBalanceView, Controller}
@@ -23,13 +23,12 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params) do
       full_options = paging_options(params)
 
-      {coin_balances_plus_one, scan_continuation} =
-        CoinBalance.address_hash_to_coin_balances(address_hash, full_options)
+      coin_balances_plus_one = CoinBalance.address_hash_to_coin_balances(address_hash, full_options)
 
       {coin_balances, next_page} = split_list_by_page(coin_balances_plus_one)
 
       next_page_url =
-        case coin_balances_next_page_params(next_page, coin_balances, params, scan_continuation) do
+        case next_page_params(next_page, coin_balances, params) do
           nil ->
             nil
 
@@ -120,13 +119,4 @@ defmodule BlockScoutWeb.AddressCoinBalanceController do
         unprocessable_entity(conn)
     end
   end
-
-  # The scan budget ran out before the page was filled: continue below the scanned range.
-  defp coin_balances_next_page_params([], coin_balances, params, scan_continuation)
-       when not is_nil(scan_continuation),
-       do:
-         next_page_params([:scan_limit_reached], coin_balances, params, fn _ -> %{block_number: scan_continuation} end)
-
-  defp coin_balances_next_page_params(next_page, coin_balances, params, _scan_continuation),
-    do: next_page_params(next_page, coin_balances, params)
 end

@@ -104,9 +104,7 @@ export function asyncReducer (state = asyncInitialState, action) {
 
       return Object.assign({}, state, {
         requestError: false,
-        // an empty page with a next page path (e.g. a bounded scan that found nothing)
-        // is not the end of the listing, so pagination controls must stay visible
-        emptyResponse: action.items.length === 0 && !action.nextPagePath,
+        emptyResponse: action.items.length === 0,
         items: action.items,
         nextPagePath: action.nextPagePath,
         prevPagePath
@@ -165,8 +163,7 @@ export const elements = {
       if (
         !state.requestError &&
         (!state.loading) &&
-        state.items.length === 0 &&
-        !state.nextPagePath
+        state.items.length === 0
       ) {
         return $el.show()
       }

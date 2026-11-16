@@ -69,29 +69,6 @@ describe('ITEMS_FETCHED', () => {
 
     expect(output.items).toEqual(expectedItems)
   })
-
-  test('marks the response empty when there are no items and no next page', () => {
-    const state = Object.assign({}, asyncInitialState)
-    const action = { type: 'ITEMS_FETCHED', items: [], nextPagePath: null }
-    const output = asyncReducer(state, action)
-
-    expect(output.emptyResponse).toEqual(true)
-    expect(output.nextPagePath).toEqual(null)
-  })
-
-  test('keeps pagination for an empty page that has a next page, then shows older items', () => {
-    const state = Object.assign({}, asyncInitialState)
-    const emptyPage = asyncReducer(state, { type: 'ITEMS_FETCHED', items: [], nextPagePath: '/older?block_number=10' })
-
-    expect(emptyPage.emptyResponse).toEqual(false)
-    expect(emptyPage.nextPagePath).toEqual('/older?block_number=10')
-
-    const olderPage = asyncReducer(emptyPage, { type: 'ITEMS_FETCHED', items: [1, 2], nextPagePath: null })
-
-    expect(olderPage.emptyResponse).toEqual(false)
-    expect(olderPage.items).toEqual([1, 2])
-    expect(olderPage.nextPagePath).toEqual(null)
-  })
 })
 
 describe('NAVIGATE_TO_OLDER', () => {

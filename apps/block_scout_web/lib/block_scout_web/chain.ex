@@ -862,27 +862,16 @@ defmodule BlockScoutWeb.Chain do
 
         _ ->
           paging_function = Keyword.get(opts, :paging_function, &paging_params/1)
-          next_page_params_from_paging_params(params, paging_function.(List.last(items)))
+          paging_params = paging_function.(List.last(items))
+          string_keys = map_to_string_keys(paging_params)
+
+          params
+          |> delete_parameters_from_next_page_params()
+          |> Map.drop(string_keys)
+          |> Map.merge(paging_params)
       end
 
     {items, next_page_params}
-  end
-
-  @doc """
-  Builds next page params from the current request `params` and the given
-  `paging_params`, dropping request-only parameters and overriding the paging keys.
-
-  Useful when the next page cursor does not come from the last item of the page,
-  e.g. when a bounded scan ran out before the page was filled.
-  """
-  @spec next_page_params_from_paging_params(map(), map()) :: map()
-  def next_page_params_from_paging_params(params, paging_params) do
-    string_keys = map_to_string_keys(paging_params)
-
-    params
-    |> delete_parameters_from_next_page_params()
-    |> Map.drop(string_keys)
-    |> Map.merge(paging_params)
   end
 
   defp decimal_parse(input_string) do

@@ -2909,40 +2909,6 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       check_paginated_response(response, response_2nd_page, acbs)
     end
-
-    test "returns next_page_params for a short page when the scan limit is reached", %{conn: conn} do
-      initial = Application.get_env(:explorer, Explorer.Chain.Address.CoinBalance)
-
-      Application.put_env(
-        :explorer,
-        Explorer.Chain.Address.CoinBalance,
-        Keyword.merge(initial || [], history_scan_limit: 3)
-      )
-
-      on_exit(fn -> Application.put_env(:explorer, Explorer.Chain.Address.CoinBalance, initial) end)
-
-      address = insert(:address)
-
-      [b1, b2, _b3, _b4, b5] =
-        [1000, 2000, 2000, 2000, 3000]
-        |> Enum.map(fn value ->
-          block = insert(:block)
-          insert(:fetched_balance, address_hash: address.hash, value: value, block_number: block.number)
-          block.number
-        end)
-
-      request = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history")
-
-      assert %{"items" => [%{"block_number" => ^b5}], "next_page_params" => next_page_params} =
-               json_response(request, 200)
-
-      assert next_page_params == %{"block_number" => b2 + 1}
-
-      request_2nd_page = get(conn, "/api/v2/addresses/#{address.hash}/coin-balance-history", next_page_params)
-
-      assert %{"items" => items, "next_page_params" => nil} = json_response(request_2nd_page, 200)
-      assert Enum.map(items, & &1["block_number"]) == [b2, b1]
-    end
   end
 
   describe "/addresses/{address_hash}/coin-balance-history-by-day" do
