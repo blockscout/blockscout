@@ -225,5 +225,33 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
         nil
       end
     end)
+    |> reduce_daily_params_to_max_value()
+  end
+
+  @doc """
+  Reduces daily balance params to a single entry per `{address_hash, day}`,
+  keeping the one with the greatest `value`.
+
+  One batch can carry balances of the same address at several blocks of the
+  same day, while `address_coin_balances_daily` stores only the greatest
+  value of the day. `nil` entries (balances whose block timestamp could not
+  be resolved) are passed through as is.
+
+  ## Parameters
+  - `daily_params`: list of `%{address_hash: _, day: _, value: _}` maps or `nil`s.
+
+  ## Returns
+  - The list with at most one map per `{address_hash, day}`.
+  """
+  @spec reduce_daily_params_to_max_value([map() | nil]) :: [map() | nil]
+  def reduce_daily_params_to_max_value(daily_params) do
+    {unresolved, resolved} = Enum.split_with(daily_params, &is_nil/1)
+
+    reduced =
+      resolved
+      |> Enum.group_by(&{&1.address_hash, &1.day})
+      |> Enum.map(fn {_key, params} -> Enum.max_by(params, & &1.value) end)
+
+    unresolved ++ reduced
   end
 end
