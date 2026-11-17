@@ -142,6 +142,37 @@ defmodule Indexer.Fetcher.CoinBalance.CompactorTest do
       assert stored_block_numbers(address_hash) == [1, 5, 6, 20]
     end
 
+    test "ends the batch at the lowest block with a pending transaction operation and waits below it", %{
+      address_hash: address_hash
+    } do
+      insert(:block, number: 100)
+      settle_blocks_up_to(90)
+
+      block = insert(:block, number: 5)
+      insert(:fetched_balance, address_hash: block.miner_hash, block_number: 5, value: 0)
+      transaction = :transaction |> insert() |> with_block(block)
+      pending_operation = insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      for block_number <- [1, 2, 5, 6, 8, 50] do
+        insert(:fetched_balance, address_hash: address_hash, block_number: block_number, value: 100)
+      end
+
+      # the rows up to the block of the pending transaction are not affected by it
+      assert Compactor.compact_next_batch() == {:ok, {0, 5, 2}}
+      assert stored_block_numbers(address_hash) == [1, 6, 8, 50]
+
+      # the blocks above it are not skipped
+      for _ <- 1..3, do: assert(Compactor.compact_next_batch() == {:waiting_for_internal_transactions, 6})
+      assert last_block_number() == 5
+      assert stored_block_numbers(address_hash) == [1, 6, 8, 50]
+
+      # the internal transactions are fetched
+      Repo.delete!(pending_operation)
+
+      assert Compactor.compact_next_batch() == {:ok, {6, 15, 2}}
+      assert stored_block_numbers(address_hash) == [1, 50]
+    end
+
     test "waits at a block left without coin balances by an indexer that stopped between the import stages", %{
       address_hash: address_hash
     } do
