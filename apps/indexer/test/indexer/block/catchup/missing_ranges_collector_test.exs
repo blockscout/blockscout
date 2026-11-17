@@ -33,6 +33,9 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       assert [999_799..999_700//-1] = batch = MissingBlockRange.get_latest_batch(100)
       MissingBlockRange.clear_batch(batch)
 
+      # the backward scanning has reached the first block, so everything below the forward boundary is accounted for
+      assert MissingRangesCollector.settled_block_number() in 999_999..1_000_000
+
       stub(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBlockByNumber", params: ["latest", false]}],
                                               _options ->
         block_response(id, 1_000_200)
@@ -46,6 +49,14 @@ defmodule Indexer.Block.Catchup.MissingRangesCollectorTest do
       assert [1_000_099..1_000_001//-1, 999_699..999_699//-1] = batch = MissingBlockRange.get_latest_batch(100)
       MissingBlockRange.clear_batch(batch)
       assert [999_698..999_599//-1] = MissingBlockRange.get_latest_batch(100)
+
+      assert MissingRangesCollector.settled_block_number() in 1_000_199..1_000_200
+    end
+  end
+
+  describe "settled_block_number/0" do
+    test "returns nil when the collector is not running" do
+      assert MissingRangesCollector.settled_block_number() == nil
     end
   end
 
