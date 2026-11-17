@@ -24,6 +24,11 @@ defmodule Indexer.Transform.EIP8430Transactions do
     exceptions: it replaces `sender` with the `has_named_sender` flag, and it adds the
     `payer_type` label that tells what the `payer` value means.
 
+    The function also reads the receipt fields from the `:eip_8430_receipt_fields` key: the
+    resolved payer and the number of committed phases. It does not interpret them. If the key
+    or one of its fields is absent, the value in the row is `nil`, and the import rejects the
+    row.
+
     An unexpected form of `sender` or `payer` does not raise an error. The function writes a
     warning to the log, and the row gets `has_named_sender: false` or `payer_type: :unknown`.
 
@@ -36,14 +41,16 @@ defmodule Indexer.Transform.EIP8430Transactions do
   @spec parse([
           %{
             optional(:eip_8430_fields) => EthereumJSONRPC.Transaction.eip_8430_fields(),
+            optional(:eip_8430_receipt_fields) => EthereumJSONRPC.Receipt.eip_8430_receipt_fields(),
             optional(any()) => any()
           }
         ]) :: [EIP8430Transaction.to_import()]
   def parse(transactions_with_receipts) do
     transactions_with_receipts
     |> Enum.filter(&Map.has_key?(&1, :eip_8430_fields))
-    |> Enum.map(fn %{hash: transaction_hash, eip_8430_fields: fields} ->
+    |> Enum.map(fn %{hash: transaction_hash, eip_8430_fields: fields} = transaction ->
       {payer_type, payer} = classify_payer(fields.payer, transaction_hash)
+      receipt_fields = Map.get(transaction, :eip_8430_receipt_fields, %{})
 
       %{
         transaction_hash: transaction_hash,
@@ -56,7 +63,9 @@ defmodule Indexer.Transform.EIP8430Transactions do
         payer: payer,
         sender_auth: fields.sender_auth,
         payer_auth: fields.payer_auth,
-        account_changes: fields.account_changes
+        account_changes: fields.account_changes,
+        resolved_payer_address_hash: Map.get(receipt_fields, :payer),
+        committed_phases_count: Map.get(receipt_fields, :committed_phases)
       }
     end)
   end
