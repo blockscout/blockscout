@@ -36,6 +36,9 @@ defmodule Explorer.Chain.Token.Erc404 do
   conversion can safely run more than once for the same token.
   """
 
+  use Utils.RuntimeEnvHelper,
+    chain_identity: [:explorer, :chain_identity]
+
   import Ecto.Query
 
   require Logger
@@ -46,7 +49,7 @@ defmodule Explorer.Chain.Token.Erc404 do
 
   @erc404 "ERC-404"
   @legacy_types ["ERC-20", "ERC-721"]
-  @default_blocks_batch_size 10_000
+  @default_rows_batch_size 1_000
 
   # arbitrary constant identifying the retyping of tokens to ERC-404 among
   # `pg_advisory_xact_lock` users
@@ -71,34 +74,26 @@ defmodule Explorer.Chain.Token.Erc404 do
   @doc """
   Converts the stored data of the given token to the ERC-404 shape.
 
-  The token transfers and the historical token balances are processed in
-  windows of `blocks_batch_size` blocks, from the newest to the oldest one, so
-  that no single statement locks the whole history of a busy token.
+  Every statement rewrites at most `rows_batch_size` rows, in its own
+  transaction, so the row locks which the block imports may wait for are held
+  briefly however busy the token is. The rows are locked in the same order as
+  the import runners lock them, so a conversion and an import of the same rows
+  never deadlock.
+
+  The legacy token transfers are taken from the newest to the oldest one
+  through the index on the token address and the block number, which skips
+  the blocks without them. The historical token balances of each batch of
+  transfers are retyped right before the transfers themselves.
 
   Returns the number of converted token transfers.
   """
   @spec convert(Hash.Address.t(), pos_integer()) :: non_neg_integer()
-  def convert(contract_address_hash, blocks_batch_size \\ @default_blocks_batch_size) do
+  def convert(contract_address_hash, rows_batch_size \\ @default_rows_batch_size) do
     retype_token(contract_address_hash)
 
-    converted_count =
-      case token_transfers_block_range(contract_address_hash) do
-        {min_block_number, max_block_number} when not is_nil(min_block_number) ->
-          max_block_number
-          |> Stream.iterate(&(&1 - blocks_batch_size))
-          |> Stream.take_while(&(&1 >= min_block_number))
-          |> Enum.reduce(0, fn to_block_number, acc ->
-            from_block_number = max(to_block_number - blocks_batch_size + 1, min_block_number)
+    converted_count = convert_token_transfers(contract_address_hash, nil, rows_batch_size, 0)
 
-            retype_token_balances(contract_address_hash, from_block_number, to_block_number)
-            acc + convert_token_transfers(contract_address_hash, from_block_number, to_block_number)
-          end)
-
-        _ ->
-          0
-      end
-
-    retype_current_token_balances(contract_address_hash)
+    retype_current_token_balances(contract_address_hash, rows_batch_size)
 
     converted_count
   end
@@ -332,23 +327,80 @@ defmodule Explorer.Chain.Token.Erc404 do
     end
   end
 
-  defp token_transfers_block_range(contract_address_hash) do
-    Repo.one(
-      from(tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^contract_address_hash,
-        select: {min(tt.block_number), max(tt.block_number)}
-      ),
-      timeout: :infinity
-    )
+  # Each batch starts at the block the previous one ended at: the transfers of
+  # that block converted already are not legacy ones anymore, the rest of them
+  # are taken now. A batch smaller than `rows_batch_size` is the last one.
+  defp convert_token_transfers(contract_address_hash, to_block_number, rows_batch_size, converted_count) do
+    case legacy_token_transfers(contract_address_hash, to_block_number, rows_batch_size) do
+      [] ->
+        converted_count
+
+      batch ->
+        # retyped first: no legacy token transfer left tells that the conversion
+        # is complete, see `conversion_pending?/1`
+        retype_token_balances(contract_address_hash, batch)
+        converted_count = converted_count + convert_token_transfers_batch(contract_address_hash, batch)
+
+        if length(batch) < rows_batch_size do
+          converted_count
+        else
+          convert_token_transfers(
+            contract_address_hash,
+            List.last(batch).block_number,
+            rows_batch_size,
+            converted_count
+          )
+        end
+    end
   end
 
-  # The same rule as the one of `to_erc404_transfer/1`.
-  defp convert_token_transfers(contract_address_hash, from_block_number, to_block_number) do
-    {count, _} =
+  defp legacy_token_transfers(contract_address_hash, to_block_number, rows_batch_size) do
+    query =
       from(tt in TokenTransfer,
         where: tt.token_contract_address_hash == ^contract_address_hash,
-        where: tt.block_number >= ^from_block_number and tt.block_number <= ^to_block_number,
         where: tt.token_type in ^@legacy_types,
+        order_by: [desc: tt.block_number, desc: tt.log_index],
+        limit: ^rows_batch_size,
+        select: map(tt, [:block_hash, :log_index, :block_number, :from_address_hash, :to_address_hash])
+      )
+
+    query
+    |> then(&if(is_nil(to_block_number), do: &1, else: where(&1, [tt], tt.block_number <= ^to_block_number)))
+    |> Repo.all(timeout: :infinity)
+  end
+
+  # The same rule as the one of `to_erc404_transfer/1`. The block range lets the
+  # rows be found through the index on the token address and the block number.
+  defp convert_token_transfers_batch(contract_address_hash, batch) do
+    {min_block_number, max_block_number} = batch |> Enum.map(& &1.block_number) |> Enum.min_max()
+    block_hashes = Enum.map(batch, & &1.block_hash)
+    log_indexes = Enum.map(batch, & &1.log_index)
+
+    batch_query =
+      from(tt in TokenTransfer,
+        where: tt.token_contract_address_hash == ^contract_address_hash,
+        where: tt.block_number >= ^min_block_number and tt.block_number <= ^max_block_number
+      )
+
+    locked_query =
+      from(tt in batch_query,
+        join:
+          key in fragment(
+            "SELECT * FROM unnest(?::bytea[], ?::integer[]) AS key(block_hash, log_index)",
+            type(^block_hashes, {:array, Hash.Full}),
+            ^log_indexes
+          ),
+        on: tt.block_hash == key.block_hash and tt.log_index == key.log_index,
+        where: tt.token_type in ^@legacy_types,
+        order_by: ^token_transfers_lock_order(),
+        lock: "FOR UPDATE",
+        select: %{block_hash: tt.block_hash, log_index: tt.log_index}
+      )
+
+    {count, _} =
+      from(tt in batch_query,
+        join: locked in subquery(locked_query),
+        on: tt.block_hash == locked.block_hash and tt.log_index == locked.log_index,
         update: [
           set: [
             token_type: @erc404,
@@ -369,42 +421,80 @@ defmodule Explorer.Chain.Token.Erc404 do
     count
   end
 
-  # Token balances are found through the token transfers of the window: there is
-  # no index on `address_token_balances` leading with the token address, while
-  # the unique one leads with the holder address and the token address.
-  defp retype_token_balances(contract_address_hash, from_block_number, to_block_number) do
-    holders_query =
-      from(tt in TokenTransfer,
-        where: tt.token_contract_address_hash == ^contract_address_hash,
-        where: tt.block_number >= ^from_block_number and tt.block_number <= ^to_block_number,
-        distinct: true,
-        select: %{
-          address_hash: type(fragment("unnest(ARRAY[?, ?])", tt.from_address_hash, tt.to_address_hash), Hash.Address),
-          block_number: tt.block_number
-        }
+  # The import order, see `Explorer.Chain.Import.Runner.TokenTransfers`.
+  defp token_transfers_lock_order do
+    case chain_identity() do
+      {:optimism, :celo} -> [asc: :block_hash, asc: :log_index]
+      _ -> [asc: :transaction_hash, asc: :block_hash, asc: :log_index]
+    end
+  end
+
+  # The token balances are found by the holders and the blocks of the given
+  # token transfers, up to two per transfer: there is no index on
+  # `address_token_balances` leading with the token address, while the unique
+  # one leads with the holder address and the token address. They are locked in
+  # the import order, see `Explorer.Chain.Import.Runner.Address.TokenBalances`.
+  defp retype_token_balances(contract_address_hash, token_transfers) do
+    {address_hashes, block_numbers} =
+      token_transfers
+      |> Enum.flat_map(&[{&1.from_address_hash, &1.block_number}, {&1.to_address_hash, &1.block_number}])
+      |> Enum.uniq()
+      |> Enum.unzip()
+
+    locked_query =
+      from(tb in TokenBalance,
+        join:
+          key in fragment(
+            "SELECT * FROM unnest(?::bytea[], ?::bigint[]) AS key(address_hash, block_number)",
+            type(^address_hashes, {:array, Hash.Address}),
+            ^block_numbers
+          ),
+        on: tb.address_hash == key.address_hash and tb.block_number == key.block_number,
+        where: tb.token_contract_address_hash == ^contract_address_hash,
+        where: is_nil(tb.token_id) and tb.token_type in ^@legacy_types,
+        order_by: [asc: tb.address_hash, asc: tb.block_number],
+        lock: "FOR UPDATE",
+        select: %{id: tb.id}
       )
 
     from(tb in TokenBalance,
-      join: holder in subquery(holders_query),
-      on: tb.address_hash == holder.address_hash and tb.block_number == holder.block_number,
-      where: tb.token_contract_address_hash == ^contract_address_hash,
-      where: is_nil(tb.token_id) and tb.token_type in ^@legacy_types,
-      update: [
-        set: [token_type: @erc404, updated_at: ^DateTime.utc_now()]
-      ]
+      join: locked in subquery(locked_query),
+      on: tb.id == locked.id,
+      update: [set: [token_type: @erc404, updated_at: ^DateTime.utc_now()]]
     )
     |> Repo.update_all([], timeout: :infinity)
   end
 
-  # Runs last, see `conversion_pending?/1`.
-  defp retype_current_token_balances(contract_address_hash) do
-    Repo.update_all(
+  # Runs last, see `conversion_pending?/1`. The holders are read once, then
+  # retyped in batches locked in the import order, see
+  # `Explorer.Chain.Import.Runner.Address.CurrentTokenBalances`.
+  defp retype_current_token_balances(contract_address_hash, rows_batch_size) do
+    legacy_query =
       from(ctb in CurrentTokenBalance,
         where: ctb.token_contract_address_hash == ^contract_address_hash,
         where: is_nil(ctb.token_id) and ctb.token_type in ^@legacy_types
-      ),
-      [set: [token_type: @erc404, updated_at: DateTime.utc_now()]],
-      timeout: :infinity
-    )
+      )
+
+    legacy_query
+    |> order_by([ctb], asc: ctb.address_hash)
+    |> select([ctb], ctb.address_hash)
+    |> Repo.all(timeout: :infinity)
+    |> Enum.chunk_every(rows_batch_size)
+    |> Enum.each(fn address_hashes ->
+      locked_query =
+        from(ctb in legacy_query,
+          where: ctb.address_hash in ^address_hashes,
+          order_by: [asc: ctb.address_hash],
+          lock: "FOR UPDATE",
+          select: %{id: ctb.id}
+        )
+
+      from(ctb in CurrentTokenBalance,
+        join: locked in subquery(locked_query),
+        on: ctb.id == locked.id,
+        update: [set: [token_type: @erc404, updated_at: ^DateTime.utc_now()]]
+      )
+      |> Repo.update_all([], timeout: :infinity)
+    end)
   end
 end

@@ -24,7 +24,7 @@ defmodule Explorer.Migrator.SanitizeErc404TokensTest do
     Application.put_env(
       :explorer,
       SanitizeErc404Tokens,
-      Keyword.merge(configuration || [], batch_size: 1, concurrency: 1, blocks_batch_size: 2)
+      Keyword.merge(configuration || [], batch_size: 1, concurrency: 1, rows_batch_size: 2)
     )
 
     on_exit(fn -> Application.put_env(:explorer, SanitizeErc404Tokens, configuration) end)

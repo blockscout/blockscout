@@ -93,7 +93,7 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
   def update_cache, do: :ok
 
   defp convert(contract_address_hash, source) do
-    converted_count = Erc404.convert(contract_address_hash, blocks_batch_size())
+    converted_count = Erc404.convert(contract_address_hash, rows_batch_size())
     refetched_count = if source == @by_events, do: refetch_uncataloged_blocks(contract_address_hash), else: 0
 
     Logger.info(
@@ -209,8 +209,8 @@ defmodule Explorer.Migrator.SanitizeErc404Tokens do
     max(Application.get_env(:explorer, :token_functions_reader_max_retries) || 1, 1)
   end
 
-  defp blocks_batch_size do
-    Application.get_env(:explorer, __MODULE__)[:blocks_batch_size] || 10_000
+  defp rows_batch_size do
+    Application.get_env(:explorer, __MODULE__)[:rows_batch_size] || 1_000
   end
 
   defp from_block_number do
