@@ -228,46 +228,49 @@ defmodule Explorer.Chain.Address.CoinBalance do
   @spec delete_unchanged(Block.block_number(), Block.block_number(), keyword()) :: non_neg_integer()
   def delete_unchanged(from_block_number, to_block_number, options \\ [])
       when is_integer(from_block_number) and is_integer(to_block_number) do
+    # The statement is a literal: the block numbers are passed as parameters.
     # Enforce CoinBalance ShareLocks order (see docs: sharelocks.md)
-    sql = """
-    WITH unchanged AS (
-      SELECT cb.address_hash, cb.block_number
-      FROM address_coin_balances AS cb
-      CROSS JOIN LATERAL (
-        SELECT p.block_number, p.value
-        FROM address_coin_balances AS p
-        WHERE p.address_hash = cb.address_hash AND p.block_number < cb.block_number
-        ORDER BY p.block_number DESC
-        LIMIT 1
-      ) AS previous
-      WHERE cb.block_number BETWEEN $1 AND $2
-        AND cb.value IS NOT NULL
-        AND previous.value = cb.value
-        AND NOT EXISTS (SELECT 1 FROM pending_transaction_operations)
-        AND NOT EXISTS (
-          SELECT 1 FROM missing_block_ranges AS mbr
-          WHERE mbr.from_number > previous.block_number AND mbr.from_number < cb.block_number
-        )
-        AND NOT COALESCE((
-          SELECT mbr.to_number < cb.block_number FROM missing_block_ranges AS mbr
-          WHERE mbr.from_number >= cb.block_number
-          ORDER BY mbr.from_number ASC
-          LIMIT 1
-        ), FALSE)
-        AND NOT EXISTS (
-          SELECT 1 FROM pending_block_operations AS pbo
-          WHERE pbo.block_number > previous.block_number AND pbo.block_number < cb.block_number
-        )
-      ORDER BY cb.address_hash ASC, cb.block_number ASC
-      FOR UPDATE OF cb
-    )
-    DELETE FROM address_coin_balances AS cb
-    USING unchanged
-    WHERE cb.address_hash = unchanged.address_hash AND cb.block_number = unchanged.block_number
-    """
-
     %{num_rows: deleted_count} =
-      Repo.query!(sql, [from_block_number, to_block_number], timeout: Keyword.get(options, :timeout, :infinity))
+      Repo.query!(
+        """
+        WITH unchanged AS (
+          SELECT cb.address_hash, cb.block_number
+          FROM address_coin_balances AS cb
+          CROSS JOIN LATERAL (
+            SELECT p.block_number, p.value
+            FROM address_coin_balances AS p
+            WHERE p.address_hash = cb.address_hash AND p.block_number < cb.block_number
+            ORDER BY p.block_number DESC
+            LIMIT 1
+          ) AS previous
+          WHERE cb.block_number BETWEEN $1 AND $2
+            AND cb.value IS NOT NULL
+            AND previous.value = cb.value
+            AND NOT EXISTS (SELECT 1 FROM pending_transaction_operations)
+            AND NOT EXISTS (
+              SELECT 1 FROM missing_block_ranges AS mbr
+              WHERE mbr.from_number > previous.block_number AND mbr.from_number < cb.block_number
+            )
+            AND NOT COALESCE((
+              SELECT mbr.to_number < cb.block_number FROM missing_block_ranges AS mbr
+              WHERE mbr.from_number >= cb.block_number
+              ORDER BY mbr.from_number ASC
+              LIMIT 1
+            ), FALSE)
+            AND NOT EXISTS (
+              SELECT 1 FROM pending_block_operations AS pbo
+              WHERE pbo.block_number > previous.block_number AND pbo.block_number < cb.block_number
+            )
+          ORDER BY cb.address_hash ASC, cb.block_number ASC
+          FOR UPDATE OF cb
+        )
+        DELETE FROM address_coin_balances AS cb
+        USING unchanged
+        WHERE cb.address_hash = unchanged.address_hash AND cb.block_number = unchanged.block_number
+        """,
+        [from_block_number, to_block_number],
+        timeout: Keyword.get(options, :timeout, :infinity)
+      )
 
     deleted_count
   end
