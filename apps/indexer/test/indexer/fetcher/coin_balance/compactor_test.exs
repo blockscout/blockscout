@@ -117,6 +117,68 @@ defmodule Indexer.Fetcher.CoinBalance.CompactorTest do
       assert stored_block_numbers(address_hash) == [1, 14, 50]
     end
 
+    test "waits at a block whose coin balances are not imported yet", %{address_hash: address_hash} do
+      insert(:block, number: 100)
+      settle_blocks_up_to(90)
+
+      # block 5 is stored, but the stage of its import that writes the coin balances is not finished
+      block = insert(:block, number: 5)
+
+      for block_number <- [1, 2, 6, 7, 20] do
+        insert(:fetched_balance, address_hash: address_hash, block_number: block_number, value: 100)
+      end
+
+      assert Compactor.compact_next_batch() == {:ok, {0, 4, 1}}
+      assert Compactor.compact_next_batch() == {:waiting, 5}
+      assert Compactor.compact_next_batch() == {:waiting, 5}
+      assert last_block_number() == 4
+      assert stored_block_numbers(address_hash) == [1, 6, 7, 20]
+
+      # the import finishes: the address had another balance in block 5
+      insert(:fetched_balance, address_hash: block.miner_hash, block_number: 5, value: 0)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 200)
+
+      assert Compactor.compact_next_batch() == {:ok, {5, 14, 1}}
+      assert stored_block_numbers(address_hash) == [1, 5, 6, 20]
+    end
+
+    test "waits at a block left without coin balances by an indexer that stopped between the import stages", %{
+      address_hash: address_hash
+    } do
+      insert(:block, number: 100)
+      settle_blocks_up_to(90)
+      block = insert(:block, number: 5)
+
+      for block_number <- [1, 6, 7, 20] do
+        insert(:fetched_balance, address_hash: address_hash, block_number: block_number, value: 100)
+      end
+
+      assert Compactor.compact_next_batch() == {:ok, {0, 4, 0}}
+
+      # nothing changes however long it takes
+      for _ <- 1..3, do: assert(Compactor.compact_next_batch() == {:waiting, 5})
+      assert stored_block_numbers(address_hash) == [1, 6, 7, 20]
+
+      # the block is imported again
+      insert(:fetched_balance, address_hash: block.miner_hash, block_number: 5, value: 0)
+
+      assert Compactor.compact_next_batch() == {:ok, {5, 14, 2}}
+      assert stored_block_numbers(address_hash) == [1, 20]
+    end
+
+    test "ignores non-consensus blocks without coin balances", %{address_hash: address_hash} do
+      insert(:block, number: 100)
+      settle_blocks_up_to(90)
+      insert(:block, number: 5, consensus: false)
+
+      for block_number <- [1, 6, 20] do
+        insert(:fetched_balance, address_hash: address_hash, block_number: block_number, value: 100)
+      end
+
+      assert Compactor.compact_next_batch() == {:ok, {0, 9, 1}}
+      assert stored_block_numbers(address_hash) == [1, 20]
+    end
+
     test "is idle while it is not known which blocks are settled", %{address_hash: address_hash} do
       insert(:block, number: 30)
       insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)

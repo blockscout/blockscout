@@ -21,9 +21,16 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
       Without this boundary (the collector is not running, has not scanned the
       whole chain yet, or is configured with specific block ranges) nothing is
       processed.
-    * `head_offset` blocks below the chain head: a block can be counted as
-      imported by the collector while its coin balances are still being written
-      by a later stage of the same import.
+    * the first block that has no coin balances at all
+      (`Explorer.Chain.Address.CoinBalance.min_block_number_without_coin_balances/2`).
+      The collector counts a block as imported as soon as the block itself is
+      stored, while its coin balances are written by a later stage of the same
+      import, in another transaction. Every block has at least the coin balance
+      of its miner, so a block without any is still being imported, or was left
+      half-imported by an indexer that stopped between the two stages. The
+      process waits at such a block and logs it once.
+    * `head_offset` blocks below the chain head, as an extra distance from the
+      blocks that are being imported.
 
   The number of the last processed block is kept in `last_fetched_counters`, so
   the process continues from it after a restart. The rows that could not be
@@ -73,11 +80,11 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
 
   @impl GenServer
   def handle_info(:compact, state) do
-    compact_next_batch()
+    result = compact_next_batch()
 
     Process.send_after(self(), :compact, interval())
 
-    {:noreply, state}
+    {:noreply, log_waiting(result, state)}
   end
 
   # e.g. a late reply of the missing ranges collector to a call that timed out
@@ -85,33 +92,56 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
     {:noreply, state}
   end
 
+  # Logs the block the process is waiting at, once per block.
+  defp log_waiting({:waiting, block_number}, state) do
+    if Map.get(state, :waiting_at) != block_number do
+      Logger.warning(
+        "Coin balances compactor is waiting at block #{block_number}: the block has no coin balances, " <>
+          "so it is still being imported or was imported partially"
+      )
+    end
+
+    Map.put(state, :waiting_at, block_number)
+  end
+
+  defp log_waiting(_result, state), do: Map.delete(state, :waiting_at)
+
   @doc """
   Processes the next batch of blocks, if there are settled blocks far enough
   from the chain head that are not processed yet.
 
   ## Returns
   - `{:ok, {from_block_number, to_block_number, deleted_count}}` for a processed batch.
+  - `{:waiting, block_number}` when the next block to process has no coin balances yet.
   - `:idle` when there is nothing to process yet.
   """
-  @spec compact_next_batch() :: {:ok, {non_neg_integer(), non_neg_integer(), non_neg_integer()}} | :idle
+  @spec compact_next_batch() ::
+          {:ok, {non_neg_integer(), non_neg_integer(), non_neg_integer()}} | {:waiting, non_neg_integer()} | :idle
   def compact_next_batch do
     from_block_number = last_block_number() + 1
     max_block_number = max_block_number()
 
     if not is_nil(max_block_number) and from_block_number <= max_block_number do
       to_block_number = min(from_block_number + batch_size() - 1, max_block_number)
-      deleted_count = CoinBalance.delete_unchanged(from_block_number, to_block_number)
 
-      {:ok, _} = LastFetchedCounter.upsert(%{counter_type: @counter_type, value: to_block_number})
-
-      Logger.debug(
-        "Deleted #{deleted_count} unchanged coin balances in blocks #{from_block_number}..#{to_block_number}"
-      )
-
-      {:ok, {from_block_number, to_block_number, deleted_count}}
+      case CoinBalance.min_block_number_without_coin_balances(from_block_number, to_block_number) do
+        nil -> compact(from_block_number, to_block_number)
+        ^from_block_number -> {:waiting, from_block_number}
+        block_number -> compact(from_block_number, block_number - 1)
+      end
     else
       :idle
     end
+  end
+
+  defp compact(from_block_number, to_block_number) do
+    deleted_count = CoinBalance.delete_unchanged(from_block_number, to_block_number)
+
+    {:ok, _} = LastFetchedCounter.upsert(%{counter_type: @counter_type, value: to_block_number})
+
+    Logger.debug("Deleted #{deleted_count} unchanged coin balances in blocks #{from_block_number}..#{to_block_number}")
+
+    {:ok, {from_block_number, to_block_number, deleted_count}}
   end
 
   # The highest block number that can be processed, or `nil` when it is not known
