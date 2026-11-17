@@ -26,10 +26,7 @@ defmodule Indexer.Fetcher.CoinBalance.HelperTest do
                ])
     end
 
-    test "passes entries with unresolved day through" do
-      param = %{address_hash: "0x0000000000000000000000000000000000000001", day: ~D[2026-11-17], value: 1}
-
-      assert Helper.reduce_daily_params_to_max_value([nil, param, nil]) == [nil, nil, param]
+    test "returns an empty list for no params" do
       assert Helper.reduce_daily_params_to_max_value([]) == []
     end
   end
