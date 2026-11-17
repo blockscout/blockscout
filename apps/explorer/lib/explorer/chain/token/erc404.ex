@@ -38,6 +38,8 @@ defmodule Explorer.Chain.Token.Erc404 do
 
   import Ecto.Query
 
+  require Logger
+
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.{Hash, Log, Token, TokenTransfer}
   alias Explorer.Repo
@@ -49,6 +51,15 @@ defmodule Explorer.Chain.Token.Erc404 do
   # arbitrary constant identifying the retyping of tokens to ERC-404 among
   # `pg_advisory_xact_lock` users
   @retype_advisory_lock_key 7_235_622_386_404
+
+  # The retyping tries the exclusive lock without waiting this many times, this
+  # many milliseconds apart, before it starts waiting for it, see
+  # `retype_token/1`.
+  @retype_try_attempts 50
+  @retype_try_interval 100
+  # the longest pause of the token imports per wait, and the pause between waits
+  @retype_lock_timeout "500ms"
+  @retype_wait_interval 2_000
 
   @doc """
   Returns the first topics of the events only ERC-404 tokens emit.
@@ -262,22 +273,62 @@ defmodule Explorer.Chain.Token.Erc404 do
   end
 
   # The exclusive advisory lock waits for the imports which might have read the
-  # old token type, see `legacy_erc404_token_hashes/2`, and holds back the new
-  # ones meanwhile. It is taken only when there is a legacy type to change: the
-  # imports of a token already stored as ERC-404 one read the right type.
+  # old token type, see `legacy_erc404_token_hashes/2`. It is taken only when
+  # there is a legacy type to change: the imports of a token already stored as
+  # ERC-404 one read the right type.
+  #
+  # A waiting exclusive request holds back every new shared one, so a blocking
+  # request would pause the token imports of the whole chain until the slowest
+  # in-flight import commits, which may take minutes. The lock is tried without
+  # waiting first, which never holds anything back. Only when the imports never
+  # leave a gap, it is requested with a short `lock_timeout`, which bounds each
+  # pause, and requested again after a pause long enough to let the queued
+  # imports through.
   defp retype_token(contract_address_hash) do
     legacy_token_query =
       from(t in Token, where: t.contract_address_hash == ^contract_address_hash and t.type in ^@legacy_types)
 
-    if Repo.exists?(legacy_token_query) do
-      {:ok, _} =
-        Repo.transaction(
-          fn ->
-            Repo.query!("SELECT pg_advisory_xact_lock($1)", [@retype_advisory_lock_key])
+    if Repo.exists?(legacy_token_query), do: retype_token(legacy_token_query, 1)
+  end
+
+  defp retype_token(legacy_token_query, attempt) do
+    result =
+      Repo.transaction(
+        fn ->
+          if lock_for_retype(attempt) do
             Repo.update_all(legacy_token_query, set: [type: @erc404, updated_at: DateTime.utc_now()])
-          end,
-          timeout: :infinity
-        )
+          else
+            Repo.rollback(:locked)
+          end
+        end,
+        timeout: :infinity
+      )
+
+    case result do
+      {:ok, _} ->
+        :ok
+
+      {:error, :locked} ->
+        if attempt == @retype_try_attempts do
+          Logger.warning("The token imports leave no gap to retype a token to ERC-404, waiting for the lock")
+        end
+
+        Process.sleep(if attempt < @retype_try_attempts, do: @retype_try_interval, else: @retype_wait_interval)
+        retype_token(legacy_token_query, attempt + 1)
+    end
+  end
+
+  defp lock_for_retype(attempt) when attempt < @retype_try_attempts do
+    %{rows: [[locked?]]} = Repo.query!("SELECT pg_try_advisory_xact_lock($1)", [@retype_advisory_lock_key])
+    locked?
+  end
+
+  defp lock_for_retype(_attempt) do
+    Repo.query!("SET LOCAL lock_timeout = '#{@retype_lock_timeout}'")
+
+    case Repo.query("SELECT pg_advisory_xact_lock($1)", [@retype_advisory_lock_key]) do
+      {:ok, _} -> true
+      {:error, %Postgrex.Error{postgres: %{code: :lock_not_available}}} -> false
     end
   end
 
