@@ -166,6 +166,40 @@ defmodule Indexer.Fetcher.CoinBalance.CompactorTest do
       assert stored_block_numbers(address_hash) == [1, 20]
     end
 
+    test "is not misled by a coin balance written at a half-imported block independently of the import", %{
+      address_hash: address_hash
+    } do
+      insert(:block, number: 100)
+      settle_blocks_up_to(90)
+      block = insert(:block, number: 5)
+
+      for block_number <- [1, 6, 7, 20] do
+        insert(:fetched_balance, address_hash: address_hash, block_number: block_number, value: 100)
+      end
+
+      # an on-demand historic fetch writes the balance of some address at block 5,
+      # while the block still has no coin balances of its own
+      insert(:fetched_balance, address_hash: insert(:address).hash, block_number: 5, value: 1)
+
+      assert Compactor.compact_next_batch() == {:ok, {0, 4, 0}}
+      assert Compactor.compact_next_batch() == {:waiting, 5}
+
+      # the process is restarted: it continues from the stored block number and still waits
+      pid = Compactor.Supervisor.Case.start_supervised!()
+      Process.sleep(100)
+      assert Process.alive?(pid)
+      assert last_block_number() == 4
+      assert stored_block_numbers(address_hash) == [1, 6, 7, 20]
+
+      # the block is imported again: the address had another balance in block 5
+      insert(:fetched_balance, address_hash: block.miner_hash, block_number: 5, value: 0)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 200)
+
+      wait_for_results(fn ->
+        [1, 5, 6, 20] = stored_block_numbers(address_hash)
+      end)
+    end
+
     test "ignores non-consensus blocks without coin balances", %{address_hash: address_hash} do
       insert(:block, number: 100)
       settle_blocks_up_to(90)

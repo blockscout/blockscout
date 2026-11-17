@@ -183,20 +183,26 @@ defmodule Explorer.Chain.Address.CoinBalance do
   end
 
   @doc """
-  Returns the lowest consensus block of the given block range that has no coin
-  balances at all, or `nil` when every consensus block of the range has some.
+  Returns the lowest consensus block of the given block range that does not
+  have the coin balance of its miner, or `nil` when every consensus block of
+  the range has it.
 
   The block itself and its coin balances are written by different stages of an
   import, in separate database transactions, so a block can exist for a while
   (or for good, if the indexer stops in between) without its coin balances. The
-  coin balances of a block are all written in one transaction, and there is
-  always at least one, for the block miner. So a coin balance at a block number
-  tells that the coin balances of that block are imported, as long as the block
-  has not been through `delete_unchanged/3` yet, which can delete all of them.
+  coin balances of a block are all written in one transaction, and the one of
+  the block miner is always among them. So the coin balance of the miner at the
+  block number tells that the coin balances of that block are imported, as long
+  as the block has not been through `delete_unchanged/3` yet, which can delete
+  it.
+
+  Only the miner's row is taken as the evidence, not any row at the block
+  number: a coin balance of another address can be written at any block by the
+  on-demand fetcher, independently of the block import.
   """
-  @spec min_block_number_without_coin_balances(Block.block_number(), Block.block_number()) ::
+  @spec min_block_number_without_miner_coin_balance(Block.block_number(), Block.block_number()) ::
           Block.block_number() | nil
-  def min_block_number_without_coin_balances(from_block_number, to_block_number)
+  def min_block_number_without_miner_coin_balance(from_block_number, to_block_number)
       when is_integer(from_block_number) and is_integer(to_block_number) do
     query =
       from(block in Block,
@@ -206,7 +212,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
         where:
           not exists(
             from(cb in CoinBalance,
-              where: cb.block_number == parent_as(:block).number,
+              where: cb.block_number == parent_as(:block).number and cb.address_hash == parent_as(:block).miner_hash,
               select: 1
             )
           ),
@@ -254,7 +260,7 @@ defmodule Explorer.Chain.Address.CoinBalance do
   imported concurrently and out of order, and a block that is still being
   imported has neither coin balances, nor a pending block operation, nor
   necessarily a missing block range yet. See
-  `min_block_number_without_coin_balances/2` and
+  `min_block_number_without_miner_coin_balance/2` and
   `Indexer.Fetcher.CoinBalance.Compactor`.
 
   ## Parameters

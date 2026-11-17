@@ -21,12 +21,12 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
       Without this boundary (the collector is not running, has not scanned the
       whole chain yet, or is configured with specific block ranges) nothing is
       processed.
-    * the first block that has no coin balances at all
-      (`Explorer.Chain.Address.CoinBalance.min_block_number_without_coin_balances/2`).
+    * the first block that does not have the coin balance of its miner
+      (`Explorer.Chain.Address.CoinBalance.min_block_number_without_miner_coin_balance/2`).
       The collector counts a block as imported as soon as the block itself is
       stored, while its coin balances are written by a later stage of the same
-      import, in another transaction. Every block has at least the coin balance
-      of its miner, so a block without any is still being imported, or was left
+      import, in another transaction, and the one of the block miner is always
+      among them. A block without it is still being imported, or was left
       half-imported by an indexer that stopped between the two stages. The
       process waits at such a block and logs it once.
     * `head_offset` blocks below the chain head, as an extra distance from the
@@ -96,7 +96,7 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
   defp log_waiting({:waiting, block_number}, state) do
     if Map.get(state, :waiting_at) != block_number do
       Logger.warning(
-        "Coin balances compactor is waiting at block #{block_number}: the block has no coin balances, " <>
+        "Coin balances compactor is waiting at block #{block_number}: the coin balance of its miner is not there, " <>
           "so it is still being imported or was imported partially"
       )
     end
@@ -112,7 +112,7 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
 
   ## Returns
   - `{:ok, {from_block_number, to_block_number, deleted_count}}` for a processed batch.
-  - `{:waiting, block_number}` when the next block to process has no coin balances yet.
+  - `{:waiting, block_number}` when the next block to process does not have the coin balance of its miner yet.
   - `:idle` when there is nothing to process yet.
   """
   @spec compact_next_batch() ::
@@ -124,7 +124,7 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
     if not is_nil(max_block_number) and from_block_number <= max_block_number do
       to_block_number = min(from_block_number + batch_size() - 1, max_block_number)
 
-      case CoinBalance.min_block_number_without_coin_balances(from_block_number, to_block_number) do
+      case CoinBalance.min_block_number_without_miner_coin_balance(from_block_number, to_block_number) do
         nil -> compact(from_block_number, to_block_number)
         ^from_block_number -> {:waiting, from_block_number}
         block_number -> compact(from_block_number, block_number - 1)
