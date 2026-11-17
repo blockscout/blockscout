@@ -7,6 +7,7 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.{Address, Block, Wei}
   alias Explorer.PagingOptions
+  alias Explorer.Utility.MissingBlockRange
 
   describe "changeset/2" do
     test "is valid with address_hash, block_number, and value" do
@@ -484,6 +485,154 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
 
         assert is_nil(coin_balance.transaction_hash)
       end
+    end
+  end
+
+  describe "delete_unchanged/3" do
+    setup do
+      %{address_hash: insert(:address).hash}
+    end
+
+    defp stored(address_hash) do
+      CoinBalance
+      |> where([cb], cb.address_hash == ^address_hash)
+      |> order_by([cb], asc: cb.block_number)
+      |> select([cb], {cb.block_number, cb.value})
+      |> Repo.all()
+      |> Enum.map(fn
+        {block_number, nil} -> {block_number, nil}
+        {block_number, %Wei{value: value}} -> {block_number, Decimal.to_integer(value)}
+      end)
+    end
+
+    test "deletes the rows whose value is the same as in the previous row", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 2, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 4, value: 150)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 150)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 6, value: 100)
+
+      assert CoinBalance.delete_unchanged(0, 10) == 3
+      assert stored(address_hash) == [{1, 100}, {4, 150}, {6, 100}]
+    end
+
+    test "keeps the latest row of an address", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 2, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
+
+      assert CoinBalance.delete_unchanged(0, 10) == 1
+      assert stored(address_hash) == [{1, 100}, {3, 100}]
+    end
+
+    test "keeps the first row of an address and rows of other addresses", %{address_hash: address_hash} do
+      other_address_hash = insert(:address).hash
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 0)
+      insert(:fetched_balance, address_hash: other_address_hash, block_number: 2, value: 0)
+
+      assert CoinBalance.delete_unchanged(0, 10) == 0
+      assert stored(address_hash) == [{1, 0}]
+      assert stored(other_address_hash) == [{2, 0}]
+    end
+
+    test "processes only the rows of the given block range", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 2, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 4, value: 100)
+
+      assert CoinBalance.delete_unchanged(3, 3) == 1
+      assert stored(address_hash) == [{1, 100}, {2, 100}, {4, 100}]
+    end
+
+    test "compares with a previous row below the block range", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 50, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 70, value: 100)
+
+      assert CoinBalance.delete_unchanged(40, 60) == 1
+      assert stored(address_hash) == [{1, 100}, {70, 100}]
+    end
+
+    test "keeps unfetched rows and the rows that follow them", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:unfetched_balance, address_hash: address_hash, block_number: 2)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
+
+      assert CoinBalance.delete_unchanged(0, 10) == 0
+      assert stored(address_hash) == [{1, 100}, {2, nil}, {3, 100}]
+    end
+
+    test "keeps the row when blocks between it and the previous row are not imported yet", %{
+      address_hash: address_hash
+    } do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
+      Repo.insert!(%MissingBlockRange{from_number: 3, to_number: 2})
+
+      assert CoinBalance.delete_unchanged(0, 10) == 0
+      assert stored(address_hash) == [{1, 100}, {5, 100}, {9, 100}]
+    end
+
+    test "keeps the row when a missing block range starts below it and ends above it", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
+      Repo.insert!(%MissingBlockRange{from_number: 7, to_number: 4})
+
+      assert CoinBalance.delete_unchanged(0, 10) == 0
+      assert stored(address_hash) == [{1, 100}, {5, 100}, {9, 100}]
+    end
+
+    test "ignores missing block ranges outside the blocks between the rows", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 3, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
+      Repo.insert!(%MissingBlockRange{from_number: 2, to_number: 0})
+      Repo.insert!(%MissingBlockRange{from_number: 8, to_number: 5})
+
+      assert CoinBalance.delete_unchanged(0, 10) == 1
+      assert stored(address_hash) == [{3, 100}, {9, 100}]
+    end
+
+    test "keeps the row when internal transactions of a block below it are pending", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
+      block = insert(:block, number: 3)
+      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+
+      assert CoinBalance.delete_unchanged(0, 10) == 0
+      assert stored(address_hash) == [{1, 100}, {5, 100}, {9, 100}]
+    end
+
+    test "deletes the row when only its own block or the block of the previous row is pending", %{
+      address_hash: address_hash
+    } do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
+
+      for number <- [1, 5] do
+        block = insert(:block, number: number)
+        insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+      end
+
+      assert CoinBalance.delete_unchanged(0, 10) == 1
+      assert stored(address_hash) == [{1, 100}, {9, 100}]
+    end
+
+    test "keeps everything while there are pending transaction operations", %{address_hash: address_hash} do
+      insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
+      transaction = :transaction |> insert() |> with_block()
+      insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+
+      assert CoinBalance.delete_unchanged(0, 10) == 0
+      assert stored(address_hash) == [{1, 100}, {5, 100}, {9, 100}]
     end
   end
 
