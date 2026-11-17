@@ -749,6 +749,80 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       compare_item(internal_transaction, Enum.at(response["items"], 0))
     end
 
+    # `EthereumJSONRPC.RSK` and `EthereumJSONRPC.Filecoin` variants trace whole blocks instead of transactions
+    if Application.compile_env(:explorer, :chain_type) not in [:rsk, :filecoin] do
+      test "returns internal transactions fetched from the node when their storage is disabled", %{conn: conn} do
+        initial_config = Application.get_env(:explorer, InternalTransaction)
+        initial_geth_config = Application.get_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth)
+
+        Application.put_env(
+          :explorer,
+          InternalTransaction,
+          Keyword.merge(initial_config || [], storage_disabled?: true)
+        )
+
+        Application.put_env(
+          :ethereum_jsonrpc,
+          EthereumJSONRPC.Geth,
+          Keyword.merge(initial_geth_config || [], tracer: "call_tracer", block_traceable?: false)
+        )
+
+        on_exit(fn ->
+          Application.put_env(:explorer, InternalTransaction, initial_config)
+          Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth, initial_geth_config)
+        end)
+
+        transaction =
+          :transaction
+          |> insert()
+          |> with_block()
+
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, params: _}], _ ->
+          {:ok,
+           [
+             %{
+               id: id,
+               result: %{
+                 "type" => "CALL",
+                 "from" => "0x117b358218da5a4f647072ddb50ded038ed63d17",
+                 "to" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                 "value" => "0x0",
+                 "gas" => "0x106f5",
+                 "gasUsed" => "0x106f5",
+                 "input" => "0x",
+                 "output" => "0x",
+                 "calls" => [
+                   %{
+                     "type" => "CALL",
+                     "from" => "0x205a6b72ce16736c9d87172568a9c0cb9304de0d",
+                     "to" => "0x4200000000000000000000000000000000000015",
+                     "value" => "0x1",
+                     "gas" => "0xe9a3c",
+                     "gasUsed" => "0x4a28",
+                     "input" => "0x",
+                     "output" => "0x"
+                   }
+                 ]
+               }
+             }
+           ]}
+        end)
+
+        request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/internal-transactions")
+
+        assert %{
+                 "items" => [
+                   %{
+                     "index" => 1,
+                     "value" => "1",
+                     "to" => %{"hash" => "0x4200000000000000000000000000000000000015"}
+                   }
+                 ],
+                 "next_page_params" => nil
+               } = json_response(request, 200)
+      end
+    end
+
     test "return list with next_page_params", %{conn: conn} do
       transaction =
         :transaction
