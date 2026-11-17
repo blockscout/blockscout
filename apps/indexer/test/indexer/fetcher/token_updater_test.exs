@@ -96,6 +96,27 @@ defmodule Indexer.Fetcher.TokenUpdaterTest do
               }} = Chain.token_from_address_hash(token.contract_address_hash)
     end
 
+    test "marks an ERC-721 token as uncataloged once its decimals are read, to ask the ERC-404 getters" do
+      # cataloged while the node failed `decimals()` and the ERC-404 getters
+      token = insert(:token, type: "ERC-721", decimals: nil, cataloged: true)
+
+      TokenUpdater.update_metadata([%{decimals: 18, contract_address_hash: to_string(token.contract_address_hash)}])
+
+      decimals = Decimal.new(18)
+
+      assert {:ok, %Token{type: "ERC-721", decimals: ^decimals, cataloged: false}} =
+               Chain.token_from_address_hash(token.contract_address_hash)
+    end
+
+    test "keeps an ERC-721 token without decimals cataloged" do
+      token = insert(:token, type: "ERC-721", name: nil, decimals: nil, cataloged: true)
+
+      TokenUpdater.update_metadata([%{name: "Bancor", contract_address_hash: to_string(token.contract_address_hash)}])
+
+      assert {:ok, %Token{name: "Bancor", decimals: nil, cataloged: true}} =
+               Chain.token_from_address_hash(token.contract_address_hash)
+    end
+
     test "exports the ERC-8056 multiplier to the multichain service along with the metadata" do
       initial = Application.get_env(:explorer, MultichainSearch) || []
 

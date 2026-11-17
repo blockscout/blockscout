@@ -10,6 +10,7 @@ defmodule Indexer.Fetcher.Token do
   alias Explorer.Chain
   alias Explorer.Chain.Hash.Address
   alias Explorer.Chain.Token
+  alias Explorer.Chain.Token.Erc404
   alias Explorer.MicroserviceInterfaces.MultichainSearch
   alias Explorer.Token.MetadataRetriever
   alias Indexer.{BufferedTask, Tracer}
@@ -85,10 +86,36 @@ defmodule Indexer.Fetcher.Token do
         |> Map.put(token.contract_address_hash.bytes, data_for_multichain)
         |> MultichainSearch.send_token_info_to_queue(:metadata)
 
+        maybe_convert_to_erc404(token, token_params)
         {:ok, _} = Token.update(token, Map.put(token_params, :cataloged, true))
         :ok
     end
   end
+
+  # The transfers imported before the token turned out to be an ERC-404 one were
+  # parsed from its standard `Transfer` events with the ERC-721 and ERC-20 shapes.
+  # The ones imported from now on get the ERC-404 shape, since the type stored
+  # for the token takes precedence over the one derived from the logs.
+  #
+  # The conversion runs before the token is marked as cataloged. It retypes the
+  # token first, so a failed attempt leaves an uncataloged ERC-404 token behind,
+  # which is converted again on the next attempt to catalog it. Re-running the
+  # conversion is safe, it only touches the rows which are not converted yet.
+  # Tokens detected as ERC-404 from their dedicated events have nothing to
+  # convert, see `Erc404.conversion_pending?/1`.
+  defp maybe_convert_to_erc404(%Token{contract_address_hash: contract_address_hash}, %{type: "ERC-404"}) do
+    Erc404.convert(contract_address_hash)
+  end
+
+  defp maybe_convert_to_erc404(
+         %Token{type: "ERC-404", cataloged: cataloged, contract_address_hash: contract_address_hash},
+         _token_params
+       )
+       when cataloged != true do
+    if Erc404.conversion_pending?(contract_address_hash), do: Erc404.convert(contract_address_hash), else: :ok
+  end
+
+  defp maybe_convert_to_erc404(_token, _token_params), do: :ok
 
   defp defaults do
     [

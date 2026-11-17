@@ -79,6 +79,7 @@ for migrator <- [
       Explorer.Migrator.BackfillMetadataURL,
       Explorer.Migrator.SanitizeErc1155TokenBalancesWithoutTokenIds,
       Explorer.Migrator.SanitizeEip7708TokenTransfers,
+      Explorer.Migrator.SanitizeErc404Tokens,
       Explorer.Migrator.MergeAdjacentMissingBlockRanges,
       Explorer.Migrator.UnescapeQuotesInTokens,
       Explorer.Migrator.UnescapeAmpersandsInTokens,
