@@ -436,11 +436,8 @@ defmodule EthereumJSONRPC.Receipt do
   # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash
-                      revertReason l1FeeScalar),
+                      revertReason l1FeeScalar payer),
        do: {:ok, entry}
-
-  # The resolved payer of an EIP-8430 transaction passes through, as the other addresses do.
-  defp entry_to_elixir({"payer", _} = entry), do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed
