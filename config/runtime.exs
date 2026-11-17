@@ -1494,7 +1494,10 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
 config :indexer, Indexer.Fetcher.CoinBalance.Compactor,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_BATCH_SIZE", 100, min: 1),
   interval: ConfigHelper.parse_time_env_var("INDEXER_COIN_BALANCES_COMPACTOR_INTERVAL", "1s"),
-  head_offset: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_HEAD_OFFSET", 1000, min: 0)
+  # The offset cannot go below 1000 blocks: the blocks next to the chain head are still being imported, and a head
+  # block that failed to import gets into `missing_block_ranges` only with the next forward scan of the missing
+  # ranges collector, a minute later. 1000 blocks cover that minute down to a block time of about 60 ms.
+  head_offset: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_HEAD_OFFSET", 1000, min: 1000)
 
 config :indexer, Indexer.Block.Realtime.Fetcher,
   max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1_000),

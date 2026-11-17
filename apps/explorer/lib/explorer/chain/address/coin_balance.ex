@@ -193,6 +193,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
   another value would otherwise become the latest known balance for the deleted
   block. So a row is left in place when
 
+    * it is the latest row of the address: the latest observation of an address
+      stays, so that `last_coin_balance_timestamp/1` and the readers of the
+      latest row keep seeing the block the balance was last checked at;
     * the previous row is not fetched yet;
     * a missing block range overlaps the blocks between the two rows;
     * a block between the two rows has a pending block operation: its internal
@@ -246,6 +249,10 @@ defmodule Explorer.Chain.Address.CoinBalance do
           WHERE cb.block_number BETWEEN $1 AND $2
             AND cb.value IS NOT NULL
             AND previous.value = cb.value
+            AND EXISTS (
+              SELECT 1 FROM address_coin_balances AS following
+              WHERE following.address_hash = cb.address_hash AND following.block_number > cb.block_number
+            )
             AND NOT EXISTS (SELECT 1 FROM pending_transaction_operations)
             AND NOT EXISTS (
               SELECT 1 FROM missing_block_ranges AS mbr

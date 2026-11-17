@@ -55,6 +55,7 @@ defmodule Indexer.Fetcher.CoinBalance.CompactorTest do
       insert(:block, number: 8)
       insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
       insert(:fetched_balance, address_hash: address_hash, block_number: 6, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 11, value: 100)
 
       assert Compactor.compact_next_batch() == {:ok, {0, 3, 0}}
       assert Compactor.compact_next_batch() == :idle
@@ -62,7 +63,7 @@ defmodule Indexer.Fetcher.CoinBalance.CompactorTest do
       insert(:block, number: 12)
 
       assert Compactor.compact_next_batch() == {:ok, {4, 7, 1}}
-      assert stored_block_numbers(address_hash) == [1]
+      assert stored_block_numbers(address_hash) == [1, 11]
     end
 
     test "is idle on an empty chain" do
@@ -76,11 +77,12 @@ defmodule Indexer.Fetcher.CoinBalance.CompactorTest do
       insert(:block, number: 30)
       insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
       insert(:fetched_balance, address_hash: address_hash, block_number: 2, value: 100)
+      insert(:fetched_balance, address_hash: address_hash, block_number: 29, value: 100)
 
       Compactor.Supervisor.Case.start_supervised!()
 
       wait_for_results(fn ->
-        [1] = stored_block_numbers(address_hash)
+        [1, 29] = stored_block_numbers(address_hash)
       end)
     end
   end
