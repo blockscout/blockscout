@@ -241,8 +241,11 @@ defmodule Explorer.Chain.Address.CoinBalance do
     * a block between the two rows has a pending block operation: its internal
       transactions are not fetched, and they can bring a balance change that is
       not known yet;
-    * there is any pending transaction operation: those are not bound to a
-      block number, so the blocks between the two rows cannot be checked.
+    * a transaction of a block below the row has a pending transaction
+      operation. Those operations carry no block number of their own, so
+      instead of probing the blocks between the two rows for every row, the
+      lowest block with such a transaction is found once per statement and
+      every row above it is left in place.
 
   The pending operations are checked regardless of whether the internal
   transactions fetcher is enabled: they are the only evidence that the balance
@@ -279,7 +282,12 @@ defmodule Explorer.Chain.Address.CoinBalance do
     %{num_rows: deleted_count} =
       Repo.query!(
         """
-        WITH unchanged AS (
+        WITH pending_transactions AS MATERIALIZED (
+          SELECT min(t.block_number) AS min_block_number
+          FROM pending_transaction_operations AS pto
+          INNER JOIN transactions AS t ON t.hash = pto.transaction_hash
+        ),
+        unchanged AS (
           SELECT cb.address_hash, cb.block_number
           FROM address_coin_balances AS cb
           CROSS JOIN LATERAL (
@@ -296,7 +304,9 @@ defmodule Explorer.Chain.Address.CoinBalance do
               SELECT 1 FROM address_coin_balances AS following
               WHERE following.address_hash = cb.address_hash AND following.block_number > cb.block_number
             )
-            AND NOT EXISTS (SELECT 1 FROM pending_transaction_operations)
+            AND NOT COALESCE((
+              SELECT pending_transactions.min_block_number < cb.block_number FROM pending_transactions
+            ), FALSE)
             AND NOT EXISTS (
               SELECT 1 FROM missing_block_ranges AS mbr
               WHERE mbr.from_number > previous.block_number AND mbr.from_number < cb.block_number

@@ -624,15 +624,30 @@ defmodule Explorer.Chain.Address.CoinBalanceTest do
       assert stored(address_hash) == [{1, 100}, {9, 100}]
     end
 
-    test "keeps everything while there are pending transaction operations", %{address_hash: address_hash} do
+    test "keeps the rows above the lowest block with a pending transaction operation", %{address_hash: address_hash} do
+      for block_number <- [1, 5, 9, 11, 13] do
+        insert(:fetched_balance, address_hash: address_hash, block_number: block_number, value: 100)
+      end
+
+      for block_number <- [7, 12] do
+        transaction = :transaction |> insert() |> with_block(insert(:block, number: block_number))
+        insert(:pending_transaction_operation, transaction_hash: transaction.hash)
+      end
+
+      # block 5 is below the pending transaction of block 7, blocks 9 and 11 are above it
+      assert CoinBalance.delete_unchanged(0, 20) == 1
+      assert stored(address_hash) == [{1, 100}, {9, 100}, {11, 100}, {13, 100}]
+    end
+
+    test "deletes the row when the pending transaction operation is in its own block", %{address_hash: address_hash} do
       insert(:fetched_balance, address_hash: address_hash, block_number: 1, value: 100)
       insert(:fetched_balance, address_hash: address_hash, block_number: 5, value: 100)
       insert(:fetched_balance, address_hash: address_hash, block_number: 9, value: 100)
-      transaction = :transaction |> insert() |> with_block()
+      transaction = :transaction |> insert() |> with_block(insert(:block, number: 5))
       insert(:pending_transaction_operation, transaction_hash: transaction.hash)
 
-      assert CoinBalance.delete_unchanged(0, 10) == 0
-      assert stored(address_hash) == [{1, 100}, {5, 100}, {9, 100}]
+      assert CoinBalance.delete_unchanged(0, 10) == 1
+      assert stored(address_hash) == [{1, 100}, {9, 100}]
     end
   end
 

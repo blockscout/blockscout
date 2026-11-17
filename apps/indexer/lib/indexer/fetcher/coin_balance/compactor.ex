@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
   afterwards. This process therefore goes through the blocks in batches of
   `batch_size` blocks and leaves the decision on every row to
   `Explorer.Chain.Address.CoinBalance.delete_unchanged/3`. It never goes above
-  either of two boundaries:
+  any of these boundaries:
 
     * `Indexer.Block.Catchup.MissingRangesCollector.settled_block_number/0`:
       every block at or below it is either imported or recorded in
@@ -31,6 +31,14 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
       process waits at such a block and logs it once.
     * `head_offset` blocks below the chain head, as an extra distance from the
       blocks that are being imported.
+    * the lowest block that has a transaction with a pending transaction
+      operation (`Explorer.Chain.PendingTransactionOperation.min_block_number/0`).
+      The internal transactions of such a transaction are not fetched yet, and
+      `Explorer.Chain.Address.CoinBalance.delete_unchanged/3` leaves every row
+      above that block in place. Going above it would skip those rows for good,
+      so the process waits below it and logs it once. Finding that block takes
+      a lookup per pending operation, so the pause before the next batch is
+      never shorter than the batch itself took.
 
   The number of the last processed block is kept in `last_fetched_counters`, so
   the process continues from it after a restart. The rows that could not be
@@ -46,6 +54,7 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
   alias Explorer.Chain.Address.CoinBalance
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.LastFetchedCounter
+  alias Explorer.Chain.PendingTransactionOperation
   alias Indexer.Block.Catchup.MissingRangesCollector
 
   @counter_type "coin_balances_compactor_last_block_number"
@@ -80,9 +89,11 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
 
   @impl GenServer
   def handle_info(:compact, state) do
-    result = compact_next_batch()
+    {duration, result} = :timer.tc(&compact_next_batch/0, :millisecond)
 
-    Process.send_after(self(), :compact, interval())
+    # the pause is never shorter than the batch itself took, so that the process
+    # backs off when a batch gets slow, e.g. with many pending transaction operations
+    Process.send_after(self(), :compact, max(interval(), duration))
 
     {:noreply, log_waiting(result, state)}
   end
@@ -93,18 +104,24 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
   end
 
   # Logs the block the process is waiting at, once per block.
-  defp log_waiting({:waiting, block_number}, state) do
-    if Map.get(state, :waiting_at) != block_number do
-      Logger.warning(
-        "Coin balances compactor is waiting at block #{block_number}: the coin balance of its miner is not there, " <>
-          "so it is still being imported or was imported partially"
-      )
+  defp log_waiting({reason, block_number} = waiting, state)
+       when reason in [:waiting, :waiting_for_internal_transactions] do
+    if Map.get(state, :waiting) != waiting do
+      Logger.warning("Coin balances compactor is waiting at block #{block_number}: #{waiting_reason(reason)}")
     end
 
-    Map.put(state, :waiting_at, block_number)
+    Map.put(state, :waiting, waiting)
   end
 
-  defp log_waiting(_result, state), do: Map.delete(state, :waiting_at)
+  defp log_waiting(_result, state), do: Map.delete(state, :waiting)
+
+  defp waiting_reason(:waiting) do
+    "the coin balance of its miner is not there, so it is still being imported or was imported partially"
+  end
+
+  defp waiting_reason(:waiting_for_internal_transactions) do
+    "a transaction of a block below it has a pending transaction operation, so its internal transactions are not fetched yet"
+  end
 
   @doc """
   Processes the next batch of blocks, if there are settled blocks far enough
@@ -113,24 +130,48 @@ defmodule Indexer.Fetcher.CoinBalance.Compactor do
   ## Returns
   - `{:ok, {from_block_number, to_block_number, deleted_count}}` for a processed batch.
   - `{:waiting, block_number}` when the next block to process does not have the coin balance of its miner yet.
+  - `{:waiting_for_internal_transactions, block_number}` when a transaction of a block below the next block to
+    process has a pending transaction operation.
   - `:idle` when there is nothing to process yet.
   """
   @spec compact_next_batch() ::
-          {:ok, {non_neg_integer(), non_neg_integer(), non_neg_integer()}} | {:waiting, non_neg_integer()} | :idle
+          {:ok, {non_neg_integer(), non_neg_integer(), non_neg_integer()}}
+          | {:waiting, non_neg_integer()}
+          | {:waiting_for_internal_transactions, non_neg_integer()}
+          | :idle
   def compact_next_batch do
     from_block_number = last_block_number() + 1
     max_block_number = max_block_number()
 
     if not is_nil(max_block_number) and from_block_number <= max_block_number do
-      to_block_number = min(from_block_number + batch_size() - 1, max_block_number)
-
-      case CoinBalance.min_block_number_without_miner_coin_balance(from_block_number, to_block_number) do
-        nil -> compact(from_block_number, to_block_number)
-        ^from_block_number -> {:waiting, from_block_number}
-        block_number -> compact(from_block_number, block_number - 1)
-      end
+      compact_up_to(from_block_number, min(from_block_number + batch_size() - 1, max_block_number))
     else
       :idle
+    end
+  end
+
+  # The pending transaction operations are looked at only when there are blocks to
+  # process. A row is left in place by `CoinBalance.delete_unchanged/3` when a
+  # block below it has such an operation, so the batch ends at the lowest of those
+  # blocks, and nothing is processed while that block is below the batch.
+  defp compact_up_to(from_block_number, to_block_number) do
+    case PendingTransactionOperation.min_block_number() do
+      pending_block_number when is_integer(pending_block_number) and pending_block_number < from_block_number ->
+        {:waiting_for_internal_transactions, from_block_number}
+
+      pending_block_number when is_integer(pending_block_number) ->
+        compact_imported(from_block_number, min(to_block_number, pending_block_number))
+
+      nil ->
+        compact_imported(from_block_number, to_block_number)
+    end
+  end
+
+  defp compact_imported(from_block_number, to_block_number) do
+    case CoinBalance.min_block_number_without_miner_coin_balance(from_block_number, to_block_number) do
+      nil -> compact(from_block_number, to_block_number)
+      ^from_block_number -> {:waiting, from_block_number}
+      block_number -> compact(from_block_number, block_number - 1)
     end
   end
 
