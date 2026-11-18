@@ -85,10 +85,21 @@ defmodule Explorer.Etherscan.Contracts do
     end
   end
 
-  def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
+  def append_proxy_info(%Address{hash: address_hash, smart_contract: smart_contract} = address)
+      when not is_nil(smart_contract) do
+    # For an unverified address, `smart_contract` is the verified contract of its implementation or of its
+    # bytecode twin, i.e. a contract of another address. Proxy info must describe the requested address,
+    # otherwise a proxy answered with its implementation's sources would be reported as a non-proxy.
+    proxy_smart_contract =
+      if smart_contract.address_hash == address_hash do
+        smart_contract
+      else
+        %{smart_contract | address_hash: address_hash, metadata_from_verified_bytecode_twin: true}
+      end
+
     updated_smart_contract =
-      if Proxy.proxy_contract?(smart_contract) do
-        implementation = Implementation.get_implementation(smart_contract)
+      if Proxy.proxy_contract?(proxy_smart_contract) do
+        implementation = Implementation.get_implementation(proxy_smart_contract)
 
         smart_contract
         |> Map.put(:is_proxy, true)
