@@ -520,6 +520,49 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert Timex.equal?(current_token_balance.refetch_after, refetch_after)
     end
 
+    test "a stale failure does not move retry metadata backward", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      refetch_after = ~U[2030-01-01 00:00:00.000000Z]
+
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: nil,
+        value_fetched_at: nil,
+        refetch_after: refetch_after,
+        retries_count: 3
+      )
+
+      for {retries_count, stale_refetch_after} <- [
+            {2, ~U[2029-01-01 00:00:00.000000Z]},
+            {4, ~U[2029-01-01 00:00:00.000000Z]}
+          ] do
+        assert {:ok, %{address_current_token_balances: []}} =
+                 run_changes(
+                   %{
+                     address_hash: address_hash,
+                     token_contract_address_hash: token_contract_address_hash,
+                     block_number: 1,
+                     value: nil,
+                     value_fetched_at: nil,
+                     refetch_after: stale_refetch_after,
+                     retries_count: retries_count
+                   },
+                   options
+                 )
+      end
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert current_token_balance.retries_count == 3
+      assert Timex.equal?(current_token_balance.refetch_after, refetch_after)
+    end
+
     test "does not record retry metadata over a fetched balance of the same block", %{
       address: %Address{hash: address_hash} = address,
       token: %Token{contract_address_hash: token_contract_address_hash},

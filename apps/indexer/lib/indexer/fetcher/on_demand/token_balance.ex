@@ -45,8 +45,10 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   work to a later call.
 
   ## Parameters
-  - `caller`: identifier for the on-demand rate limit, such as the client IP, or
-    `nil` for no limit.
+  - `caller`: identifier for the `:on_demand_burn_address_balances` rate limit,
+    such as the client IP, or `nil` for no limit. This budget is separate from
+    `:on_demand`, so the backfill does not use up other on-demand refreshes of
+    the same request.
   - `address_hashes`: addresses whose balance of `token` is missing.
   - `token`: the fungible token, with `contract_address_hash` and `type` set.
 
@@ -61,7 +63,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   def trigger_current_fetch(caller, address_hashes, %Token{} = token) when is_list(address_hashes) do
     if not __MODULE__.Supervisor.disabled?() do
       try do
-        if RateLimiter.check_rate(caller, :on_demand) == :allow do
+        if RateLimiter.check_rate(caller, :on_demand_burn_address_balances) == :allow do
           BufferedTask.buffer(__MODULE__, current_fetch_entries(address_hashes, token), false, @current_fetch_timeout)
         end
       rescue

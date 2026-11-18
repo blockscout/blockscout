@@ -172,31 +172,32 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   @spec burned_supply_fields(Token.t(), %{Hash.Address.t() => Decimal.t()}) :: map()
   defp burned_supply_fields(token, burn_address_balances) do
     balances =
-      if token.type in CurrentTokenBalance.fungible_token_types() do
-        SmartContract.burn_address_hashes()
-        |> Enum.flat_map(fn address_hash ->
-          case Map.fetch(burn_address_balances, address_hash) do
-            {:ok, value} -> [{address_hash, Decimal.to_integer(value)}]
-            :error -> []
-          end
-        end)
-      else
-        []
-      end
+      if token.type in CurrentTokenBalance.fungible_token_types(),
+        do: indexed_burn_address_balances(burn_address_balances),
+        else: []
 
     burned_supply = if balances != [], do: balances |> Enum.map(&elem(&1, 1)) |> Enum.sum()
 
     %{
-      "burn_address_balances" =>
-        if(balances != [],
-          do:
-            Enum.map(balances, fn {address_hash, value} ->
-              %{"address_hash" => Address.checksum(address_hash), "value" => Integer.to_string(value)}
-            end)
-        ),
+      "burn_address_balances" => if(balances != [], do: Enum.map(balances, &render_burn_address_balance/1)),
       "burned_supply" => burned_supply && Integer.to_string(burned_supply),
       "calculated_circulating_supply" => calculated_circulating_supply(token.total_supply, burned_supply)
     }
+  end
+
+  # `[{address_hash, raw_value}]` in the order of `SmartContract.burn_address_hashes/0`,
+  # for the burn addresses with an indexed balance
+  defp indexed_burn_address_balances(burn_address_balances) do
+    Enum.flat_map(SmartContract.burn_address_hashes(), fn address_hash ->
+      case Map.fetch(burn_address_balances, address_hash) do
+        {:ok, value} -> [{address_hash, Decimal.to_integer(value)}]
+        :error -> []
+      end
+    end)
+  end
+
+  defp render_burn_address_balance({address_hash, value}) do
+    %{"address_hash" => Address.checksum(address_hash), "value" => Integer.to_string(value)}
   end
 
   # `totalSupply()` already excludes the tokens burned by the contract itself, so
