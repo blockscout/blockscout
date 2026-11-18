@@ -68,7 +68,7 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
 
     test "burned supply sums the burn address balances", %{conn: conn} do
       token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
-      insert_burn_address_balances(token, zero: {300, 10}, dead: {200, 12})
+      insert_burn_address_balances(token, zero: {300, 10}, dead: {200, 8})
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
 
@@ -79,6 +79,44 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                ],
                "burned_supply" => "500",
                "calculated_circulating_supply" => "500"
+             } = json_response(request, 200)
+    end
+
+    test "calculated circulating supply is null when the dead address balance is newer than total supply",
+         %{conn: conn} do
+      # a transfer to the dead address at block 12, after the total supply read at block 10
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, zero: {300, 10}, dead: {200, 12})
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"burned_supply" => "500", "calculated_circulating_supply" => nil} = json_response(request, 200)
+    end
+
+    test "a balance kept from an earlier block but not fetched at its latest transfer is not used", %{conn: conn} do
+      # the dead address had a transfer at block 9: its row moved to block 9 and
+      # still holds the block 5 value until the new balance is read
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, zero: {300, 10})
+      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
+
+      insert(:address_current_token_balance,
+        address: dead,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-20",
+        value: 10,
+        value_fetched_at: nil,
+        block_number: 9
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "burn_address_balances" => [
+                 %{"address_hash" => "0x0000000000000000000000000000000000000000", "value" => "300"}
+               ],
+               "burned_supply" => nil,
+               "calculated_circulating_supply" => nil
              } = json_response(request, 200)
     end
 

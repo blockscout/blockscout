@@ -254,47 +254,52 @@ defmodule Indexer.Fetcher.TokenBalance.HistoricalTest do
       assert Repo.all(Address.TokenBalance) == []
     end
 
-    test "a reverted zero address balance is retried and keeps the token and other placeholders" do
-      zero_address = insert(:address, hash: "0x0000000000000000000000000000000000000000")
-      holder = insert(:address)
-      %{contract_address_hash: token_contract_address_hash} = insert(:token)
+    for burn_address_hash <- [
+          "0x0000000000000000000000000000000000000000",
+          "0x000000000000000000000000000000000000dEaD"
+        ] do
+      test "a reverted #{burn_address_hash} balance is retried and keeps the token and other placeholders" do
+        burn_address = insert(:address, hash: unquote(burn_address_hash))
+        holder = insert(:address)
+        %{contract_address_hash: token_contract_address_hash} = insert(:token)
 
-      for address <- [zero_address, holder] do
-        insert(:token_balance,
-          token_contract_address_hash: token_contract_address_hash,
-          address: address,
-          block_number: 0,
-          value_fetched_at: nil,
-          value: nil,
-          refetch_after: nil,
-          retries_count: nil
-        )
-      end
-
-      expect(
-        EthereumJSONRPC.Mox,
-        :json_rpc,
-        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
-          {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "-32000", message: "execution reverted"}}]}
+        for address <- [burn_address, holder] do
+          insert(:token_balance,
+            token_contract_address_hash: token_contract_address_hash,
+            address: address,
+            block_number: 0,
+            value_fetched_at: nil,
+            value: nil,
+            refetch_after: nil,
+            retries_count: nil
+          )
         end
-      )
 
-      assert TokenBalanceHistorical.run(
-               [
-                 {zero_address.hash.bytes, token_contract_address_hash.bytes, 0, "ERC-20", nil, 0}
-               ],
-               nil
-             ) == :ok
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+            {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "-32000", message: "execution reverted"}}]}
+          end
+        )
 
-      assert Repo.all(MissingBalanceOfToken) == []
+        assert TokenBalanceHistorical.run(
+                 [
+                   {burn_address.hash.bytes, token_contract_address_hash.bytes, 0, "ERC-20", nil, 0}
+                 ],
+                 nil
+               ) == :ok
 
-      balances = Repo.all(Address.TokenBalance)
-      assert Enum.count(balances) == 2
+        assert Repo.all(MissingBalanceOfToken) == []
 
-      assert %{retries_count: 1, refetch_after: refetch_after} =
-               Enum.find(balances, &(&1.address_hash == zero_address.hash))
+        balances = Repo.all(Address.TokenBalance)
+        assert Enum.count(balances) == 2
 
-      refute is_nil(refetch_after)
+        assert %{retries_count: 1, refetch_after: refetch_after} =
+                 Enum.find(balances, &(&1.address_hash == burn_address.hash))
+
+        refute is_nil(refetch_after)
+      end
     end
 
     test "in case of other error updates the refetch_after and retries_count of token balance" do

@@ -4,13 +4,14 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
   Common functions for `Indexer.Fetcher.TokenBalance.Historical` and `Indexer.Fetcher.TokenBalance.Current` modules
   """
 
-  import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
-
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.{BufferedTask, TokenBalances}
+
+  # lowercase, as the params of this module carry address hashes
+  @burn_address_hash_strings Enum.map(Explorer.Chain.SmartContract.burn_address_hash_strings(), &String.downcase/1)
 
   @default_max_batch_size 100
   @default_max_concurrency 10
@@ -146,15 +147,16 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
     |> handle_other_errors()
   end
 
-  # A revert of `balanceOf(0x0)` does not mean the token lacks `balanceOf`: some
-  # contracts reject the zero address only. Such a failure stays with its own
-  # row and is retried like any other error, instead of marking the whole token
-  # as missing `balanceOf` and dropping the placeholders of every holder.
+  # A revert of `balanceOf` for a burn address (the zero or the dead address)
+  # does not mean the token lacks `balanceOf`: some contracts reject those
+  # addresses only. Such a failure stays with its own row and is retried like
+  # any other error, instead of marking the whole token as missing `balanceOf`
+  # and dropping the placeholders of every holder.
   defp handle_missing_balance_of_tokens(failed_token_balances) do
     {missing_balance_of_balances, other_failed_balances} =
       Enum.split_with(failed_token_balances, fn token_balance ->
         EthereumJSONRPC.contract_failure?(token_balance) and
-          token_balance.address_hash != burn_address_hash_string()
+          String.downcase(to_string(token_balance.address_hash)) not in @burn_address_hash_strings
       end)
 
     MissingBalanceOfToken.insert_from_params(missing_balance_of_balances)

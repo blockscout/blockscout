@@ -166,14 +166,19 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   # of the burn addresses, see
   # `Explorer.Chain.Address.CurrentTokenBalance.burn_address_balances/2`.
   #
-  # `burned_supply` needs the balances of all burn addresses, so it is `nil`
-  # while one is not indexed yet. `calculated_circulating_supply` must also
-  # describe one state: `total_supply` is read at `total_supply_updated_at_block`,
-  # and every mint or burn moves the zero address balance to the block of its
-  # transfer. A zero address balance newer than `total_supply` therefore means a
-  # supply change that `total_supply` may not include yet, and the value is
-  # `nil` until `total_supply` is refreshed. Transfers to the dead address do not
-  # change `totalSupply()`, so the dead address balance block does not matter.
+  # A burn address balance is used only when it is fetched at the block of its
+  # latest transfer (`value_fetched_at` set): a newer transfer keeps the previous
+  # value until the new balance is read. `burned_supply` needs the balances of
+  # all burn addresses, so it is `nil` while one is not fetched.
+  #
+  # `calculated_circulating_supply` must describe one state, the block at which
+  # `total_supply` was read (`total_supply_updated_at_block`, the indexed head at
+  # the time of the read). Balance rows move to the block of each transfer that
+  # touches the address, and every mint or burn touches the zero address. A row
+  # newer than that block therefore means a change that `total_supply` or the
+  # other balance may not include, and the value is `nil` until `total_supply`
+  # is refreshed. A row at or below that block holds the balance at that block,
+  # as long as the token balances of the blocks up to it are imported.
   #
   # Raw amounts are `uint256`, up to 78 digits, beyond the 28 significant digits
   # of the default `Decimal` context, so the arithmetic is done on integers and
@@ -193,19 +198,20 @@ defmodule BlockScoutWeb.API.V2.TokenView do
       "burn_address_balances" => if(balances != [], do: Enum.map(balances, &render_burn_address_balance/1)),
       "burned_supply" => burned_supply && Integer.to_string(burned_supply),
       "calculated_circulating_supply" =>
-        if(burned_supply && total_supply_includes_zero_address_balance?(token, balances),
+        if(burned_supply && balances_within_total_supply_block?(token, balances),
           do: calculated_circulating_supply(token.total_supply, burned_supply)
         )
     }
   end
 
   # `[%{address_hash, value, block_number}]` in the order of
-  # `SmartContract.burn_address_hashes/0`, for the burn addresses with a fetched
-  # balance, with the raw value as an integer
+  # `SmartContract.burn_address_hashes/0`, for the burn addresses whose balance
+  # is fetched at the block of their latest transfer, with the raw value as an
+  # integer
   defp indexed_burn_address_balances(burn_address_balances) do
     Enum.flat_map(SmartContract.burn_address_hashes(), fn address_hash ->
       case Map.fetch(burn_address_balances, address_hash) do
-        {:ok, %{value: %Decimal{} = value, block_number: block_number}} ->
+        {:ok, %{value: %Decimal{} = value, value_fetched_at: %DateTime{}, block_number: block_number}} ->
           [%{address_hash: address_hash, value: Decimal.to_integer(value), block_number: block_number}]
 
         _not_fetched ->
@@ -214,13 +220,10 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     end)
   end
 
-  defp total_supply_includes_zero_address_balance?(%Token{total_supply_updated_at_block: nil}, _balances), do: false
+  defp balances_within_total_supply_block?(%Token{total_supply_updated_at_block: nil}, _balances), do: false
 
-  defp total_supply_includes_zero_address_balance?(%Token{total_supply_updated_at_block: total_supply_block}, balances) do
-    {:ok, zero_address_hash} = Hash.Address.cast(SmartContract.burn_address_hash_string())
-
-    Enum.any?(balances, &(&1.address_hash == zero_address_hash and &1.block_number <= total_supply_block))
-  end
+  defp balances_within_total_supply_block?(%Token{total_supply_updated_at_block: total_supply_block}, balances),
+    do: Enum.all?(balances, &(&1.block_number <= total_supply_block))
 
   defp render_burn_address_balance(%{address_hash: address_hash, value: value}) do
     %{"address_hash" => Address.checksum(address_hash), "value" => Integer.to_string(value)}

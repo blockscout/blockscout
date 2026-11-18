@@ -99,7 +99,7 @@ defmodule Explorer.Chain.Token do
   alias Ecto.{Changeset, Multi}
   alias Explorer.{Chain, SortingHelper}
   alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
-  alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.Cache.Counters.TokenCounters
   alias Explorer.Chain.Import.Runner
   alias Explorer.Helper, as: ExplorerHelper
@@ -290,12 +290,12 @@ defmodule Explorer.Chain.Token do
         info_from_admin_panel? \\ false,
         operation_type \\ :base
       ) do
-    params =
-      if Map.has_key?(params, :total_supply) do
-        Map.put(params, :total_supply_updated_at_block, BlockNumber.get_max())
-      else
-        params
-      end
+    # `total_supply_updated_at_block` is the block at which `total_supply` was
+    # read, so only a caller that pinned its `totalSupply()` call to a block
+    # passes it. An unpinned read (at "latest") keeps the previous block: an
+    # older block than the read only makes consumers comparing it with indexed
+    # data more conservative, while the indexed head after the read could be
+    # newer than the block the node answered for.
 
     filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
 

@@ -372,12 +372,16 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   end
 
   @typedoc """
-  Current balance row of a burn address, see `burn_address_balances/2`. `value`
-  is `nil` while the balance is not fetched yet; `retries_count` and
+  Current balance row of a burn address, see `burn_address_balances/2`. The
+  balance at `block_number` is fetched only when `value_fetched_at` is set: a
+  transfer in a newer block moves `block_number` forward and clears
+  `value_fetched_at`, but keeps the previous `value` until the new balance is
+  read. `value` is `nil` while no balance was ever fetched; `retries_count` and
   `refetch_after` then describe the backoff of failed fetches.
   """
   @type burn_address_balance :: %{
           value: Decimal.t() | nil,
+          value_fetched_at: DateTime.t() | nil,
           block_number: Block.block_number(),
           retries_count: non_neg_integer() | nil,
           refetch_after: DateTime.t() | nil
@@ -403,6 +407,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
           {ctb.address_hash,
            %{
              value: ctb.value,
+             value_fetched_at: ctb.value_fetched_at,
              block_number: ctb.block_number,
              retries_count: ctb.retries_count,
              refetch_after: ctb.refetch_after
@@ -412,6 +417,86 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     query
     |> Chain.select_repo(options).all()
     |> Map.new()
+  end
+
+  @doc """
+  Records failed backfill reads of current token balances: inserts the missing
+  rows as unfetched balances with the given `retries_count` and `refetch_after`,
+  and updates those two fields on rows that were never fetched (`value` and
+  `value_fetched_at` both `nil`).
+
+  A row that has a value, fetched before or meanwhile, is left unchanged, and so
+  is the retry state of a newer attempt: an update must raise `retries_count`,
+  or keep it and move `refetch_after` later.
+
+  ## Parameters
+  - `params`: maps with `address_hash` and `token_contract_address_hash` (hash
+    structs or hex strings), `token_type`, `block_number`, `retries_count` and
+    `refetch_after`, for balances without a token id.
+
+  ## Returns
+  - the number of inserted or updated rows.
+  """
+  @spec record_backfill_failures([map()]) :: non_neg_integer()
+  def record_backfill_failures([]), do: 0
+
+  def record_backfill_failures(params) do
+    now = DateTime.utc_now()
+
+    rows =
+      params
+      |> Enum.map(fn param ->
+        {:ok, address_hash} = Hash.Address.cast(param.address_hash)
+        {:ok, token_contract_address_hash} = Hash.Address.cast(param.token_contract_address_hash)
+
+        %{
+          address_hash: address_hash,
+          token_contract_address_hash: token_contract_address_hash,
+          token_type: param.token_type,
+          block_number: param.block_number
+        }
+        |> Map.merge(%{
+          token_id: nil,
+          value: nil,
+          value_fetched_at: nil,
+          retries_count: param.retries_count,
+          refetch_after: param.refetch_after,
+          inserted_at: now,
+          updated_at: now
+        })
+      end)
+      |> Enum.uniq_by(&{&1.address_hash, &1.token_contract_address_hash})
+      # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
+
+    on_conflict =
+      from(
+        ctb in __MODULE__,
+        update: [
+          set: [
+            retries_count: fragment("EXCLUDED.retries_count"),
+            refetch_after: fragment("EXCLUDED.refetch_after"),
+            updated_at: fragment("EXCLUDED.updated_at")
+          ]
+        ],
+        where:
+          is_nil(ctb.value) and is_nil(ctb.value_fetched_at) and
+            fragment(
+              "(? IS NULL OR EXCLUDED.retries_count > ? OR (EXCLUDED.retries_count = ? AND EXCLUDED.refetch_after > ?))",
+              ctb.retries_count,
+              ctb.retries_count,
+              ctb.retries_count,
+              ctb.refetch_after
+            )
+      )
+
+    {count, _} =
+      Repo.insert_all(__MODULE__, rows,
+        on_conflict: on_conflict,
+        conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>}
+      )
+
+    count
   end
 
   @doc """
