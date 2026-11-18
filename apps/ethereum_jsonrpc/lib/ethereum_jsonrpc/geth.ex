@@ -30,15 +30,41 @@ defmodule EthereumJSONRPC.Geth do
 
     json_rpc_named_arguments_corrected_timeout = correct_timeouts(json_rpc_named_arguments)
 
-    with {:ok, responses} <-
+    with {:ok, raw_responses} <-
            id_to_params
            |> debug_trace_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments_corrected_timeout) do
+           |> json_rpc(json_rpc_named_arguments_corrected_timeout),
+         # errors of replies that carry their own id go first (annotated with
+         # their block number), so the fetcher can still mark blocks for refetch
+         :ok <- check_transaction_errors(correlated_responses(raw_responses), id_to_params),
+         :ok <- check_responses_complete(raw_responses, id_to_params),
+         # the batch is complete, so replies without an id can be attributed
+         responses = EthereumJSONRPC.sanitize_responses(raw_responses, id_to_params),
+         :ok <- check_transaction_errors(responses, id_to_params) do
       debug_trace_transaction_responses_to_internal_transactions_params(
         responses,
         id_to_params,
         json_rpc_named_arguments
       )
+    end
+  end
+
+  # Returns the replies that carry their own id. Replies without an id are
+  # attributed to request ids only once the batch is known to be complete.
+  defp correlated_responses(responses), do: Enum.reject(responses, &is_nil(&1.id))
+
+  # Annotates the error replies with their request params, the same way the
+  # converter does, so the failed batch is handled before any conversion (and
+  # before the metadata requests of the opcode tracer).
+  defp check_transaction_errors(responses, id_to_params) do
+    case Enum.filter(responses, &Map.has_key?(&1, :error)) do
+      [] ->
+        :ok
+
+      error_responses ->
+        error_responses
+        |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
+        |> reduce_internal_transactions_params()
     end
   end
 
@@ -101,10 +127,16 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, blocks_responses} <-
+    with {:ok, raw_blocks_responses} <-
            id_to_params
            |> debug_trace_block_by_number_requests()
            |> json_rpc(json_rpc_named_arguments),
+         # errors of replies that carry their own id go first, so the fetcher can
+         # still fall back to tracing by transactions (e.g. on incorrect top-level calls)
+         :ok <- check_errors_exist(correlated_responses(raw_blocks_responses), id_to_params),
+         :ok <- check_responses_complete(raw_blocks_responses, id_to_params),
+         # the batch is complete, so replies without an id can be attributed
+         blocks_responses = EthereumJSONRPC.sanitize_responses(raw_blocks_responses, id_to_params),
          :ok <- check_errors_exist(blocks_responses, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
@@ -135,6 +167,41 @@ defmodule EthereumJSONRPC.Geth do
       {:error, error} ->
         Logger.error(inspect(error))
         {:error, error}
+    end
+  end
+
+  @doc """
+  Checks that a batch response contains a reply for every requested id.
+
+  Replies are matched by id, not by position, so a complete batch whose replies
+  arrive out of order is accepted. Replies without an id (some endpoints omit it
+  in error replies) are not attributed to any request here: they only cover the
+  requests left without a matching reply when there are at least as many of
+  them, which is when `EthereumJSONRPC.sanitize_responses/2` can attribute them.
+
+  ## Parameters
+  - `responses`: raw batch replies, before `EthereumJSONRPC.sanitize_responses/2`
+  - `id_to_params`: map of request id to request params that was used to build
+    the batch
+
+  ## Returns
+  - `:ok` when every requested id has a reply, counting replies without an id
+  - `{:error, {:missing_responses, params}}` with the request params of the ids
+    without a matching reply when the batch has fewer replies than requests.
+    If the batch also has replies without an id, it is not known which of these
+    requests they answered, so all of them are listed
+  """
+  @spec check_responses_complete([map()], %{non_neg_integer() => any()}) ::
+          :ok | {:error, {:missing_responses, [any()]}}
+  def check_responses_complete(responses, id_to_params) do
+    {uncorrelated, correlated} = Enum.split_with(responses, &is_nil(&1.id))
+    response_ids = MapSet.new(correlated, & &1.id)
+    unmatched = Enum.reject(id_to_params, fn {id, _params} -> MapSet.member?(response_ids, id) end)
+
+    if length(unmatched) <= length(uncorrelated) do
+      :ok
+    else
+      {:error, {:missing_responses, Enum.map(unmatched, fn {_id, params} -> params end)}}
     end
   end
 
