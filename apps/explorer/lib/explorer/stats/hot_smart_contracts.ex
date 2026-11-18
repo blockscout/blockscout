@@ -37,6 +37,22 @@ defmodule Explorer.Stats.HotSmartContracts do
     |> validate_required([:date, :contract_address_hash, :transactions_count, :total_gas_used])
   end
 
+  @doc """
+  Checks whether the Hot smart-contracts functionality is enabled.
+
+  The functionality is driven by `Indexer.Fetcher.Stats.HotSmartContracts`,
+  which is switched with the `INDEXER_DISABLE_HOT_SMART_CONTRACTS_FETCHER` env
+  variable. API endpoints must not query the database when it is disabled.
+
+  ## Returns
+  - `true` if the fetcher is enabled.
+  - `false` otherwise, including when the configuration is missing.
+  """
+  @spec enabled?() :: boolean()
+  def enabled? do
+    Application.get_env(:indexer, Indexer.Fetcher.Stats.HotSmartContracts.Supervisor)[:enabled] == true
+  end
+
   @spec aggregate_hot_smart_contracts_for_date(Date.t(), keyword()) ::
           {:ok,
            [%{contract_address_hash: Hash.Address.t(), transactions_count: integer(), total_gas_used: Decimal.t()}]}

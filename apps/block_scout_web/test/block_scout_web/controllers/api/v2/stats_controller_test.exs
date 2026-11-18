@@ -70,14 +70,20 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     alias Explorer.Repo
     alias Explorer.Stats.{HotSmartContracts, HotSmartContractsCache}
 
+    @hot_smart_contracts_fetcher_supervisor Indexer.Fetcher.Stats.HotSmartContracts.Supervisor
+
     setup do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)
       hot_smart_contracts_cache_config = Application.get_env(:explorer, HotSmartContractsCache)
+      hot_smart_contracts_fetcher_config = Application.get_env(:indexer, @hot_smart_contracts_fetcher_supervisor)
       clear_hot_smart_contracts_cache()
+
+      Application.put_env(:indexer, @hot_smart_contracts_fetcher_supervisor, disabled?: false, enabled: true)
 
       on_exit(fn ->
         Application.put_env(:block_scout_web, :hide_scam_addresses, init_value)
         Application.put_env(:explorer, HotSmartContractsCache, hot_smart_contracts_cache_config)
+        Application.put_env(:indexer, @hot_smart_contracts_fetcher_supervisor, hot_smart_contracts_fetcher_config)
         clear_hot_smart_contracts_cache()
       end)
 
@@ -133,6 +139,41 @@ defmodule BlockScoutWeb.API.V2.StatsControllerTest do
     defp clear_hot_smart_contracts_cache do
       Supervisor.terminate_child(Explorer.Supervisor, {ConCache, HotSmartContractsCache.cache_name()})
       Supervisor.restart_child(Explorer.Supervisor, {ConCache, HotSmartContractsCache.cache_name()})
+    end
+
+    test "returns 404 and runs no SQL queries for every scale when the functionality is disabled", %{conn: conn} do
+      Application.put_env(:indexer, @hot_smart_contracts_fetcher_supervisor, disabled?: true, enabled: false)
+
+      insert_hot_smart_contracts_daily(3, Date.add(Date.utc_today(), -1))
+      insert_transactions_in_last_seconds(3, 300)
+
+      test_pid = self()
+      handler_id = "hot-smart-contracts-disabled-#{inspect(test_pid)}"
+
+      # Requests are dispatched in the test process, so queries issued by
+      # unrelated background processes are ignored.
+      :telemetry.attach_many(
+        handler_id,
+        [[:explorer, :repo, :query], [:explorer, :repo, :replica1, :query]],
+        fn _event, _measurements, metadata, _config ->
+          if self() == test_pid, do: send(test_pid, {:sql_query, metadata[:query]})
+        end,
+        nil
+      )
+
+      on_exit(fn -> :telemetry.detach(handler_id) end)
+
+      for scale <- ~w(5m 1h 3h 1d 7d 30d) do
+        request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: scale})
+
+        assert %{"message" => "Hot smart-contracts functionality is disabled"} = json_response(request, 404)
+      end
+
+      # The gate runs before params validation, so invalid params get the same response.
+      request = get(conn, "/api/v2/stats/hot-smart-contracts", %{scale: "invalid"})
+      assert %{"message" => "Hot smart-contracts functionality is disabled"} = json_response(request, 404)
+
+      refute_received {:sql_query, _}
     end
 
     test "empty stats works for short scale", %{conn: conn} do
