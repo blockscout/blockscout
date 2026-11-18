@@ -54,6 +54,99 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       compare_item(token, response)
     end
 
+    test "burned supply is null without indexed burn address balances", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 1000)
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "burn_address_balances" => nil,
+               "burned_supply" => nil,
+               "calculated_circulating_supply" => nil
+             } = json_response(request, 200)
+    end
+
+    test "burned supply sums the burn address balances", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 1000)
+      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
+
+      for {address, value} <- [{zero, 300}, {dead, 200}] do
+        insert(:address_current_token_balance,
+          address: address,
+          token_contract_address_hash: token.contract_address_hash,
+          token_type: "ERC-20",
+          value: value
+        )
+      end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "burn_address_balances" => [
+                 %{"address_hash" => "0x0000000000000000000000000000000000000000", "value" => "300"},
+                 %{"address_hash" => "0x000000000000000000000000000000000000dEaD", "value" => "200"}
+               ],
+               "burned_supply" => "500",
+               "calculated_circulating_supply" => "500"
+             } = json_response(request, 200)
+    end
+
+    test "burned supply with only the dead address indexed", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 1000)
+      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
+
+      insert(:address_current_token_balance,
+        address: dead,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-20",
+        value: 250
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "burn_address_balances" => [
+                 %{"address_hash" => "0x000000000000000000000000000000000000dEaD", "value" => "250"}
+               ],
+               "burned_supply" => "250",
+               "calculated_circulating_supply" => "750"
+             } = json_response(request, 200)
+    end
+
+    test "calculated circulating supply is null when burned supply exceeds total supply", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 100)
+      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+
+      insert(:address_current_token_balance,
+        address: zero,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-20",
+        value: 300
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"burned_supply" => "300", "calculated_circulating_supply" => nil} = json_response(request, 200)
+    end
+
+    test "burned supply is null for an NFT token", %{conn: conn} do
+      token = insert(:token, type: "ERC-721", total_supply: 100)
+      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
+
+      insert(:address_current_token_balance,
+        address: dead,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-721",
+        value: 3
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"burn_address_balances" => nil, "burned_supply" => nil, "calculated_circulating_supply" => nil} =
+               json_response(request, 200)
+    end
+
     test "get token without ERC-8056 support", %{conn: conn} do
       token = insert(:token)
 
@@ -523,6 +616,52 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders")
 
       assert %{"items" => [], "next_page_params" => nil} = json_response(request, 200)
+    end
+
+    test "lists the burn addresses of a fungible token and flags them", %{conn: conn} do
+      token = insert(:token, type: "ERC-20")
+      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
+
+      for {address, value} <- [{zero, 300}, {dead, 200}] do
+        insert(:address_current_token_balance,
+          address: address,
+          token_contract_address_hash: token.contract_address_hash,
+          token_type: "ERC-20",
+          value: value
+        )
+      end
+
+      holder =
+        insert(:address_current_token_balance,
+          token_contract_address_hash: token.contract_address_hash,
+          token_type: "ERC-20",
+          value: 100
+        )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders")
+      assert %{"items" => items} = json_response(request, 200)
+
+      assert [
+               {Address.checksum(zero.hash), true},
+               {Address.checksum(dead.hash), true},
+               {Address.checksum(holder.address_hash), false}
+             ] == Enum.map(items, &{&1["address"]["hash"], &1["is_burn_address"]})
+    end
+
+    test "does not list the zero address of an NFT token", %{conn: conn} do
+      token = insert(:token, type: "ERC-721")
+      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+
+      insert(:address_current_token_balance,
+        address: zero,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-721",
+        value: 3
+      )
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}/holders")
+      assert %{"items" => []} = json_response(request, 200)
     end
 
     test "check pagination", %{conn: conn} do

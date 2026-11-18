@@ -263,6 +263,26 @@ defmodule Explorer.Chain.SmartContract do
   end
 
   @doc """
+  Returns the hashes of the addresses whose token balances count as burned
+  supply: the zero address and the dead address.
+  """
+  @spec burn_address_hash_strings() :: [EthereumJSONRPC.address()]
+  def burn_address_hash_strings do
+    [@burn_address_hash_string, @dead_address_hash_string]
+  end
+
+  @doc """
+  Same as `burn_address_hash_strings/0`, cast to `t:Explorer.Chain.Hash.Address.t/0`.
+  """
+  @spec burn_address_hashes() :: [Hash.Address.t()]
+  def burn_address_hashes do
+    Enum.map(burn_address_hash_strings(), fn hash_string ->
+      {:ok, hash} = Hash.Address.cast(hash_string)
+      hash
+    end)
+  end
+
+  @doc """
   Returns a preload spec for the `:smart_contract` association that selects all
   fields except `abi`.
 

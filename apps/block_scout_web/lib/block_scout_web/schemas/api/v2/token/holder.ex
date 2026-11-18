@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
   Example response:
   {
     "address": { ... },
+    "is_burn_address": false,
     "token_id": null,
     "value": "19474530513868000"
   }
@@ -20,10 +21,19 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
     type: :object,
     properties: %{
       address: Address.schema(),
+      is_burn_address: %Schema{
+        type: :boolean,
+        nullable: false,
+        description:
+          "Whether `address` is the zero address (`0x0000000000000000000000000000000000000000`) or the dead address " <>
+            "(`0x000000000000000000000000000000000000dEaD`). Their balances are reported as `burned_supply` by " <>
+            "`/api/v2/tokens/{address_hash}`. The zero address is listed for ERC-20 and ERC-8056 tokens but is not " <>
+            "counted in `holders_count`."
+      },
       token_id: General.IntegerStringNullable,
       value: General.IntegerStringNullable
     },
-    required: [:address, :token_id, :value],
+    required: [:address, :is_burn_address, :token_id, :value],
     additionalProperties: false,
     example: %{
       address: %{
@@ -79,6 +89,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
         reputation: "ok",
         watchlist_names: []
       },
+      is_burn_address: false,
       token_id: nil,
       value: "19474530513868000"
     }

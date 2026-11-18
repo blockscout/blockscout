@@ -12,7 +12,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.Events.Publisher
-  alias Explorer.Chain.Hash
+  alias Explorer.Chain.{Hash, Token}
   alias Explorer.Token.BalanceReader
   alias Explorer.Utility.RateLimiter
   alias Indexer.BufferedTask
@@ -27,6 +27,38 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
       __MODULE__.AddressQueue.enqueue(address_hash)
     end
+  end
+
+  @doc """
+  Schedules a fetch of the current balance of `token` held by `address_hash`,
+  for a pair that has no `address_current_token_balances` row yet. The balance
+  is read at the latest block and imported as the current token balance.
+
+  Used to backfill burn address balances of tokens indexed before those were
+  tracked.
+  """
+  @spec trigger_current_fetch(String.t() | nil, Hash.Address.t(), Token.t()) :: :ok
+  def trigger_current_fetch(caller \\ nil, address_hash, %Token{} = token) do
+    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
+      BufferedTask.buffer(
+        __MODULE__,
+        [
+          {:fetch,
+           %{
+             token_contract_address_hash: token.contract_address_hash,
+             address_hash: address_hash,
+             block_number: nil,
+             token_id: nil,
+             token_type: token.type,
+             token: token,
+             stale_value: nil
+           }}
+        ],
+        false
+      )
+    end
+
+    :ok
   end
 
   @spec trigger_historic_fetch(

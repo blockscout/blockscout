@@ -6,7 +6,8 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.NFTHelper
   alias Ecto.Association.NotLoaded
-  alias Explorer.Chain.{Address, BridgedToken, Token}
+  alias Explorer.Chain.{Address, BridgedToken, Hash, SmartContract, Token}
+  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.Token.Instance
 
   def render("token.json", %{token: nil = token, contract_address_hash: contract_address_hash}) do
@@ -33,6 +34,12 @@ defmodule BlockScoutWeb.API.V2.TokenView do
 
   def render("token.json", %{token: nil}) do
     nil
+  end
+
+  def render("token.json", %{token: %Token{} = token, burn_address_balances: burn_address_balances}) do
+    "token.json"
+    |> render(%{token: token})
+    |> Map.merge(burned_supply_fields(token, burn_address_balances))
   end
 
   def render("token.json", %{token: token}) do
@@ -110,6 +117,15 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     %{"items" => Enum.map(tokens, &render("bridged_token.json", %{token: &1})), "next_page_params" => next_page_params}
   end
 
+  def render(
+        "bridged_token.json",
+        %{token: {token, _bridged_token}, burn_address_balances: burn_address_balances} = assigns
+      ) do
+    "bridged_token.json"
+    |> render(Map.delete(assigns, :burn_address_balances))
+    |> Map.merge(burned_supply_fields(token, burn_address_balances))
+  end
+
   def render("bridged_token.json", %{token: {token, bridged_token}}) do
     "token.json"
     |> render(%{token: token})
@@ -140,9 +156,53 @@ defmodule BlockScoutWeb.API.V2.TokenView do
     %{
       "address" => Helper.address_with_info(nil, token_balance.address, token_balance.address_hash, false),
       "value" => token_balance.value,
-      "token_id" => token_balance.token_id
+      "token_id" => token_balance.token_id,
+      "is_burn_address" => token_balance.address_hash in SmartContract.burn_address_hashes()
     }
   end
+
+  # Burn address balances, burned supply and on-chain circulating supply of the
+  # token detail endpoint. `burn_address_balances` maps the burn address hashes
+  # to their indexed current balances, see
+  # `Explorer.Chain.Address.CurrentTokenBalance.burn_address_balances/2`.
+  @spec burned_supply_fields(Token.t(), %{Hash.Address.t() => Decimal.t()}) :: map()
+  defp burned_supply_fields(token, burn_address_balances) do
+    balances =
+      SmartContract.burn_address_hashes()
+      |> Enum.flat_map(fn address_hash ->
+        case Map.fetch(burn_address_balances, address_hash) do
+          {:ok, value} -> [%{"address_hash" => Address.checksum(address_hash), "value" => value}]
+          :error -> []
+        end
+      end)
+
+    burned_supply =
+      if balances != [] and token.type in CurrentTokenBalance.fungible_token_types() do
+        balances
+        |> Enum.map(& &1["value"])
+        |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      end
+
+    %{
+      "burn_address_balances" => if(burned_supply, do: balances),
+      "burned_supply" => burned_supply,
+      "calculated_circulating_supply" => calculated_circulating_supply(token.total_supply, burned_supply)
+    }
+  end
+
+  # `totalSupply()` already excludes the tokens burned by the contract itself, so
+  # only the balances still held by the burn addresses are subtracted. When they
+  # exceed the total supply (a non-standard burn that also credits the zero
+  # address, or a stale total supply) there is no meaningful value.
+  defp calculated_circulating_supply(%Decimal{} = total_supply, %Decimal{} = burned_supply) do
+    if Decimal.compare(burned_supply, total_supply) == :gt do
+      nil
+    else
+      Decimal.sub(total_supply, burned_supply)
+    end
+  end
+
+  defp calculated_circulating_supply(_total_supply, _burned_supply), do: nil
 
   @doc """
     Internal json rendering function

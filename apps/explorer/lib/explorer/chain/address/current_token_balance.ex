@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Chain.{Address, Block, Hash, SmartContract, Token}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Utility.MissingBalanceOfToken
@@ -78,6 +78,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
+
+  @fungible_token_types ~w(ERC-20 ERC-8056)
 
   @doc """
   Builds an `Ecto.Query` to fetch the token holders from the given token contract address hash.
@@ -354,16 +356,52 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch addresses that hold the token.
 
-  Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value or be an ERC-7984 token.
+  Token holders must have a non-zero value or be an ERC-7984 token. The burn
+  address (#{@burn_address_hash}) is listed only for fungible tokens
+  (#{Enum.join(@fungible_token_types, ", ")}), where its balance is supply sent
+  there without lowering `totalSupply()`. It is still not counted in
+  `tokens.holder_count`, see `token_holders_query_for_count/1`.
   """
   def token_holders_query(token_contract_address_hash) do
     from(
       tb in __MODULE__,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
-      where: tb.address_hash != ^@burn_address_hash,
+      where: tb.address_hash != ^@burn_address_hash or tb.token_type in ^@fungible_token_types,
       where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
   end
+
+  @doc """
+  Returns the current balances of `token_contract_address_hash` held by the burn
+  addresses (#{Enum.join(SmartContract.burn_address_hash_strings(), ", ")}), as
+  a map of address hash to raw value. Addresses without an indexed balance are
+  absent from the map.
+  """
+  @spec burn_address_balances(Hash.Address.t(), [Chain.api?()]) :: %{Hash.Address.t() => Decimal.t()}
+  def burn_address_balances(token_contract_address_hash, options \\ []) do
+    burn_address_hashes = SmartContract.burn_address_hashes()
+
+    query =
+      from(
+        ctb in __MODULE__,
+        where: ctb.token_contract_address_hash == ^token_contract_address_hash,
+        where: ctb.address_hash in ^burn_address_hashes,
+        where: is_nil(ctb.token_id),
+        where: not is_nil(ctb.value),
+        select: {ctb.address_hash, ctb.value}
+      )
+
+    query
+    |> Chain.select_repo(options).all()
+    |> Map.new()
+  end
+
+  @doc """
+  Returns the token types whose burn address balance is indexed and reported as
+  burned supply.
+  """
+  @spec fungible_token_types() :: [String.t()]
+  def fungible_token_types, do: @fungible_token_types
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do
