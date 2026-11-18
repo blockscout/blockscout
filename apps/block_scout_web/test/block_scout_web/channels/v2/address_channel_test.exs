@@ -5,6 +5,7 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
     async: false
 
   alias BlockScoutWeb.Notifier
+  alias Explorer.Chain
   alias Explorer.Chain.{Address, Wei}
   alias Explorer.Chain.Cache.Counters.AddressesAggregates
   alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
@@ -125,6 +126,56 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
                      100,
                      "Received duplicate broadcast."
     end
+
+    # https://github.com/blockscout/blockscout/issues/12674
+    test "notified of coin_balance once when the same balance is fetched again", %{address: address, topic: topic} do
+      insert(:block, number: 101)
+
+      import_coin_balance(address, 101, 2_000, :realtime)
+
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: ^topic,
+                       event: "coin_balance",
+                       payload: %{coin_balance: %{"block_number" => 101}}
+                     },
+                     :timer.seconds(5)
+
+      import_coin_balance(address, 101, 2_000, :on_demand)
+
+      refute_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "coin_balance"},
+                     500,
+                     "Received a duplicate coin_balance broadcast."
+
+      import_coin_balance(address, 101, 3_000, :on_demand)
+
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: ^topic,
+                       event: "coin_balance",
+                       payload: %{coin_balance: %{"block_number" => 101, "value" => %Wei{value: value}}}
+                     },
+                     :timer.seconds(5)
+
+      assert Decimal.eq?(value, 3_000)
+    end
+  end
+
+  # Goes through `Explorer.Chain.import/1`, which publishes the chain event that
+  # the realtime event handler of the application passes to the notifier.
+  defp import_coin_balance(address, block_number, value, broadcast) do
+    {:ok, _} =
+      Chain.import(%{
+        address_coin_balances: %{
+          params: [
+            %{
+              address_hash: to_string(address.hash),
+              block_number: block_number,
+              value: value,
+              value_fetched_at: DateTime.utc_now()
+            }
+          ]
+        },
+        broadcast: broadcast
+      })
   end
 
   describe "participants enrichment" do
