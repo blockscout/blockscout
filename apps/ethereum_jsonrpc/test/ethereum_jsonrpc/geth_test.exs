@@ -984,6 +984,89 @@ defmodule EthereumJSONRPC.GethTest do
     end
   end
 
+  describe "batch response completeness" do
+    setup do
+      Application.put_env(:ethereum_jsonrpc, Geth, tracer: "call_tracer", debug_trace_timeout: "5s")
+
+      EthereumJSONRPC.Case.Geth.Mox.setup()
+    end
+
+    @transaction_hash_1 "0x32b17f27ddb546eab3c4c33f31eb22c1cb992d4ccc50dae26922805b717efe5c"
+    @transaction_hash_2 "0x32b17f27ddb546eab3c4c33f31eb22c1cb992d4ccc50dae26922805b717efe5b"
+
+    defp call_trace do
+      %{
+        "from" => "0xdeaddeaddeaddeaddeaddeaddeaddeaddead0001",
+        "gas" => "0xf4240",
+        "gasUsed" => "0xb6f9",
+        "input" => "0x",
+        "to" => "0x4200000000000000000000000000000000000015",
+        "type" => "CALL",
+        "value" => "0x0"
+      }
+    end
+
+    defp block_trace_reply(id, transaction_hash),
+      do: %{id: id, result: [%{"result" => call_trace(), "txHash" => transaction_hash}]}
+
+    defp transactions_params do
+      [
+        %{block_number: 1, transaction_index: 0, hash_data: @transaction_hash_1},
+        %{block_number: 2, transaction_index: 0, hash_data: @transaction_hash_2}
+      ]
+    end
+
+    test "fetch_block_internal_transactions/2 returns an error when a block reply is missing", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id_1, params: ["0x1", _]}, %{params: ["0x2", _]}], _ ->
+        {:ok, [block_trace_reply(id_1, @transaction_hash_1)]}
+      end)
+
+      assert {:error, {:missing_responses, [2]}} =
+               Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
+    test "fetch_block_internal_transactions/2 accepts a complete batch with out-of-order replies", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id_1, params: ["0x1", _]}, %{id: id_2, params: ["0x2", _]}], _ ->
+        {:ok, [block_trace_reply(id_2, @transaction_hash_2), block_trace_reply(id_1, @transaction_hash_1)]}
+      end)
+
+      assert {:ok, internal_transactions} = Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+
+      assert internal_transactions |> Enum.map(&{&1.block_number, &1.transaction_hash}) |> Enum.sort() ==
+               [{1, @transaction_hash_1}, {2, @transaction_hash_2}]
+    end
+
+    test "fetch_internal_transactions/2 returns an error when a transaction reply is missing", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+        %{id: id} = Enum.find(requests, &match?(%{params: [@transaction_hash_1, _]}, &1))
+        {:ok, [%{id: id, result: call_trace()}]}
+      end)
+
+      assert {:error, {:missing_responses, [%{hash_data: @transaction_hash_2}]}} =
+               Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+    end
+
+    test "fetch_internal_transactions/2 accepts a complete batch with out-of-order replies", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+        {:ok, requests |> Enum.reverse() |> Enum.map(&%{id: &1.id, result: call_trace()})}
+      end)
+
+      assert {:ok, internal_transactions} =
+               Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+
+      assert internal_transactions |> Enum.map(&{&1.block_number, &1.transaction_hash}) |> Enum.sort() ==
+               [{1, @transaction_hash_1}, {2, @transaction_hash_2}]
+    end
+  end
+
   describe "fetch_pending_transactions/1" do
     @tag :no_geth
     test "fetches pending transactions", %{json_rpc_named_arguments: json_rpc_named_arguments} do

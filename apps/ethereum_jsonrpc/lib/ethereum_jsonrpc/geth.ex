@@ -30,10 +30,12 @@ defmodule EthereumJSONRPC.Geth do
 
     json_rpc_named_arguments_corrected_timeout = correct_timeouts(json_rpc_named_arguments)
 
-    with {:ok, responses} <-
+    with {:ok, raw_responses} <-
            id_to_params
            |> debug_trace_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments_corrected_timeout) do
+           |> json_rpc(json_rpc_named_arguments_corrected_timeout),
+         responses = EthereumJSONRPC.sanitize_responses(raw_responses, id_to_params),
+         :ok <- check_responses_complete(responses, id_to_params) do
       debug_trace_transaction_responses_to_internal_transactions_params(
         responses,
         id_to_params,
@@ -101,10 +103,12 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, blocks_responses} <-
+    with {:ok, raw_blocks_responses} <-
            id_to_params
            |> debug_trace_block_by_number_requests()
            |> json_rpc(json_rpc_named_arguments),
+         blocks_responses = EthereumJSONRPC.sanitize_responses(raw_blocks_responses, id_to_params),
+         :ok <- check_responses_complete(blocks_responses, id_to_params),
          :ok <- check_errors_exist(blocks_responses, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
@@ -135,6 +139,29 @@ defmodule EthereumJSONRPC.Geth do
       {:error, error} ->
         Logger.error(inspect(error))
         {:error, error}
+    end
+  end
+
+  @doc """
+  Checks that a batch response contains a reply for every requested id.
+
+  Replies are matched by id, not by position, so a complete batch whose replies
+  arrive out of order is accepted. Responses must already be passed through
+  `EthereumJSONRPC.sanitize_responses/2` so that replies without an id are
+  attributed to the unmatched request ids.
+
+  Returns `{:error, {:missing_responses, params}}` with the request params of
+  the ids that got no reply, so callers retry or fail instead of treating a
+  partial batch as complete.
+  """
+  @spec check_responses_complete([map()], %{non_neg_integer() => any()}) ::
+          :ok | {:error, {:missing_responses, [any()]}}
+  def check_responses_complete(responses, id_to_params) do
+    response_ids = MapSet.new(responses, & &1.id)
+
+    case Enum.reject(id_to_params, fn {id, _params} -> MapSet.member?(response_ids, id) end) do
+      [] -> :ok
+      missing -> {:error, {:missing_responses, Enum.map(missing, fn {_id, params} -> params end)}}
     end
   end
 
