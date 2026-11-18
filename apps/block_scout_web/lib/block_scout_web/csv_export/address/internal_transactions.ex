@@ -38,7 +38,6 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
     |> Helper.dump_to_stream()
   end
 
-  # sobelow_skip ["DOS.StringToAtom"]
   defp fetch_all_internal_transactions(
          address_hash,
          from_block,
@@ -55,13 +54,21 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       |> Keyword.put(:to_block, to_block)
       |> Keyword.put(:include_zero_value, include_zero_value?)
       |> Keyword.put(:timeout, AsyncHelper.db_timeout())
-      |> (&if(Helper.valid_filter?(filter_type, filter_value, "internal_transactions"),
-            do: &1 |> Keyword.put(:direction, String.to_atom(filter_value)),
-            else: &1
-          )).()
+      |> maybe_put_direction(filter_type, filter_value)
 
     address_to_internal_transactions(address_hash, options)
   end
+
+  defp maybe_put_direction(options, filter_type, filter_value) do
+    if Helper.valid_filter?(filter_type, filter_value, "internal-transactions") do
+      Keyword.put(options, :direction, direction_atom(filter_value))
+    else
+      options
+    end
+  end
+
+  defp direction_atom("to"), do: :to
+  defp direction_atom("from"), do: :from
 
   defp to_csv_format(internal_transactions) do
     row_names = [
