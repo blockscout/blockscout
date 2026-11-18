@@ -35,12 +35,16 @@ defmodule EthereumJSONRPC.Geth do
            |> debug_trace_transaction_requests()
            |> json_rpc(json_rpc_named_arguments_corrected_timeout),
          responses = EthereumJSONRPC.sanitize_responses(raw_responses, id_to_params),
+         # errors of the received replies (annotated with their block number) go
+         # first, so the fetcher can still mark blocks for refetch
+         {:ok, internal_transactions_params} <-
+           debug_trace_transaction_responses_to_internal_transactions_params(
+             responses,
+             id_to_params,
+             json_rpc_named_arguments
+           ),
          :ok <- check_responses_complete(responses, id_to_params) do
-      debug_trace_transaction_responses_to_internal_transactions_params(
-        responses,
-        id_to_params,
-        json_rpc_named_arguments
-      )
+      {:ok, internal_transactions_params}
     end
   end
 
@@ -108,8 +112,10 @@ defmodule EthereumJSONRPC.Geth do
            |> debug_trace_block_by_number_requests()
            |> json_rpc(json_rpc_named_arguments),
          blocks_responses = EthereumJSONRPC.sanitize_responses(raw_blocks_responses, id_to_params),
-         :ok <- check_responses_complete(blocks_responses, id_to_params),
-         :ok <- check_errors_exist(blocks_responses, id_to_params) do
+         # errors of the received replies go first, so the fetcher can still fall
+         # back to tracing by transactions (e.g. on incorrect top-level calls)
+         :ok <- check_errors_exist(blocks_responses, id_to_params),
+         :ok <- check_responses_complete(blocks_responses, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
       {transactions_id_to_params, transactions_responses} =
@@ -146,13 +152,21 @@ defmodule EthereumJSONRPC.Geth do
   Checks that a batch response contains a reply for every requested id.
 
   Replies are matched by id, not by position, so a complete batch whose replies
-  arrive out of order is accepted. Responses must already be passed through
-  `EthereumJSONRPC.sanitize_responses/2` so that replies without an id are
-  attributed to the unmatched request ids.
+  arrive out of order is accepted. Callers check the errors of the received
+  replies first and use this as the last check, so a partial batch is retried
+  or fails instead of being treated as complete.
 
-  Returns `{:error, {:missing_responses, params}}` with the request params of
-  the ids that got no reply, so callers retry or fail instead of treating a
-  partial batch as complete.
+  ## Parameters
+  - `responses`: batch replies, already passed through
+    `EthereumJSONRPC.sanitize_responses/2` so that replies without an id are
+    attributed to the unmatched request ids
+  - `id_to_params`: map of request id to request params that was used to build
+    the batch
+
+  ## Returns
+  - `:ok` when every requested id has a reply
+  - `{:error, {:missing_responses, params}}` with the request params of the ids
+    that got no reply
   """
   @spec check_responses_complete([map()], %{non_neg_integer() => any()}) ::
           :ok | {:error, {:missing_responses, [any()]}}
