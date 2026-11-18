@@ -45,15 +45,35 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesTest do
       assert %CoinBalance{value: ^value, inserted_at: @old_timestamp} = Repo.one!(CoinBalance)
     end
 
-    test "neither rewrites nor returns a balance fetched again with the same value" do
+    test "moves value_fetched_at forward but does not return a balance fetched again with the same value" do
       %{hash: address_hash} = insert(:address)
       insert_coin_balance(address_hash, 100)
-      row_version_before = row_version()
+      %{value_fetched_at: confirmed_at} = changes = fetched(address_hash, 100)
 
-      assert {:ok, %{address_coin_balances: []}} = run_changes(fetched(address_hash, 100))
+      assert {:ok, %{address_coin_balances: []}} = run_changes(changes)
 
-      assert %CoinBalance{value_fetched_at: @old_timestamp, updated_at: @old_timestamp} = Repo.one!(CoinBalance)
-      assert row_version() == row_version_before
+      assert %CoinBalance{value: value, value_fetched_at: ^confirmed_at, inserted_at: @old_timestamp} =
+               Repo.one!(CoinBalance)
+
+      assert value == wei(100)
+    end
+
+    test "rejects a different value fetched before a later confirmation of the stored one" do
+      %{hash: address_hash} = insert(:address)
+      insert_coin_balance(address_hash, 100)
+      t2 = DateTime.add(@old_timestamp, 2)
+      t3 = DateTime.add(@old_timestamp, 3)
+
+      # the confirmation fetched at t3 is imported first
+      assert {:ok, %{address_coin_balances: []}} =
+               run_changes(%{fetched(address_hash, 100) | value_fetched_at: t3})
+
+      # the observation fetched at t2 with another value is imported late
+      assert {:ok, %{address_coin_balances: []}} =
+               run_changes(%{fetched(address_hash, 101) | value_fetched_at: t2})
+
+      assert %CoinBalance{value: value, value_fetched_at: ^t3} = Repo.one!(CoinBalance)
+      assert value == wei(100)
     end
 
     test "neither rewrites nor returns a balance fetched earlier than the stored one" do

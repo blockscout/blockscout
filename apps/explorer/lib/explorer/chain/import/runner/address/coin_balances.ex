@@ -98,12 +98,57 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
 
     written_keys = MapSet.new(written, &{&1.address_hash, &1.block_number})
 
+    unless Map.has_key?(options, :on_conflict) do
+      confirm_unchanged(repo, ordered_changes_list, written_keys, options)
+    end
+
     imported =
       ordered_changes_list
       |> Enum.filter(&imported?(&1, written_keys))
       |> Enum.map(&Map.take(&1, ~w(address_hash block_number value)a))
 
     {:ok, imported}
+  end
+
+  # A fetched value that `default_on_conflict/0` did not write is either older
+  # than the stored one or the same value fetched again. The latter still moves
+  # `value_fetched_at` forward, so that an observation fetched earlier and
+  # imported late is rejected by the timestamp check instead of overwriting the
+  # confirmed value. It is not reported: the value did not change.
+  defp confirm_unchanged(repo, ordered_changes_list, written_keys, %{timeout: timeout, timestamps: timestamps}) do
+    case Enum.reject(ordered_changes_list, &imported?(&1, written_keys)) do
+      [] ->
+        :ok
+
+      unchanged_changes_list ->
+        {:ok, _} =
+          Import.insert_changes_list(
+            repo,
+            unchanged_changes_list,
+            conflict_target: [:address_hash, :block_number],
+            on_conflict: confirm_on_conflict(),
+            for: CoinBalance,
+            timeout: timeout,
+            timestamps: timestamps
+          )
+
+        :ok
+    end
+  end
+
+  defp confirm_on_conflict do
+    from(
+      balance in CoinBalance,
+      update: [
+        set: [
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at)
+        ]
+      ],
+      where:
+        fragment("EXCLUDED.value = ?", balance.value) and
+          fragment("EXCLUDED.value_fetched_at > ?", balance.value_fetched_at)
+    )
   end
 
   # A row without a value stays in the result whether it was written or not:
@@ -124,9 +169,10 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
   The default `ON CONFLICT` clause of the coin balances import.
 
   A stored balance is replaced only by a value fetched later, and only when it is
-  not fetched yet or the new value is different: refetching the same value would
-  rewrite the row for nothing, and would make the row look newly imported to the
-  readers of the import result.
+  not fetched yet or the new value is different, so that the rows it returns are
+  the balances that changed. A newer fetch of the same value only moves
+  `value_fetched_at` forward, in a separate statement of the import, and is not
+  reported.
   """
   @spec default_on_conflict() :: Ecto.Query.t()
   def default_on_conflict do

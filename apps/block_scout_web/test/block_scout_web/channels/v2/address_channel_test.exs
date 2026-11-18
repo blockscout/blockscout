@@ -140,7 +140,8 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
                      },
                      :timer.seconds(5)
 
-      import_coin_balance(address, 101, 2_000, :on_demand)
+      # nothing is reported, so no chain event is published for the notifier
+      assert [] = import_coin_balance(address, 101, 2_000, :on_demand)
 
       refute_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "coin_balance"},
                      500,
@@ -156,13 +157,19 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
                      :timer.seconds(5)
 
       assert Decimal.eq?(value, 3_000)
+
+      # the corrected value is pushed once, and no delayed duplicate follows it
+      refute_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "coin_balance"},
+                     500,
+                     "Received a duplicate coin_balance broadcast."
     end
   end
 
   # Goes through `Explorer.Chain.import/1`, which publishes the chain event that
   # the realtime event handler of the application passes to the notifier.
+  # Returns the coin balances reported by the import, which are the ones published.
   defp import_coin_balance(address, block_number, value, broadcast) do
-    {:ok, _} =
+    {:ok, %{address_coin_balances: address_coin_balances}} =
       Chain.import(%{
         address_coin_balances: %{
           params: [
@@ -176,6 +183,8 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
         },
         broadcast: broadcast
       })
+
+    address_coin_balances
   end
 
   describe "participants enrichment" do
