@@ -401,8 +401,21 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   # new ctb is the same height or older
   defp should_update?(new_ctb, existing_ctb) do
-    existing_ctb.block_number == new_ctb.block_number and not is_nil(Map.get(new_ctb, :value)) and
+    existing_ctb.block_number == new_ctb.block_number and
+      (fetched_value_update?(new_ctb, existing_ctb) or retry_metadata_update?(new_ctb, existing_ctb))
+  end
+
+  defp fetched_value_update?(new_ctb, existing_ctb) do
+    not is_nil(Map.get(new_ctb, :value)) and
       (is_nil(existing_ctb.value_fetched_at) or Timex.before?(existing_ctb.value_fetched_at, new_ctb.value_fetched_at))
+  end
+
+  # A failed fetch of a still unfetched balance records its retry metadata
+  # (`retries_count`, `refetch_after`), so it is not picked again without backoff.
+  # Mirrors the last branch of `default_on_conflict/0`.
+  defp retry_metadata_update?(new_ctb, existing_ctb) do
+    is_nil(Map.get(new_ctb, :value)) and is_nil(new_ctb.value_fetched_at) and
+      not is_nil(Map.get(new_ctb, :retries_count)) and is_nil(existing_ctb.value_fetched_at)
   end
 
   @spec insert(Repo.t(), [map()], %{
@@ -489,7 +502,12 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
              fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
              fragment("EXCLUDED.value IS NOT NULL") and
              (is_nil(current_token_balance.value_fetched_at) or
-                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))
+                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at))) or
+          (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
+             fragment("EXCLUDED.value_fetched_at IS NULL") and
+             fragment("EXCLUDED.value IS NULL") and
+             fragment("EXCLUDED.retries_count IS NOT NULL") and
+             is_nil(current_token_balance.value_fetched_at))
     )
   end
 end

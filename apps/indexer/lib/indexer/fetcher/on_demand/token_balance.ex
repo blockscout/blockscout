@@ -32,14 +32,26 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   end
 
   @doc """
-  Schedules a fetch of the current balances of `token` held by `address_hashes`,
-  for pairs that have no `address_current_token_balances` row yet. The balances
-  are read at the latest block and imported as current token balances.
+  Schedules a fetch of the current fungible token balances held by `address_hashes`.
 
-  Used to backfill burn address balances of tokens indexed before those were
-  tracked. Best effort: it never raises and waits at most
-  #{@current_fetch_timeout} ms for the fetcher, so a busy or restarting fetcher
-  only leaves the work to a later call.
+  The balances are read at the latest block and imported as current token
+  balances. The function does not check what is already indexed: the caller
+  passes only the addresses whose balance of `token` is missing or has no value
+  yet. Used to backfill burn address balances of ERC-20 and ERC-8056 tokens
+  indexed before those were tracked.
+
+  Best effort: it never raises and waits at most #{@current_fetch_timeout} ms
+  for the fetcher. A busy or restarting fetcher or rate limiter only leaves the
+  work to a later call.
+
+  ## Parameters
+  - `caller`: identifier for the on-demand rate limit, such as the client IP, or
+    `nil` for no limit.
+  - `address_hashes`: addresses whose balance of `token` is missing.
+  - `token`: the fungible token, with `contract_address_hash` and `type` set.
+
+  ## Returns
+  - `:ok` in all cases.
   """
   @spec trigger_current_fetch(String.t() | nil, [Hash.Address.t()], Token.t()) :: :ok
   def trigger_current_fetch(caller \\ nil, address_hashes, token)
@@ -47,23 +59,14 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   def trigger_current_fetch(_caller, [], %Token{}), do: :ok
 
   def trigger_current_fetch(caller, address_hashes, %Token{} = token) when is_list(address_hashes) do
-    if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
-      entries =
-        Enum.map(address_hashes, fn address_hash ->
-          {:fetch,
-           %{
-             token_contract_address_hash: token.contract_address_hash,
-             address_hash: address_hash,
-             block_number: nil,
-             token_id: nil,
-             token_type: token.type,
-             token: token,
-             stale_value: nil
-           }}
-        end)
-
+    if not __MODULE__.Supervisor.disabled?() do
       try do
-        BufferedTask.buffer(__MODULE__, entries, false, @current_fetch_timeout)
+        if RateLimiter.check_rate(caller, :on_demand) == :allow do
+          BufferedTask.buffer(__MODULE__, current_fetch_entries(address_hashes, token), false, @current_fetch_timeout)
+        end
+      rescue
+        error ->
+          Logger.debug(fn -> "On-demand current token balance fetch not scheduled: #{inspect(error)}" end)
       catch
         :exit, reason ->
           Logger.debug(fn -> "On-demand current token balance fetch not scheduled: #{inspect(reason)}" end)
@@ -71,6 +74,21 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     end
 
     :ok
+  end
+
+  defp current_fetch_entries(address_hashes, token) do
+    Enum.map(address_hashes, fn address_hash ->
+      {:fetch,
+       %{
+         token_contract_address_hash: token.contract_address_hash,
+         address_hash: address_hash,
+         block_number: nil,
+         token_id: nil,
+         token_type: token.type,
+         token: token,
+         stale_value: nil
+       }}
+    end)
   end
 
   @spec trigger_historic_fetch(
@@ -126,10 +144,15 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
     # The same balance can be requested several times before the first request
     # is imported, for instance by concurrent token page views, so it is read
-    # only once per batch.
+    # only once per batch. The last entry is kept, so its `stale_value` stays the
+    # baseline that suppresses broadcasts of unchanged balances, as it was in
+    # `balances_map` before deduplication.
     fetch_entries =
       entries_by_type[:fetch] &&
-        Enum.uniq_by(entries_by_type[:fetch], &{&1.address_hash, &1.token_contract_address_hash, &1.token_id})
+        entries_by_type[:fetch]
+        |> Enum.reverse()
+        |> Enum.uniq_by(&{&1.address_hash, &1.token_contract_address_hash, &1.token_id})
+        |> Enum.reverse()
 
     fetch_data = prepare_fetch_requests(fetch_entries, latest_block_number)
 
