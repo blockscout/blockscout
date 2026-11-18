@@ -131,7 +131,12 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
     test "notified of coin_balance once when the same balance is fetched again", %{address: address, topic: topic} do
       insert(:block, number: 101)
 
-      import_coin_balance(address, 101, 2_000, :realtime)
+      # fixed, strictly increasing fetch times, so that every import is newer
+      # than the stored one whatever the host clock does
+      [fetched_at_1, fetched_at_2, fetched_at_3] =
+        Enum.map(1..3, &DateTime.add(~U[2026-11-18 00:00:00.000000Z], &1))
+
+      import_coin_balance(address, 101, 2_000, fetched_at_1, :realtime)
 
       assert_receive %Phoenix.Socket.Broadcast{
                        topic: ^topic,
@@ -142,13 +147,13 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
 
       # nothing is reported: the chain event still goes out, but with an empty
       # list, so the notifier has no balance to push
-      assert [] = import_coin_balance(address, 101, 2_000, :on_demand)
+      assert [] = import_coin_balance(address, 101, 2_000, fetched_at_2, :on_demand)
 
       refute_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "coin_balance"},
                      500,
                      "Received a duplicate coin_balance broadcast."
 
-      import_coin_balance(address, 101, 3_000, :on_demand)
+      import_coin_balance(address, 101, 3_000, fetched_at_3, :on_demand)
 
       assert_receive %Phoenix.Socket.Broadcast{
                        topic: ^topic,
@@ -170,7 +175,7 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
   # the realtime event handler of the application passes to the notifier.
   # Returns the coin balances reported by the import, which are the ones the
   # chain event carries to the notifier.
-  defp import_coin_balance(address, block_number, value, broadcast) do
+  defp import_coin_balance(address, block_number, value, value_fetched_at, broadcast) do
     {:ok, %{address_coin_balances: address_coin_balances}} =
       Chain.import(%{
         address_coin_balances: %{
@@ -179,7 +184,7 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
               address_hash: to_string(address.hash),
               block_number: block_number,
               value: value,
-              value_fetched_at: DateTime.utc_now()
+              value_fetched_at: value_fetched_at
             }
           ]
         },
