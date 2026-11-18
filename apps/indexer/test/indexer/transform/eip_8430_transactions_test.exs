@@ -13,6 +13,19 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
   @payer "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
   @zero_address "0x0000000000000000000000000000000000000000"
 
+  # Values of the receipt `payer` that are not an address string. `Hash.Address.cast/1` accepts
+  # the integer, and it takes the last value, a string of 20 characters, as the raw bytes of an
+  # address.
+  @incorrect_resolved_payers [
+    5,
+    "garbage",
+    "0x",
+    "0x00",
+    "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a",
+    "c4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+    "abcdefghijklmnopqrst"
+  ]
+
   # The response of `eth_getTransactionByHash` on an OP Stack test network (chain id 84538453),
   # with a reduced `calls` list.
   @raw_transaction %{
@@ -174,7 +187,7 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
       assert [%{committed_phases_count: 0}] = parse_with(%{}, %{"committedPhases" => "0x0", "status" => "0x0"})
     end
 
-    test "does not interpret the resolved payer and writes no warning" do
+    test "keeps the zero address as the resolved payer and writes no warning" do
       log =
         capture_log(fn ->
           assert [%{resolved_payer_address_hash: @zero_address}] = parse_with(%{}, %{"payer" => @zero_address})
@@ -183,22 +196,24 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
       assert log == ""
     end
 
-    test "leaves the resolved payer empty if the payer of the receipt is not an address string" do
-      # `resolved_payers/1` skips the same values. The integer and the string of 20 characters
-      # are the values that `Hash.Address.cast/1` accepts: without the replacement, the import
-      # stores them as an address that has no row in `addresses`.
-      for payer <- [
-            5,
-            "garbage",
-            "0x",
-            "0x00",
-            "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a",
-            "c4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
-            "abcdefghijklmnopqrst"
-          ] do
-        assert [%{resolved_payer_address_hash: nil}] = parse_with(%{}, %{"payer" => payer})
-        assert [@raw_transaction] |> to_params(%{"payer" => payer}) |> EIP8430Transactions.resolved_payers() == []
+    test "leaves the resolved payer empty and writes a warning if the payer of the receipt is not an address string" do
+      for payer <- @incorrect_resolved_payers do
+        log =
+          capture_log(fn ->
+            assert [%{resolved_payer_address_hash: nil}] = parse_with(%{}, %{"payer" => payer})
+          end)
+
+        assert log =~ "Unexpected payer value #{inspect(payer)} in the receipt of EIP-8430 transaction"
       end
+    end
+
+    test "writes no warning if the receipt has no payer value" do
+      log =
+        capture_log(fn ->
+          assert [%{resolved_payer_address_hash: nil}] = parse_with(%{}, %{"payer" => nil})
+        end)
+
+      assert log == ""
     end
 
     test "leaves the receipt values empty if the node returns a receipt without them" do
@@ -322,17 +337,7 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
     end
 
     test "skips a transaction if the payer of its receipt is not an address string" do
-      # The last value has 20 characters: `Hash.Address.cast/1` takes it as the raw bytes of an
-      # address, but it is not the address string that the node must return.
-      for payer <- [
-            5,
-            "garbage",
-            "0x",
-            "0x00",
-            "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a",
-            "c4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
-            "abcdefghijklmnopqrst"
-          ] do
+      for payer <- @incorrect_resolved_payers do
         assert [@raw_transaction] |> to_params(%{"payer" => payer}) |> EIP8430Transactions.resolved_payers() == []
       end
     end

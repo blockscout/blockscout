@@ -25,11 +25,12 @@ defmodule Indexer.Transform.EIP8430Transactions do
     `payer_type` label that tells what the `payer` value means.
 
     The function also reads the receipt fields from the `:eip_8430_receipt_fields` key: the
-    resolved payer and the number of committed phases. It does not interpret them. If the key
-    or one of its fields is absent, the value in the row is `nil`, and the import rejects the
-    row. The same applies to a resolved payer that is not an address string: `0x` and 40 hex
-    digits. `resolved_payers/1` uses the same rule, so the import never stores a resolved
-    payer that has no address row.
+    resolved payer and the number of committed phases. If the key or one of its fields is
+    absent, the value in the row is `nil`, and the import rejects the row.
+
+    The function keeps the resolved payer without change if it is an address string: `0x` and
+    40 hex digits. For every other value, the function writes a warning to the log and puts
+    `nil` into the row, so the import rejects the row. `resolved_payers/1` uses the same rule.
 
     An unexpected form of `sender` or `payer` does not raise an error. The function writes a
     warning to the log, and the row gets `has_named_sender: false` or `payer_type: :unknown`.
@@ -66,7 +67,7 @@ defmodule Indexer.Transform.EIP8430Transactions do
         sender_auth: fields.sender_auth,
         payer_auth: fields.payer_auth,
         account_changes: fields.account_changes,
-        resolved_payer_address_hash: resolved_payer_address_hash(Map.get(receipt_fields, :payer)),
+        resolved_payer_address_hash: parse_resolved_payer(Map.get(receipt_fields, :payer), transaction_hash),
         committed_phases_count: Map.get(receipt_fields, :committed_phases)
       }
     end)
@@ -104,9 +105,9 @@ defmodule Indexer.Transform.EIP8430Transactions do
   def resolved_payers(transactions_with_receipts) do
     Enum.flat_map(transactions_with_receipts, fn
       %{eip_8430_receipt_fields: %{payer: payer}, block_number: block_number} when is_integer(block_number) ->
-        case address_bytes(payer) do
-          {:ok, _address_bytes} -> [%{address_hash: payer, block_number: block_number}]
-          :error -> []
+        case resolved_payer_address_hash(payer) do
+          nil -> []
+          address_hash -> [%{address_hash: address_hash, block_number: block_number}]
         end
 
       _transaction ->
@@ -114,10 +115,31 @@ defmodule Indexer.Transform.EIP8430Transactions do
     end)
   end
 
+  # Returns the value to store as the resolved payer of the row. An absent payer gives `nil`
+  # without a warning. A payer that is not an address string gives `nil` with a warning: the
+  # import error for the row is the same in the two cases, so only the warning shows the value
+  # of the node.
+  @spec parse_resolved_payer(any(), EthereumJSONRPC.hash()) :: String.t() | nil
+  defp parse_resolved_payer(nil, _transaction_hash), do: nil
+
+  defp parse_resolved_payer(payer, transaction_hash) do
+    case resolved_payer_address_hash(payer) do
+      nil ->
+        Logger.warning(
+          "Unexpected payer value #{inspect(payer)} in the receipt of EIP-8430 transaction #{transaction_hash}. The resolved payer is recorded as absent."
+        )
+
+        nil
+
+      address_hash ->
+        address_hash
+    end
+  end
+
   # Returns the resolved payer of the receipt if it is an address string, and `nil` for every
-  # other term. The changeset of the row accepts more forms than `resolved_payers/1` does: an
-  # integer, and a binary of 20 bytes. With `nil` in place of such a value, the import rejects
-  # the row.
+  # other term. `parse/1` and `resolved_payers/1` both use this function, so they have one
+  # rule for the payer. The changeset of the row accepts more forms: an integer, and a binary
+  # of 20 bytes. With `nil` in place of such a value, the import rejects the row.
   @spec resolved_payer_address_hash(any()) :: String.t() | nil
   defp resolved_payer_address_hash(payer) do
     case address_bytes(payer) do
