@@ -54,6 +54,9 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
       |> Keyword.put(:to_block, to_block)
       |> Keyword.put(:include_zero_value, include_zero_value?)
       |> Keyword.put(:timeout, AsyncHelper.db_timeout())
+      # a failed on-demand trace batch must fail the export instead of
+      # silently producing a partial or header-only file
+      |> Keyword.put(:raise_on_fetch_error, true)
       |> maybe_put_direction(filter_type, filter_value)
 
     address_to_internal_transactions(address_hash, options)
