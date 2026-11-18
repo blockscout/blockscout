@@ -15,8 +15,11 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArguments do
   def quick_resolve_implementations(proxy_address, _proxy_type) do
     case proxy_address.contract_code && proxy_address.contract_code.bytes do
       # wighawag variant: https://github.com/wighawag/clones-with-immutable-args/blob/196f1ecc6485c1bf2d41677fa01d3df4927ff9ce/src/ClonesWithImmutableArgs.sol
-      <<0x3D3D3D3D363D3D3761::9-unit(8), _::2-bytes, 0x603736393661::6-unit(8), _::2-bytes, 0x013D73::3-unit(8),
-        template_address::20-bytes, _::binary>> ->
+      # The whole 55-byte runtime code is matched, including the tail after the template address: everything
+      # past it is the immutable arguments data, which is never executed. Matching the prefix only would
+      # accept bytecode that discards the template address and delegates to another contract.
+      <<0x3D3D3D3D363D3D3761::9-unit(8), extra_length::2-bytes, 0x603736393661::6-unit(8), extra_length::2-bytes,
+        0x013D73::3-unit(8), template_address::20-bytes, 0x5AF43D3D93803E603557FD5BF3::13-unit(8), _::binary>> ->
         {:ok, template_address_hash} = Hash.Address.cast(template_address)
         {:ok, [template_address_hash]}
 

@@ -637,6 +637,41 @@ defmodule Explorer.Chain.SmartContractTest do
     refute log =~ ~s(Error determining value json for "tuple")
   end
 
+  describe "get_address_verified_bytecode_twin_contract/2" do
+    test "returns verified contract with identical bytecode" do
+      smart_contract = insert(:smart_contract)
+      verified_address = Repo.get!(Address, smart_contract.address_hash)
+      twin_address = insert(:address, contract_code: verified_address.contract_code)
+
+      assert %SmartContract{} = twin = SmartContract.get_address_verified_bytecode_twin_contract(twin_address.hash, [])
+      assert twin.address_hash == smart_contract.address_hash
+    end
+
+    test "does not return verified contract with different bytecode and the same MD5" do
+      {verified_bytecode, colliding_bytecode} = Explorer.TestHelper.md5_colliding_bytecodes()
+
+      verified_address = insert(:address, contract_code: verified_bytecode)
+      colliding_address = insert(:address, contract_code: colliding_bytecode)
+
+      assert verified_address.contract_code.bytes != colliding_address.contract_code.bytes
+
+      contract_code_md5 = Explorer.SmartContract.Helper.md5(verified_address.contract_code.bytes)
+      assert contract_code_md5 == Explorer.SmartContract.Helper.md5(colliding_address.contract_code.bytes)
+
+      insert(:smart_contract, address_hash: verified_address.hash, contract_code_md5: contract_code_md5)
+
+      assert is_nil(SmartContract.get_address_verified_bytecode_twin_contract(colliding_address.hash, []))
+
+      # an exact copy of the verified bytecode is still resolved as a twin
+      twin_address = insert(:address, contract_code: verified_bytecode)
+
+      assert %SmartContract{address_hash: address_hash} =
+               SmartContract.get_address_verified_bytecode_twin_contract(twin_address.hash, [])
+
+      assert address_hash == verified_address.hash
+    end
+  end
+
   describe "check_and_update_constructor_args/1" do
     setup do
       # the last 2 bytes of the deployed bytecode hold the length of the CBOR metadata preceding them

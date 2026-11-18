@@ -11,15 +11,18 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
   describe "quick_resolve_implementations/2 with wighawag variant" do
     test "returns implementation address hash for valid wighawag proxy address" do
       # wighawag variant bytecode pattern
-      # 0x3D3D3D3D363D3D3761 (9 bytes) + 2 bytes + 0x603736393661 (6 bytes) + 2 bytes + 0x013D73 (3 bytes) + implementation address (20 bytes) + rest
+      # 0x3D3D3D3D363D3D3761 (9 bytes) + extra length (2 bytes) + 0x603736393661 (6 bytes) + extra length (2 bytes) +
+      # 0x013D73 (3 bytes) + implementation address (20 bytes) + 0x5AF43D3D93803E603557FD5BF3 (13 bytes) +
+      # immutable arguments data followed by its 2-byte length (extra length = data length + 2)
       bytecode =
         "0x3D3D3D3D363D3D3761" <>
-          "AABB" <>
+          "0002" <>
           "603736393661" <>
-          "CCDD" <>
+          "0002" <>
           "013D73" <>
           @test_impl_address <>
-          "5AF43D82803E903D91602B57FD5BF3"
+          "5AF43D3D93803E603557FD5BF3" <>
+          "0000"
 
       proxy_address = insert(:address, contract_code: bytecode)
       {:ok, impl_hash} = Explorer.Chain.Hash.Address.cast("0x" <> @test_impl_address)
@@ -28,7 +31,61 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
                {:ok, [impl_hash]}
     end
 
-    test "returns implementation address hash for valid wighawag proxy with additional bytecode" do
+    test "returns implementation address hash for valid wighawag proxy with immutable arguments" do
+      bytecode =
+        "0x3D3D3D3D363D3D3761" <>
+          "000B" <>
+          "603736393661" <>
+          "000B" <>
+          "013D73" <>
+          @test_impl_address <>
+          "5AF43D3D93803E603557FD5BF3" <>
+          "DEADBEEF1234567890" <>
+          "0009"
+
+      proxy_address = insert(:address, contract_code: bytecode)
+      {:ok, impl_hash} = Explorer.Chain.Hash.Address.cast("0x" <> @test_impl_address)
+
+      assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
+               {:ok, [impl_hash]}
+    end
+
+    test "returns nil for wighawag prefix followed by code delegating to another address" do
+      # the template address is popped from the stack and replaced with another one before DELEGATECALL
+      bytecode =
+        "0x3D3D3D3D363D3D3761" <>
+          "0000" <>
+          "603736393661" <>
+          "0000" <>
+          "013D73" <>
+          @test_impl_address <>
+          "5073" <>
+          @test_impl_address_2 <>
+          "5AF43D3D93803E604B57FD5BF3"
+
+      proxy_address = insert(:address, contract_code: bytecode)
+
+      assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
+               nil
+    end
+
+    test "returns nil for wighawag proxy with non-wighawag tail" do
+      bytecode =
+        "0x3D3D3D3D363D3D3761" <>
+          "0002" <>
+          "603736393661" <>
+          "0002" <>
+          "013D73" <>
+          @test_impl_address <>
+          "5AF43D82803E903D91602B57FD5BF3"
+
+      proxy_address = insert(:address, contract_code: bytecode)
+
+      assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
+               nil
+    end
+
+    test "returns nil for wighawag proxy with mismatching extra lengths" do
       bytecode =
         "0x3D3D3D3D363D3D3761" <>
           "AABB" <>
@@ -36,15 +93,12 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
           "CCDD" <>
           "013D73" <>
           @test_impl_address <>
-          "5AF43D82803E903D91602B57FD5BF3" <>
-          "DEADBEEF" <>
-          "1234567890"
+          "5AF43D3D93803E603557FD5BF3"
 
       proxy_address = insert(:address, contract_code: bytecode)
-      {:ok, impl_hash} = Explorer.Chain.Hash.Address.cast("0x" <> @test_impl_address)
 
       assert CloneWithImmutableArguments.quick_resolve_implementations(proxy_address, :clone_with_immutable_arguments) ==
-               {:ok, [impl_hash]}
+               nil
     end
 
     test "returns nil for invalid wighawag proxy address" do
@@ -127,12 +181,13 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
       # Wighawag variant
       wighawag_bytecode =
         "0x3D3D3D3D363D3D3761" <>
-          "AABB" <>
+          "0002" <>
           "603736393661" <>
-          "CCDD" <>
+          "0002" <>
           "013D73" <>
           @test_impl_address <>
-          "5AF43D82803E903D91602B57FD5BF3"
+          "5AF43D3D93803E603557FD5BF3" <>
+          "0000"
 
       wighawag_proxy = insert(:address, contract_code: wighawag_bytecode)
 
