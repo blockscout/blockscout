@@ -304,8 +304,26 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
       assert EIP8430Transactions.resolved_payers(transactions) == []
     end
 
-    test "skips a transaction if the payer of its receipt is not a string" do
-      assert [@raw_transaction] |> to_params(%{"payer" => 5}) |> EIP8430Transactions.resolved_payers() == []
+    test "skips a transaction if the payer of its receipt is not an address string" do
+      # The last value has 20 characters: `Hash.Address.cast/1` takes it as the raw bytes of an
+      # address, but it is not the address string that the node must return.
+      for payer <- [
+            5,
+            "garbage",
+            "0x",
+            "0x00",
+            "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a",
+            "c4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+            "abcdefghijklmnopqrst"
+          ] do
+        assert [@raw_transaction] |> to_params(%{"payer" => payer}) |> EIP8430Transactions.resolved_payers() == []
+      end
+    end
+
+    test "returns the zero address if it is the payer of the receipt" do
+      assert [@raw_transaction] |> to_params(%{"payer" => @zero_address}) |> EIP8430Transactions.resolved_payers() == [
+               %{address_hash: @zero_address, block_number: @block_number}
+             ]
     end
 
     test "skips a transaction without a block number" do

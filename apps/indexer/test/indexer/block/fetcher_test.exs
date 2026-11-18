@@ -826,6 +826,12 @@ defmodule Indexer.Block.FetcherTest do
     test "registers the resolved payer of a sponsored EIP-8430 transaction and fetches its balance", %{
       block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
     } do
+      if Application.get_env(:explorer, :chain_type) == :filecoin do
+        Indexer.Fetcher.Filecoin.AddressInfo.Supervisor.Case.start_supervised!(
+          json_rpc_named_arguments: json_rpc_named_arguments
+        )
+      end
+
       block_number = 0x4A9B69
       block_quantity = integer_to_quantity(block_number)
       block_hash = "0x07ff03eccab958e2e1312ec4d889b0690d7ae3ff0b5028a04926a54b91f66540"
@@ -835,7 +841,10 @@ defmodule Indexer.Block.FetcherTest do
       payer_hash = "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
       payer_balance = 0x2386F26FC10000
 
-      # The response of `eth_getTransactionByHash` on an OP Stack test network (chain id 84538453).
+      # The response of `eth_getTransactionByHash` on an OP Stack test network (chain id 84538453),
+      # with one change: `payer` is `0x00`, the open payer mode. The transaction on the network
+      # names the payer. With an open payer, only the receipt contains the payer address, so the
+      # test fails if the code reads the payer from the transaction object.
       transaction = %{
         "accountChanges" => [],
         "blockHash" => block_hash,
@@ -854,7 +863,7 @@ defmodule Indexer.Block.FetcherTest do
         "metadata" => "0x53706f6e736f726564207472616e73616374696f6e",
         "nonce" => "0x0",
         "nonceKey" => "0x0",
-        "payer" => payer_hash,
+        "payer" => "0x00",
         "payerAuth" =>
           "0x0000000000000000000000000000000000000001c1a1dc1e515204f16a2d6c18b8f9caacab7c1d49c27b73c1c1786b2f23500a3c0409bd58182d6efbd9a48ebfceadd469dc03f80bd708eca95d539c92082571da1c",
         "sender" => sender_hash,
@@ -984,8 +993,9 @@ defmodule Indexer.Block.FetcherTest do
 
       {:ok, payer_address_hash} = Chain.string_to_address_hash(payer_hash)
 
-      # The payer takes part in the transaction only as the account that pays the fee, so only
-      # the resolved payer of the receipt can register it.
+      # The payer address is only in the receipt: the transaction has an open payer, and the
+      # payer is not the sender, a recipient or the miner. So only the resolved payer of the
+      # receipt can register it.
       payer_address = Repo.get!(Address, payer_address_hash)
 
       assert payer_address.fetched_coin_balance == %Wei{value: Decimal.new(payer_balance)}

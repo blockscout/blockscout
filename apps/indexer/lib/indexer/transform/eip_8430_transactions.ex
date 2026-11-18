@@ -79,8 +79,11 @@ defmodule Indexer.Transform.EIP8430Transactions do
     not the `payer` value of the transaction. For a transaction where the sender pays, the
     resolved payer is the sender.
 
-    The function skips a transaction if it has no receipt fields, or if its payer is not a
-    string, or if it has no block number.
+    The function skips a transaction if it has no receipt fields, or if it has no block
+    number, or if its payer is not an address string: `0x` and 40 hex digits. Such a payer
+    must not go to the import of addresses. With `INDEXER_ENABLE_PARTIAL_ASYNC_IMPORT=true`,
+    `Indexer.Fetcher.AddressImporter` gets the addresses before the block import rejects the
+    block, and one incorrect hash makes each of its next imports fail.
 
     ## Parameters
     - `transactions_with_receipts`: A list of transactions with receipts.
@@ -98,9 +101,11 @@ defmodule Indexer.Transform.EIP8430Transactions do
         ]) :: [%{address_hash: String.t(), block_number: non_neg_integer()}]
   def resolved_payers(transactions_with_receipts) do
     Enum.flat_map(transactions_with_receipts, fn
-      %{eip_8430_receipt_fields: %{payer: payer}, block_number: block_number}
-      when is_binary(payer) and is_integer(block_number) ->
-        [%{address_hash: payer, block_number: block_number}]
+      %{eip_8430_receipt_fields: %{payer: payer}, block_number: block_number} when is_integer(block_number) ->
+        case address_bytes(payer) do
+          {:ok, _address_bytes} -> [%{address_hash: payer, block_number: block_number}]
+          :error -> []
+        end
 
       _transaction ->
         []
