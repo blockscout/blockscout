@@ -821,6 +821,181 @@ defmodule Indexer.Block.FetcherTest do
 
       assert Repo.one!(select(Chain.Block.Reward, fragment("COUNT(*)"))) == 2
     end
+
+    @tag :no_geth
+    test "registers the resolved payer of a sponsored EIP-8430 transaction and fetches its balance", %{
+      block_fetcher: %Fetcher{json_rpc_named_arguments: json_rpc_named_arguments} = block_fetcher
+    } do
+      block_number = 0x4A9B69
+      block_quantity = integer_to_quantity(block_number)
+      block_hash = "0x07ff03eccab958e2e1312ec4d889b0690d7ae3ff0b5028a04926a54b91f66540"
+      transaction_hash = "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c"
+      miner_hash = "0x4200000000000000000000000000000000000011"
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+      payer_hash = "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
+      payer_balance = 0x2386F26FC10000
+
+      # The response of `eth_getTransactionByHash` on an OP Stack test network (chain id 84538453).
+      transaction = %{
+        "accountChanges" => [],
+        "blockHash" => block_hash,
+        "blockNumber" => block_quantity,
+        "blockTimestamp" => "0x6af25abc",
+        "blockTimestampMs" => "0x1a1c2b27180",
+        "calls" => [[%{"data" => "0x", "to" => sender_hash, "value" => "0x0"}]],
+        "chainId" => "0x509f455",
+        "from" => sender_hash,
+        "gas" => "0x1255c",
+        "gasPrice" => "0x7744d640",
+        "hash" => transaction_hash,
+        "input" => "0x",
+        "maxFeePerGas" => "0x77541880",
+        "maxPriorityFeePerGas" => "0x3baa0c40",
+        "metadata" => "0x53706f6e736f726564207472616e73616374696f6e",
+        "nonce" => "0x0",
+        "nonceKey" => "0x0",
+        "payer" => payer_hash,
+        "payerAuth" =>
+          "0x0000000000000000000000000000000000000001c1a1dc1e515204f16a2d6c18b8f9caacab7c1d49c27b73c1c1786b2f23500a3c0409bd58182d6efbd9a48ebfceadd469dc03f80bd708eca95d539c92082571da1c",
+        "sender" => sender_hash,
+        "senderAuth" =>
+          "0x0000000000000000000000000000000000000001f4646b5a9fcff6e29768f4d61a65b4479946e37a094a3116f5b76486ce466abf1a514af6b3ed852c8b30fcc82fb76a3e8bb6f9c92c2a77e7055c42bdbb8bdccc1b",
+        "to" => nil,
+        "transactionIndex" => "0x0",
+        "type" => "0x79",
+        "validAfter" => "0x0",
+        "validBefore" => "0x1a1c2b2a0b1",
+        "value" => "0x0"
+      }
+
+      # The response of `eth_getTransactionReceipt` for the same transaction.
+      receipt = %{
+        "blobGasUsed" => "0x10810",
+        "blockHash" => block_hash,
+        "blockNumber" => block_quantity,
+        "committedPhases" => "0x1",
+        "contractAddress" => nil,
+        "cumulativeGasUsed" => "0x8c3c",
+        "daFootprintGasScalar" => "0x190",
+        "effectiveGasPrice" => "0x7744d640",
+        "from" => sender_hash,
+        "gasUsed" => "0x8c3c",
+        "l1BaseFeeScalar" => "0x558",
+        "l1BlobBaseFee" => "0x1",
+        "l1BlobBaseFeeScalar" => "0xc3c9d",
+        "l1Fee" => "0xa2",
+        "l1GasPrice" => "0x7",
+        "l1GasUsed" => "0xa9e",
+        "logs" => [],
+        "logsBloom" => "0x" <> String.duplicate("0", 512),
+        "metadata" => "0x53706f6e736f726564207472616e73616374696f6e",
+        "payer" => payer_hash,
+        "phaseStatuses" => ["0x1"],
+        "status" => "0x1",
+        "to" => nil,
+        "transactionHash" => transaction_hash,
+        "transactionIndex" => "0x0",
+        "type" => "0x79"
+      }
+
+      block = %{
+        "author" => miner_hash,
+        "difficulty" => "0x0",
+        "extraData" => "0x",
+        "gasLimit" => "0x8f0d180",
+        "gasUsed" => "0x8c3c",
+        "hash" => block_hash,
+        "logsBloom" => "0x" <> String.duplicate("0", 512),
+        "miner" => miner_hash,
+        "number" => block_quantity,
+        "parentHash" => "0xc37bbad7057945d1bf128c1ff009fb1ad632110bf6a000aac025a80f7766b66e",
+        "receiptsRoot" => "0xd300311aab7dcc98c05ac3f1893629b2c9082c189a0a0c76f4f63e292ac419d5",
+        "sealFields" => [],
+        "sha3Uncles" => "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
+        "size" => "0x2cf",
+        "stateRoot" => "0x2cd84079b0d0c267ed387e3895fd1c1dc21ff82717beb1132adac64276886e19",
+        "timestamp" => "0x6af25abc",
+        "totalDifficulty" => "0x0",
+        "transactions" => [transaction],
+        "transactionsRoot" => "0x68e314a05495f390f9cd0c36267159522e5450d2adf254a74567b452e767bf34",
+        "uncles" => []
+      }
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # The async requests come in a non-deterministic order, so one stub answers all of them.
+        stub(EthereumJSONRPC.Mox, :json_rpc, fn requests, _options ->
+          {:ok,
+           Enum.map(requests, fn
+             %{id: id, method: "eth_getBlockByNumber", params: [^block_quantity, true]} ->
+               %{id: id, jsonrpc: "2.0", result: block}
+
+             %{id: id, method: "eth_getTransactionReceipt", params: [^transaction_hash]} ->
+               %{id: id, jsonrpc: "2.0", result: receipt}
+
+             %{id: id, method: "trace_block", params: [^block_quantity]} ->
+               %{id: id, jsonrpc: "2.0", result: []}
+
+             %{id: id, method: "eth_getBalance", params: [^payer_hash, ^block_quantity]} ->
+               %{id: id, jsonrpc: "2.0", result: integer_to_quantity(payer_balance)}
+
+             %{id: id, method: "eth_getBalance", params: [_address_hash, ^block_quantity]} ->
+               %{id: id, jsonrpc: "2.0", result: "0x1"}
+
+             %{id: id, method: "trace_replayBlockTransactions", params: [^block_quantity, ["trace"]]} ->
+               %{
+                 id: id,
+                 jsonrpc: "2.0",
+                 result: [
+                   %{
+                     "output" => "0x",
+                     "stateDiff" => nil,
+                     "trace" => [
+                       %{
+                         "action" => %{
+                           "callType" => "call",
+                           "from" => sender_hash,
+                           "gas" => "0x1255c",
+                           "input" => "0x",
+                           "to" => sender_hash,
+                           "value" => "0x0"
+                         },
+                         "result" => %{"gasUsed" => "0x0", "output" => "0x"},
+                         "subtraces" => 0,
+                         "traceAddress" => [],
+                         "type" => "call"
+                       }
+                     ],
+                     "transactionHash" => transaction_hash,
+                     "vmTrace" => nil
+                   }
+                 ]
+               }
+           end)}
+        end)
+      end
+
+      assert {:ok, %{errors: [], inserted: %{addresses: addresses}}} =
+               Fetcher.fetch_and_import_range(block_fetcher, block_number..block_number)
+
+      assert payer_hash in Enum.map(addresses, &to_string(&1.hash))
+
+      wait_for_tasks(InternalTransaction)
+      wait_for_tasks(CoinBalanceCatchup)
+
+      {:ok, payer_address_hash} = Chain.string_to_address_hash(payer_hash)
+
+      # The payer takes part in the transaction only as the account that pays the fee, so only
+      # the resolved payer of the receipt can register it.
+      payer_address = Repo.get!(Address, payer_address_hash)
+
+      assert payer_address.fetched_coin_balance == %Wei{value: Decimal.new(payer_balance)}
+      assert payer_address.fetched_coin_balance_block_number == block_number
+
+      assert %Address.CoinBalance{value: %Wei{value: payer_coin_balance}} =
+               Repo.get_by!(Address.CoinBalance, address_hash: payer_address_hash, block_number: block_number)
+
+      assert payer_coin_balance == Decimal.new(payer_balance)
+    end
   end
 
   if @chain_identity == {:optimism, :celo} do

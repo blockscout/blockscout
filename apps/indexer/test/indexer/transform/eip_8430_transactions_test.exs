@@ -252,6 +252,69 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
     end
   end
 
+  describe "resolved_payers/1" do
+    @block_number 0x4ABE4D
+
+    test "returns the payer of the receipt and the block number for a sponsored transaction" do
+      assert [@raw_transaction] |> to_params() |> EIP8430Transactions.resolved_payers() == [
+               %{address_hash: @payer, block_number: @block_number}
+             ]
+    end
+
+    test "returns the sender for a transaction where the sender pays" do
+      # The node returns `null` as the payer of such a transaction and the sender address as
+      # the payer of its receipt.
+      transactions =
+        to_params([Map.merge(@raw_transaction, %{"payer" => nil, "payerAuth" => "0x"})], %{"payer" => @sender})
+
+      assert EIP8430Transactions.resolved_payers(transactions) == [
+               %{address_hash: @sender, block_number: @block_number}
+             ]
+    end
+
+    test "returns the payer of the receipt for a transaction with an open payer" do
+      transactions = to_params([Map.put(@raw_transaction, "payer", "0x00")])
+
+      assert EIP8430Transactions.resolved_payers(transactions) == [
+               %{address_hash: @payer, block_number: @block_number}
+             ]
+    end
+
+    test "returns one entry for each transaction" do
+      other_hash = "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c"
+      transactions = to_params([@raw_transaction, Map.put(@raw_transaction, "hash", other_hash)])
+
+      assert EIP8430Transactions.resolved_payers(transactions) == [
+               %{address_hash: @payer, block_number: @block_number},
+               %{address_hash: @payer, block_number: @block_number}
+             ]
+    end
+
+    test "returns no entries for transactions of other types" do
+      transaction = Map.put(@raw_transaction, "type", "0x2")
+
+      assert [transaction] |> to_params() |> EIP8430Transactions.resolved_payers() == []
+      assert EIP8430Transactions.resolved_payers([]) == []
+    end
+
+    test "skips a transaction if its receipt has no payer value" do
+      assert [@raw_transaction] |> to_params(%{"payer" => nil}) |> EIP8430Transactions.resolved_payers() == []
+
+      transactions = Enum.map(to_params([@raw_transaction]), &Map.delete(&1, :eip_8430_receipt_fields))
+      assert EIP8430Transactions.resolved_payers(transactions) == []
+    end
+
+    test "skips a transaction if the payer of its receipt is not a string" do
+      assert [@raw_transaction] |> to_params(%{"payer" => 5}) |> EIP8430Transactions.resolved_payers() == []
+    end
+
+    test "skips a transaction without a block number" do
+      transactions = Enum.map(to_params([@raw_transaction]), &Map.put(&1, :block_number, nil))
+
+      assert EIP8430Transactions.resolved_payers(transactions) == []
+    end
+  end
+
   defp parse_with(overrides, receipt_overrides \\ %{}) do
     [Map.merge(@raw_transaction, overrides)] |> to_params(receipt_overrides) |> EIP8430Transactions.parse()
   end

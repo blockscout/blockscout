@@ -84,6 +84,15 @@ defmodule Indexer.Transform.AddressCoinBalances do
     end)
   end
 
+  # The resolved payer of an EIP-8430 transaction pays the fee in the native coin, so its
+  # balance changes in the block of the transaction.
+  defp reducer({:eip_8430_resolved_payers, resolved_payers}, acc) when is_list(resolved_payers) do
+    Enum.into(resolved_payers, acc, fn %{address_hash: address_hash, block_number: block_number}
+                                       when is_binary(address_hash) and is_integer(block_number) ->
+      %{address_hash: address_hash, block_number: block_number}
+    end)
+  end
+
   # Handles Arc chain type logs.
   #
   # ## Parameters

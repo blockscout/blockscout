@@ -70,6 +70,43 @@ defmodule Indexer.Transform.EIP8430Transactions do
     end)
   end
 
+  @doc """
+    Extracts the resolved payers of EIP-8430 transactions from a list of transactions with
+    receipts.
+
+    The resolved payer is the account that pays the fee. The function reads it from the
+    `:eip_8430_receipt_fields` key, so it is the payer that the node reports in the receipt,
+    not the `payer` value of the transaction. For a transaction where the sender pays, the
+    resolved payer is the sender.
+
+    The function skips a transaction if it has no receipt fields, or if its payer is not a
+    string, or if it has no block number.
+
+    ## Parameters
+    - `transactions_with_receipts`: A list of transactions with receipts.
+
+    ## Returns
+    A list with one entry for each resolved payer: its address and the block number of the
+    transaction. The entries are ready for `Indexer.Transform.Addresses.extract_addresses/2`
+    and `Indexer.Transform.AddressCoinBalances.params_set/1`.
+  """
+  @spec resolved_payers([
+          %{
+            optional(:eip_8430_receipt_fields) => EthereumJSONRPC.Receipt.eip_8430_receipt_fields(),
+            optional(any()) => any()
+          }
+        ]) :: [%{address_hash: String.t(), block_number: non_neg_integer()}]
+  def resolved_payers(transactions_with_receipts) do
+    Enum.flat_map(transactions_with_receipts, fn
+      %{eip_8430_receipt_fields: %{payer: payer}, block_number: block_number}
+      when is_binary(payer) and is_integer(block_number) ->
+        [%{address_hash: payer, block_number: block_number}]
+
+      _transaction ->
+        []
+    end)
+  end
+
   # Tells whether the `sender` value of the transaction object is a 20-byte address. An absent
   # value, `nil`, and `0x` mean an empty sender: the node recovers the sender from the
   # authorization.
