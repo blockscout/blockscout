@@ -346,6 +346,34 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation.Test do
     end
   end
 
+  describe "save_implementation_data/2" do
+    test "takes implementation name from a verified bytecode twin only if bytecodes are equal" do
+      {verified_bytecode, colliding_bytecode} = TestHelper.md5_colliding_bytecodes()
+
+      verified_address = insert(:address, contract_code: verified_bytecode)
+      twin_address = insert(:address, contract_code: verified_bytecode)
+      colliding_address = insert(:address, contract_code: colliding_bytecode)
+
+      insert(:smart_contract,
+        address_hash: verified_address.hash,
+        name: "Verified",
+        contract_code_md5: Explorer.SmartContract.Helper.md5(verified_address.contract_code.bytes)
+      )
+
+      proxy_address = insert(:contract_address)
+
+      assert %Implementation{names: ["Verified", "Verified", nil]} =
+               Implementation.save_implementation_data(
+                 %{
+                   proxy_address_hash: proxy_address.hash,
+                   address_hashes: [verified_address.hash, twin_address.hash, colliding_address.hash],
+                   proxy_type: :eip1967
+                 },
+                 []
+               )
+    end
+  end
+
   test "get_implementation/1 with conflicting implementations" do
     smart_contract = insert(:smart_contract)
     implementation_smart_contract1 = insert(:smart_contract, name: "implementation1")
