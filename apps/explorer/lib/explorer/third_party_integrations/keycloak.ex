@@ -31,6 +31,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @max_otp_attempts 3
   @custom_settings_prefix "settings."
   @max_setting_value_size 2048
+  @max_settings_count 100
 
   @spec enabled?() :: boolean()
   def enabled? do
@@ -73,6 +74,10 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   def link_email(%{uid: user_id, email: nil}, email, otp, _ip) do
     case verify_otp(email, otp) do
       :ok ->
+        # A known race: the admin API writes back the cached attributes of the user along with the email, so a setting
+        # written concurrently, e.g. on another Keycloak node shortly before, can be reverted. The window is small
+        # and the email is linked once per user, so the risk is accepted. Moving the email update to the extension,
+        # under the lock of the user row, would remove it.
         with :ok <-
                "#{users_path()}/#{user_id}"
                |> admin_put(%{email: email, emailVerified: true})
@@ -205,15 +210,30 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
-  # The extension sets only the address attribute. A read-modify-write of the whole user via the admin API
-  # would drop attributes, e.g. settings, written by a concurrent request after the user was read.
   defp link_address_to_user(user_id, address_hash) do
-    with :ok <-
-           "#{extension_users_path()}/#{user_id}/address"
-           |> admin_request(:put, %{address: String.downcase(address_hash)})
-           |> handle_update("Failed to link address to user"),
+    with :ok <- put_address(user_id, String.downcase(address_hash)),
          {:ok, user} <- get_user(user_id) do
       {:ok, create_auth(user, address_hash)}
+    end
+  end
+
+  # The extension sets only the address attribute. A read-modify-write of the whole user via the admin API
+  # would drop attributes, e.g. settings, written by a concurrent request after the user was read, so it is used
+  # only if the extension is not installed.
+  defp put_address(user_id, address) do
+    response = admin_request("#{extension_users_path()}/#{user_id}/address", :put, %{address: address})
+
+    if extension_missing?(response) do
+      log_extension_missing()
+
+      with {:ok, user} <- get_user(user_id) do
+        user
+        |> Map.update("attributes", %{"address" => [address]}, &Map.put(&1 || %{}, "address", [address]))
+        |> then(&admin_put("#{users_path()}/#{user_id}", &1))
+        |> handle_update("Failed to link address to user")
+      end
+    else
+      handle_update(response, "Failed to link address to user")
     end
   end
 
@@ -247,6 +267,7 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   the Keycloak extension (https://github.com/blockscout/keycloak-user-api-extension), which
   changes only the attributes of the changed settings. Unlike a read-modify-write of the whole
   user via the admin API, concurrent updates of different settings do not overwrite each other.
+  If the extension is not installed, the batch is applied with such a read-modify-write.
 
   ## Parameters
   - `user_id`: Keycloak user ID
@@ -262,9 +283,25 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
           {:ok, %{String.t() => String.t()}} | {:invalid_settings, String.t()} | {:error, :user_not_found} | :error
   def update_user_settings(user_id, diff) do
     with :ok <- validate_settings_diff(diff) do
-      "#{extension_users_path()}/#{user_id}/settings"
-      |> admin_request(:patch, diff)
-      |> handle_settings_update()
+      response = admin_request("#{extension_users_path()}/#{user_id}/settings", :patch, diff)
+
+      if extension_missing?(response),
+        do: update_user_settings_via_admin_api(user_id, diff),
+        else: handle_settings_update(response)
+    end
+  end
+
+  defp update_user_settings_via_admin_api(user_id, diff) do
+    log_extension_missing()
+
+    with {:ok, user} <- get_user(user_id),
+         settings = user |> extract_settings() |> apply_settings_diff(diff),
+         :ok <- validate_settings_count(settings),
+         :ok <- update_user(user_id, put_settings(user, settings)) do
+      {:ok, settings}
+    else
+      {:error, "User not found"} -> {:error, :user_not_found}
+      error -> error
     end
   end
 
@@ -278,13 +315,8 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
-  # Keycloak responds with 404 to a request to a missing endpoint as well, e.g. when the extension is not installed
-  defp handle_settings_update({:ok, %{status_code: 404, body: body}} = response) do
-    case Utils.JSON.decode(body) do
-      {:ok, %{"error" => "User not found"}} -> {:error, :user_not_found}
-      _ -> handle_error(response, "Failed to update user settings")
-    end
-  end
+  # update_user_settings/2 handles other responses with 404 as a missing extension
+  defp handle_settings_update({:ok, %{status_code: 404}}), do: {:error, :user_not_found}
 
   defp handle_settings_update(error), do: handle_error(error, "Failed to update user settings")
 
@@ -296,6 +328,27 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end)
     |> Map.new()
   end
+
+  defp apply_settings_diff(settings, diff) do
+    Enum.reduce(diff, settings, fn
+      {key, nil}, acc -> Map.delete(acc, key)
+      {key, value}, acc -> Map.put(acc, key, value)
+    end)
+  end
+
+  defp put_settings(user, settings) do
+    other_attributes =
+      Map.reject(user["attributes"] || %{}, fn {name, _} -> String.starts_with?(name, @custom_settings_prefix) end)
+
+    settings_attributes = Map.new(settings, fn {key, value} -> {@custom_settings_prefix <> key, [value]} end)
+
+    Map.put(user, "attributes", Map.merge(other_attributes, settings_attributes))
+  end
+
+  defp validate_settings_count(settings) when map_size(settings) > @max_settings_count,
+    do: {:invalid_settings, "Number of settings exceeds #{@max_settings_count}"}
+
+  defp validate_settings_count(_settings), do: :ok
 
   defp validate_settings_diff(diff) do
     Enum.reduce_while(diff, :ok, fn {key, value}, :ok ->
@@ -450,11 +503,31 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
 
   defp handle_update(result, error_message) do
     case result do
-      {:ok, %{status_code: 204}} -> :ok
-      {:ok, %{status_code: 404}} -> {:error, "User not found"}
-      {:ok, %{status_code: 409}} -> {:error, "Email already in use by another account"}
-      error -> handle_error(error, error_message)
+      {:ok, %{status_code: 204}} ->
+        :ok
+
+      {:ok, %{status_code: 404, body: body}} ->
+        if user_not_found?(body), do: {:error, "User not found"}, else: handle_error(result, error_message)
+
+      {:ok, %{status_code: 409}} ->
+        {:error, "Email already in use by another account"}
+
+      error ->
+        handle_error(error, error_message)
     end
+  end
+
+  # Keycloak responds with 404 to a request to a missing endpoint as well, e.g. when the extension is not installed
+  defp user_not_found?(body), do: match?({:ok, %{"error" => "User not found"}}, Utils.JSON.decode(body))
+
+  defp extension_missing?({:ok, %{status_code: 404, body: body}}), do: not user_not_found?(body)
+  defp extension_missing?(_response), do: false
+
+  defp log_extension_missing do
+    Logger.warning(
+      "Keycloak extension https://github.com/blockscout/keycloak-user-api-extension is not installed, " <>
+        "so users are updated via the admin API, and concurrent updates of a user can overwrite each other"
+    )
   end
 
   defp build_url(path) do

@@ -70,6 +70,43 @@ defmodule Explorer.ThirdPartyIntegrations.KeycloakTest do
       assert {:error, "Account with this address already exists"} = Keycloak.link_address(@user_id, @address)
     end
 
+    test "reports a missing user", %{bypass: bypass} do
+      expect_users_with_address(bypass, [])
+
+      Bypass.expect_once(bypass, "PUT", @address_path, fn conn ->
+        Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "User not found"}))
+      end)
+
+      assert {:error, "User not found"} = Keycloak.link_address(@user_id, @address)
+    end
+
+    # Keycloak responds with 404 to a request to a missing endpoint as well. Without the extension, the address is set
+    # with a read-modify-write of the whole user via the admin API.
+    test "sets the address via the admin API when the extension is not installed", %{bypass: bypass} do
+      test_pid = self()
+      expect_users_with_address(bypass, [])
+
+      Bypass.expect_once(bypass, "PUT", @address_path, fn conn ->
+        Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "HTTP 404 Not Found"}))
+      end)
+
+      Bypass.expect(bypass, "GET", @user_path, fn conn ->
+        Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user(%{"settings.theme" => ["dark"]})))
+      end)
+
+      Bypass.expect_once(bypass, "PUT", @user_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        send(test_pid, {:user_put, Utils.JSON.decode!(body)})
+        Plug.Conn.resp(conn, 204, "")
+      end)
+
+      assert {:ok, %Ueberauth.Auth{uid: @user_id, extra: %{raw_info: %{address_hash: @address}}}} =
+               Keycloak.link_address(@user_id, @address)
+
+      assert_receive {:user_put, user}
+      assert user["attributes"] == %{"settings.theme" => ["dark"], "address" => [@stored_address]}
+    end
+
     # Several Blockscout instances share a realm, so a setting can be written while the address is being linked.
     # A read-modify-write of the whole user via the admin API drops the setting when the user was read before the
     # setting was written. The fake Keycloak always returns such a stale user on read.

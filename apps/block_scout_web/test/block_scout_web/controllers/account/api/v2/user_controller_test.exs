@@ -1304,13 +1304,56 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       assert %{"message" => "User not found"} = conn |> patch_settings(%{"a" => "1"}) |> json_response(404)
     end
 
-    test "returns 500 when the Keycloak extension is not installed", %{conn: conn, bypass: bypass} do
-      # Keycloak's response to a request to a missing endpoint
-      Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
-        Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "HTTP 404 Not Found"}))
+    # Without the extension, the settings are updated with a read-modify-write of the whole user via the admin API
+    test "updates settings via the admin API when the Keycloak extension is not installed", %{
+      conn: conn,
+      bypass: bypass
+    } do
+      test_pid = self()
+      expect_missing_keycloak_extension(bypass)
+
+      expect_get_keycloak_user(bypass, %{
+        "address" => ["0x0000000000000000000000000000000000000001"],
+        "settings.a" => ["1"],
+        "settings.b" => ["2"]
+      })
+
+      Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
+        {:ok, body, conn} = Plug.Conn.read_body(conn)
+        send(test_pid, {:keycloak_put, Utils.JSON.decode!(body)})
+        Plug.Conn.resp(conn, 204, "")
       end)
 
-      assert conn |> patch_settings(%{"a" => "1"}) |> json_response(500)
+      assert conn |> patch_settings(%{"a" => nil, "c" => "3"}) |> json_response(200) == %{"b" => "2", "c" => "3"}
+
+      assert_receive {:keycloak_put, user}
+
+      assert user["attributes"] == %{
+               "address" => ["0x0000000000000000000000000000000000000001"],
+               "settings.b" => ["2"],
+               "settings.c" => ["3"]
+             }
+    end
+
+    test "checks the number of settings when the Keycloak extension is not installed", %{conn: conn, bypass: bypass} do
+      expect_missing_keycloak_extension(bypass)
+      expect_get_keycloak_user(bypass, Map.new(1..100, &{"settings.key_#{&1}", ["1"]}))
+
+      assert %{"message" => "Number of settings exceeds 100"} =
+               conn |> patch_settings(%{"new" => "1"}) |> json_response(422)
+    end
+
+    test "returns 404 when the user does not exist and the Keycloak extension is not installed", %{
+      conn: conn,
+      bypass: bypass
+    } do
+      expect_missing_keycloak_extension(bypass)
+
+      Bypass.expect_once(bypass, "GET", @keycloak_user_path, fn conn ->
+        Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "User not found"}))
+      end)
+
+      assert %{"message" => "User not found"} = conn |> patch_settings(%{"a" => "1"}) |> json_response(404)
     end
 
     test "returns 401 for unauthenticated user" do
@@ -1333,6 +1376,13 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
 
     Bypass.expect_once(bypass, "GET", @keycloak_user_path, fn conn ->
       Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user))
+    end)
+  end
+
+  # Keycloak's response to a request to a missing endpoint
+  defp expect_missing_keycloak_extension(bypass) do
+    Bypass.expect_once(bypass, "PATCH", @keycloak_settings_path, fn conn ->
+      Plug.Conn.resp(conn, 404, Utils.JSON.encode!(%{"error" => "HTTP 404 Not Found"}))
     end)
   end
 
