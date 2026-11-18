@@ -183,7 +183,13 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
     end)
   end
 
-  defp define_refetch_after(retries_count) do
+  @doc """
+  Returns when a token balance that failed `retries_count` times can be fetched
+  again: an exponential backoff, capped by the `max_refetch_interval` of
+  `Indexer.Fetcher.TokenBalance.Historical`.
+  """
+  @spec define_refetch_after(pos_integer()) :: DateTime.t()
+  def define_refetch_after(retries_count) do
     config = Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical)
 
     coef = config[:exp_timeout_coeff]

@@ -40,6 +40,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.DetailResponse do
           Helper.describe_inline(
             General.IntegerStringNullable.schema(),
             "Sum of `burn_address_balances`: tokens sent to a burn address that are still counted in `total_supply`. " <>
+              "`null` until the balances of both burn addresses are indexed, for instance while they are being " <>
+              "backfilled for a token indexed earlier, so a partial sum is never reported. " <>
               "Tokens destroyed by the contract itself already lowered `total_supply` and are not part of it. " <>
               "This assumes, as standard ERC-20 implementations do, that a burn lowering `total_supply` does not also " <>
               "credit a burn address balance. " <>
@@ -48,8 +50,12 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.DetailResponse do
         calculated_circulating_supply:
           Helper.describe_inline(
             General.IntegerStringNullable.schema(),
-            "On-chain circulating supply, `total_supply - burned_supply`, in raw units. `null` when either is `null`, " <>
-              "or when `burned_supply` exceeds `total_supply`. Unrelated to `circulating_supply`, which comes from the " <>
+            "Circulating supply from indexed on-chain data, `total_supply - burned_supply`, in raw units. Both inputs " <>
+              "describe the block at which `total_supply` was last read: every mint or burn updates the zero address " <>
+              "balance, so when that balance was updated after `total_supply` was read, the value is `null` until " <>
+              "`total_supply` is refreshed (requesting this endpoint schedules the refresh). Also `null` when " <>
+              "`burned_supply` or `total_supply` is `null`, or when `burned_supply` exceeds `total_supply`. " <>
+              "Unrelated to `circulating_supply`, which comes from the " <>
               "price source in that source's units and with its own method (it may also leave out treasury, locked " <>
               "or vesting balances); `circulating_market_cap` is based on the price source only."
           )

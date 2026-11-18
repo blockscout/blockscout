@@ -431,17 +431,31 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   # A failed fetch of a still unfetched balance records its retry metadata
   # (`retries_count`, `refetch_after`), so it is not picked again without backoff.
   # A stale failure never lowers `retries_count` nor moves `refetch_after`
-  # earlier. Mirrors the last branch of `default_on_conflict/0`.
+  # earlier; a failure with the same count is kept when its `refetch_after` is
+  # later. Mirrors the last branch of `default_on_conflict/0`.
   defp retry_metadata_update?(new_ctb, existing_ctb) do
     new_retries_count = Map.get(new_ctb, :retries_count)
-    new_refetch_after = Map.get(new_ctb, :refetch_after)
 
     is_nil(Map.get(new_ctb, :value)) and is_nil(new_ctb.value_fetched_at) and not is_nil(new_retries_count) and
       is_nil(existing_ctb.value_fetched_at) and
-      (is_nil(existing_ctb.retries_count) or new_retries_count > existing_ctb.retries_count) and
-      (is_nil(existing_ctb.refetch_after) or
-         (not is_nil(new_refetch_after) and
-            DateTime.compare(to_utc_datetime(new_refetch_after), to_utc_datetime(existing_ctb.refetch_after)) != :lt))
+      retries_count_advances?(new_retries_count, compare_refetch_after(new_ctb, existing_ctb), existing_ctb) and
+      (is_nil(existing_ctb.refetch_after) or compare_refetch_after(new_ctb, existing_ctb) in [:gt, :eq])
+  end
+
+  defp retries_count_advances?(_new_retries_count, _refetch_after_order, %{retries_count: nil}), do: true
+
+  defp retries_count_advances?(new_retries_count, refetch_after_order, %{retries_count: existing_retries_count}),
+    do:
+      new_retries_count > existing_retries_count or
+        (new_retries_count == existing_retries_count and refetch_after_order == :gt)
+
+  # Order of the new `refetch_after` relative to the stored one, `nil` when
+  # either is missing
+  defp compare_refetch_after(new_ctb, existing_ctb) do
+    new_refetch_after = Map.get(new_ctb, :refetch_after)
+
+    if new_refetch_after && existing_ctb.refetch_after,
+      do: DateTime.compare(to_utc_datetime(new_refetch_after), to_utc_datetime(existing_ctb.refetch_after))
   end
 
   # The raw SQL lookup of balances with a token id returns naive timestamps
@@ -546,7 +560,11 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
             AND EXCLUDED.value IS NULL
             AND EXCLUDED.retries_count IS NOT NULL
             AND ? IS NULL
-            AND (? IS NULL OR EXCLUDED.retries_count > ?)
+            AND (
+              ? IS NULL
+              OR EXCLUDED.retries_count > ?
+              OR (EXCLUDED.retries_count = ? AND EXCLUDED.refetch_after > ?)
+            )
             AND (? IS NULL OR EXCLUDED.refetch_after >= ?)
           )
           """,
@@ -558,6 +576,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           current_token_balance.value_fetched_at,
           current_token_balance.retries_count,
           current_token_balance.retries_count,
+          current_token_balance.retries_count,
+          current_token_balance.refetch_after,
           current_token_balance.refetch_after,
           current_token_balance.refetch_after
         )

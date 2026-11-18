@@ -371,13 +371,25 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
     )
   end
 
-  @doc """
-  Returns the current balances of `token_contract_address_hash` held by the burn
-  addresses (#{Enum.join(SmartContract.burn_address_hash_strings(), ", ")}), as
-  a map of address hash to raw value. Addresses without an indexed balance are
-  absent from the map.
+  @typedoc """
+  Current balance row of a burn address, see `burn_address_balances/2`. `value`
+  is `nil` while the balance is not fetched yet; `retries_count` and
+  `refetch_after` then describe the backoff of failed fetches.
   """
-  @spec burn_address_balances(Hash.Address.t(), [Chain.api?()]) :: %{Hash.Address.t() => Decimal.t()}
+  @type burn_address_balance :: %{
+          value: Decimal.t() | nil,
+          block_number: Block.block_number(),
+          retries_count: non_neg_integer() | nil,
+          refetch_after: DateTime.t() | nil
+        }
+
+  @doc """
+  Returns the current balance rows of `token_contract_address_hash` for the burn
+  addresses (#{Enum.join(SmartContract.burn_address_hash_strings(), ", ")}),
+  keyed by address hash. Addresses without a row are absent from the map; rows
+  whose balance is not fetched yet have a `nil` value.
+  """
+  @spec burn_address_balances(Hash.Address.t(), [Chain.api?()]) :: %{Hash.Address.t() => burn_address_balance()}
   def burn_address_balances(token_contract_address_hash, options \\ []) do
     burn_address_hashes = SmartContract.burn_address_hashes()
 
@@ -387,8 +399,14 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
         where: ctb.token_contract_address_hash == ^token_contract_address_hash,
         where: ctb.address_hash in ^burn_address_hashes,
         where: is_nil(ctb.token_id),
-        where: not is_nil(ctb.value),
-        select: {ctb.address_hash, ctb.value}
+        select:
+          {ctb.address_hash,
+           %{
+             value: ctb.value,
+             block_number: ctb.block_number,
+             retries_count: ctb.retries_count,
+             refetch_after: ctb.refetch_after
+           }}
       )
 
     query

@@ -118,22 +118,34 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     end
   end
 
-  # Indexed balances of the burn addresses for a fungible token. Tokens indexed
-  # before these balances were tracked have no row for some burn address, so a
-  # one-off fetch of the missing ones is scheduled; the response carries what is
-  # indexed so far.
+  # Current balance rows of the burn addresses for a fungible token. Tokens
+  # indexed before these balances were tracked have no row for some burn
+  # address, so a fetch of the missing or unfetched ones is scheduled, unless a
+  # previous failure set a `refetch_after` still in the future; the response
+  # carries what is indexed so far.
   defp burn_address_balances(ip, %Token{} = token) do
     if token.type in CurrentTokenBalance.fungible_token_types() do
       balances = CurrentTokenBalance.burn_address_balances(token.contract_address_hash, @api_true)
 
-      missing_address_hashes = Enum.reject(SmartContract.burn_address_hashes(), &Map.has_key?(balances, &1))
-      TokenBalanceOnDemand.trigger_current_fetch(ip, missing_address_hashes, token)
+      to_fetch =
+        Enum.flat_map(SmartContract.burn_address_hashes(), fn address_hash ->
+          case Map.fetch(balances, address_hash) do
+            :error -> [{address_hash, 0}]
+            {:ok, %{value: nil} = row} -> if(refetch_due?(row), do: [{address_hash, row.retries_count || 0}], else: [])
+            {:ok, _fetched} -> []
+          end
+        end)
+
+      TokenBalanceOnDemand.trigger_current_fetch(ip, to_fetch, token)
 
       balances
     else
       %{}
     end
   end
+
+  defp refetch_due?(%{refetch_after: nil}), do: true
+  defp refetch_due?(%{refetch_after: refetch_after}), do: DateTime.compare(refetch_after, DateTime.utc_now()) == :lt
 
   if @bridged_tokens_enabled do
     defp token_response(conn, token, address_hash, burn_address_balances) do

@@ -162,48 +162,73 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   end
 
   # Burn address balances, burned supply and on-chain circulating supply of the
-  # token detail endpoint. `burn_address_balances` maps the burn address hashes
-  # to their indexed current balances, see
+  # token detail endpoint. `burn_address_balances` holds the current balance rows
+  # of the burn addresses, see
   # `Explorer.Chain.Address.CurrentTokenBalance.burn_address_balances/2`.
+  #
+  # `burned_supply` needs the balances of all burn addresses, so it is `nil`
+  # while one is not indexed yet. `calculated_circulating_supply` must also
+  # describe one state: `total_supply` is read at `total_supply_updated_at_block`,
+  # and every mint or burn moves the zero address balance to the block of its
+  # transfer. A zero address balance newer than `total_supply` therefore means a
+  # supply change that `total_supply` may not include yet, and the value is
+  # `nil` until `total_supply` is refreshed. Transfers to the dead address do not
+  # change `totalSupply()`, so the dead address balance block does not matter.
   #
   # Raw amounts are `uint256`, up to 78 digits, beyond the 28 significant digits
   # of the default `Decimal` context, so the arithmetic is done on integers and
   # the results are rendered as integer strings.
-  @spec burned_supply_fields(Token.t(), %{Hash.Address.t() => Decimal.t()}) :: map()
+  @spec burned_supply_fields(Token.t(), %{Hash.Address.t() => CurrentTokenBalance.burn_address_balance()}) :: map()
   defp burned_supply_fields(token, burn_address_balances) do
     balances =
       if token.type in CurrentTokenBalance.fungible_token_types(),
         do: indexed_burn_address_balances(burn_address_balances),
         else: []
 
-    burned_supply = if balances != [], do: balances |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+    burned_supply =
+      if Enum.count(balances) == Enum.count(SmartContract.burn_address_hashes()),
+        do: balances |> Enum.map(& &1.value) |> Enum.sum()
 
     %{
       "burn_address_balances" => if(balances != [], do: Enum.map(balances, &render_burn_address_balance/1)),
       "burned_supply" => burned_supply && Integer.to_string(burned_supply),
-      "calculated_circulating_supply" => calculated_circulating_supply(token.total_supply, burned_supply)
+      "calculated_circulating_supply" =>
+        if(burned_supply && total_supply_includes_zero_address_balance?(token, balances),
+          do: calculated_circulating_supply(token.total_supply, burned_supply)
+        )
     }
   end
 
-  # `[{address_hash, raw_value}]` in the order of `SmartContract.burn_address_hashes/0`,
-  # for the burn addresses with an indexed balance
+  # `[%{address_hash, value, block_number}]` in the order of
+  # `SmartContract.burn_address_hashes/0`, for the burn addresses with a fetched
+  # balance, with the raw value as an integer
   defp indexed_burn_address_balances(burn_address_balances) do
     Enum.flat_map(SmartContract.burn_address_hashes(), fn address_hash ->
       case Map.fetch(burn_address_balances, address_hash) do
-        {:ok, value} -> [{address_hash, Decimal.to_integer(value)}]
-        :error -> []
+        {:ok, %{value: %Decimal{} = value, block_number: block_number}} ->
+          [%{address_hash: address_hash, value: Decimal.to_integer(value), block_number: block_number}]
+
+        _not_fetched ->
+          []
       end
     end)
   end
 
-  defp render_burn_address_balance({address_hash, value}) do
+  defp total_supply_includes_zero_address_balance?(%Token{total_supply_updated_at_block: nil}, _balances), do: false
+
+  defp total_supply_includes_zero_address_balance?(%Token{total_supply_updated_at_block: total_supply_block}, balances) do
+    {:ok, zero_address_hash} = Hash.Address.cast(SmartContract.burn_address_hash_string())
+
+    Enum.any?(balances, &(&1.address_hash == zero_address_hash and &1.block_number <= total_supply_block))
+  end
+
+  defp render_burn_address_balance(%{address_hash: address_hash, value: value}) do
     %{"address_hash" => Address.checksum(address_hash), "value" => Integer.to_string(value)}
   end
 
   # `totalSupply()` already excludes the tokens burned by the contract itself, so
   # only the balances still held by the burn addresses are subtracted. When they
-  # exceed the total supply (for instance a stale total supply) there is no
-  # meaningful value.
+  # exceed the total supply there is no meaningful value.
   defp calculated_circulating_supply(%Decimal{} = total_supply, burned_supply) when is_integer(burned_supply) do
     circulating_supply = Decimal.to_integer(total_supply) - burned_supply
 

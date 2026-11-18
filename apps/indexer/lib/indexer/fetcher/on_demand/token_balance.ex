@@ -16,6 +16,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   alias Explorer.Token.BalanceReader
   alias Explorer.Utility.RateLimiter
   alias Indexer.BufferedTask
+  alias Indexer.Fetcher.TokenBalance.Helper, as: TokenBalanceHelper
   alias Timex.Duration
 
   require Logger
@@ -35,10 +36,12 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   Schedules a fetch of the current fungible token balances held by `address_hashes`.
 
   The balances are read at the latest block and imported as current token
-  balances. The function does not check what is already indexed: the caller
-  passes only the addresses whose balance of `token` is missing or has no value
-  yet. Used to backfill burn address balances of ERC-20 and ERC-8056 tokens
-  indexed before those were tracked.
+  balances. A failed read is imported as an unfetched balance with the next
+  `retries_count` and a `refetch_after` backoff, so callers can skip it until
+  then. The function does not check what is already indexed: the caller passes
+  only the addresses whose balance of `token` is missing, or unfetched and due
+  for a retry. Used to backfill burn address balances of ERC-20 and ERC-8056
+  tokens indexed before those were tracked.
 
   Best effort: it never raises and waits at most #{@current_fetch_timeout} ms
   for the fetcher. A busy or restarting fetcher or rate limiter only leaves the
@@ -49,22 +52,23 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     such as the client IP, or `nil` for no limit. This budget is separate from
     `:on_demand`, so the backfill does not use up other on-demand refreshes of
     the same request.
-  - `address_hashes`: addresses whose balance of `token` is missing.
+  - `addresses`: `{address_hash, retries_count}` pairs, where `retries_count` is
+    the number of failed fetches so far, `0` for a missing balance.
   - `token`: the fungible token, with `contract_address_hash` and `type` set.
 
   ## Returns
   - `:ok` in all cases.
   """
-  @spec trigger_current_fetch(String.t() | nil, [Hash.Address.t()], Token.t()) :: :ok
-  def trigger_current_fetch(caller \\ nil, address_hashes, token)
+  @spec trigger_current_fetch(String.t() | nil, [{Hash.Address.t(), non_neg_integer()}], Token.t()) :: :ok
+  def trigger_current_fetch(caller \\ nil, addresses, token)
 
   def trigger_current_fetch(_caller, [], %Token{}), do: :ok
 
-  def trigger_current_fetch(caller, address_hashes, %Token{} = token) when is_list(address_hashes) do
+  def trigger_current_fetch(caller, addresses, %Token{} = token) when is_list(addresses) do
     if not __MODULE__.Supervisor.disabled?() do
       try do
         if RateLimiter.check_rate(caller, :on_demand_burn_address_balances) == :allow do
-          BufferedTask.buffer(__MODULE__, current_fetch_entries(address_hashes, token), false, @current_fetch_timeout)
+          BufferedTask.buffer(__MODULE__, current_fetch_entries(addresses, token), false, @current_fetch_timeout)
         end
       rescue
         error ->
@@ -78,8 +82,10 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
     :ok
   end
 
-  defp current_fetch_entries(address_hashes, token) do
-    Enum.map(address_hashes, fn address_hash ->
+  # `retries_count` marks the entry as a backfill: a failed read is imported with
+  # retry metadata, unlike stale balance refreshes, whose failures are only logged
+  defp current_fetch_entries(addresses, token) do
+    Enum.map(addresses, fn {address_hash, retries_count} ->
       {:fetch,
        %{
          token_contract_address_hash: token.contract_address_hash,
@@ -88,7 +94,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
          token_id: nil,
          token_type: token.type,
          token: token,
-         stale_value: nil
+         stale_value: nil,
+         retries_count: retries_count
        }}
     end)
   end
@@ -295,6 +302,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
       ctbs_with_tokens =
         imported_ctbs
+        |> Enum.reject(&is_nil(&1.value))
         |> filter_imported_ctbs(balances_map)
         |> Enum.map(fn %CurrentTokenBalance{} = ctb ->
           %CurrentTokenBalance{ctb | token: tokens[ctb.token_contract_address_hash.bytes]}
@@ -394,8 +402,29 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
       ]
     end)
 
-    nil
+    failed_balance_retry_params(ctb, block_number)
   end
+
+  # A failed backfill (see `trigger_current_fetch/3`) is imported as an unfetched
+  # balance with retry metadata, so it is not requested again before
+  # `refetch_after`. A failed refresh of a stale balance keeps its stored value.
+  defp failed_balance_retry_params(%{retries_count: retries_count} = ctb, block_number) do
+    new_retries_count = retries_count + 1
+
+    %{
+      address_hash: ctb.address_hash,
+      token_contract_address_hash: ctb.token_contract_address_hash,
+      token_type: ctb.token_type,
+      token_id: ctb.token_id,
+      block_number: block_number,
+      value: nil,
+      value_fetched_at: nil,
+      retries_count: new_retries_count,
+      refetch_after: TokenBalanceHelper.define_refetch_after(new_retries_count)
+    }
+  end
+
+  defp failed_balance_retry_params(_ctb, _block_number), do: nil
 
   def latest_block_number do
     BlockNumber.get_max()

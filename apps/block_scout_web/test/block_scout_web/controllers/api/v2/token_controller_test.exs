@@ -67,18 +67,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "burned supply sums the burn address balances", %{conn: conn} do
-      token = insert(:token, type: "ERC-20", total_supply: 1000)
-      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
-      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
-
-      for {address, value} <- [{zero, 300}, {dead, 200}] do
-        insert(:address_current_token_balance,
-          address: address,
-          token_contract_address_hash: token.contract_address_hash,
-          token_type: "ERC-20",
-          value: value
-        )
-      end
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, zero: {300, 10}, dead: {200, 12})
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
 
@@ -92,16 +82,9 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
              } = json_response(request, 200)
     end
 
-    test "burned supply with only the dead address indexed", %{conn: conn} do
-      token = insert(:token, type: "ERC-20", total_supply: 1000)
-      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
-
-      insert(:address_current_token_balance,
-        address: dead,
-        token_contract_address_hash: token.contract_address_hash,
-        token_type: "ERC-20",
-        value: 250
-      )
+    test "burned supply is null while a burn address balance is not indexed yet", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, dead: {250, 5})
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
 
@@ -109,25 +92,59 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
                "burn_address_balances" => [
                  %{"address_hash" => "0x000000000000000000000000000000000000dEaD", "value" => "250"}
                ],
-               "burned_supply" => "250",
-               "calculated_circulating_supply" => "750"
+               "burned_supply" => nil,
+               "calculated_circulating_supply" => nil
              } = json_response(request, 200)
+    end
+
+    test "an unfetched burn address balance counts as not indexed", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, zero: {nil, 5}, dead: {250, 5})
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "burn_address_balances" => [
+                 %{"address_hash" => "0x000000000000000000000000000000000000dEaD", "value" => "250"}
+               ],
+               "burned_supply" => nil,
+               "calculated_circulating_supply" => nil
+             } = json_response(request, 200)
+    end
+
+    test "calculated circulating supply is null when the zero address balance is newer than total supply",
+         %{conn: conn} do
+      # a mint or burn at block 11 that the total supply read at block 10 may not include
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, zero: {300, 11}, dead: {200, 5})
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"burned_supply" => "500", "calculated_circulating_supply" => nil} = json_response(request, 200)
+    end
+
+    test "calculated circulating supply is null when total supply was never read at a known block", %{conn: conn} do
+      token = insert(:token, type: "ERC-20", total_supply: 1000, total_supply_updated_at_block: nil)
+      insert_burn_address_balances(token, zero: {300, 1}, dead: {200, 1})
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{"burned_supply" => "500", "calculated_circulating_supply" => nil} = json_response(request, 200)
     end
 
     test "burned and circulating supply stay exact beyond 28 significant digits", %{conn: conn} do
       # 10^28 + 8 and 10^28 + 5: the default Decimal context would round the sum
-      token = insert(:token, type: "ERC-20", total_supply: Decimal.new("10000000000000000000000000008"))
-      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
-      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
-
-      for {address, value} <- [{zero, "10000000000000000000000000000"}, {dead, "5"}] do
-        insert(:address_current_token_balance,
-          address: address,
-          token_contract_address_hash: token.contract_address_hash,
-          token_type: "ERC-20",
-          value: Decimal.new(value)
+      token =
+        insert(:token,
+          type: "ERC-20",
+          total_supply: Decimal.new("10000000000000000000000000008"),
+          total_supply_updated_at_block: 10
         )
-      end
+
+      insert_burn_address_balances(token,
+        zero: {Decimal.new("10000000000000000000000000000"), 10},
+        dead: {Decimal.new(5), 10}
+      )
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
 
@@ -138,15 +155,8 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
     end
 
     test "calculated circulating supply is null when burned supply exceeds total supply", %{conn: conn} do
-      token = insert(:token, type: "ERC-20", total_supply: 100)
-      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
-
-      insert(:address_current_token_balance,
-        address: zero,
-        token_contract_address_hash: token.contract_address_hash,
-        token_type: "ERC-20",
-        value: 300
-      )
+      token = insert(:token, type: "ERC-20", total_supply: 100, total_supply_updated_at_block: 10)
+      insert_burn_address_balances(token, zero: {300, 10}, dead: {0, 10})
 
       request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
 
@@ -2923,6 +2933,26 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
         patch(conn, "/api/v2/tokens/#{token.contract_address.hash}/instances/refetch-metadata")
 
       assert %{"message" => "Wrong API key"} = json_response(request, 401)
+    end
+  end
+
+  defp insert_burn_address_balances(token, balances) do
+    hashes = [
+      zero: "0x0000000000000000000000000000000000000000",
+      dead: "0x000000000000000000000000000000000000dEaD"
+    ]
+
+    for {key, {value, block_number}} <- balances do
+      address = insert(:address, hash: hashes[key])
+
+      insert(:address_current_token_balance,
+        address: address,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: token.type,
+        value: value,
+        value_fetched_at: if(is_nil(value), do: nil, else: DateTime.utc_now()),
+        block_number: block_number
+      )
     end
   end
 

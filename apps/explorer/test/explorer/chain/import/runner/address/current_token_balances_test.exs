@@ -540,7 +540,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       for {retries_count, stale_refetch_after} <- [
             {2, ~U[2029-01-01 00:00:00.000000Z]},
-            {4, ~U[2029-01-01 00:00:00.000000Z]}
+            {4, ~U[2029-01-01 00:00:00.000000Z]},
+            {3, refetch_after}
           ] do
         assert {:ok, %{address_current_token_balances: []}} =
                  run_changes(
@@ -561,6 +562,44 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
 
       assert current_token_balance.retries_count == 3
       assert Timex.equal?(current_token_balance.refetch_after, refetch_after)
+    end
+
+    test "a failure with the same retry count and a later refetch_after is recorded", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: nil,
+        value_fetched_at: nil,
+        refetch_after: ~U[2030-01-01 00:00:00.000000Z],
+        retries_count: 3
+      )
+
+      later_refetch_after = ~U[2031-01-01 00:00:00.000000Z]
+
+      assert {:ok, %{address_current_token_balances: [_]}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 1,
+                   value: nil,
+                   value_fetched_at: nil,
+                   refetch_after: later_refetch_after,
+                   retries_count: 3
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert current_token_balance.retries_count == 3
+      assert Timex.equal?(current_token_balance.refetch_after, later_refetch_after)
     end
 
     test "does not record retry metadata over a fetched balance of the same block", %{

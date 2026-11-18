@@ -103,7 +103,7 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
 
       success_eth_call_expectation("0x00000000000000000000000000000000000000000000d3c21bcecceda1000000")
 
-      assert :ok = TokenBalanceOnDemand.trigger_current_fetch([zero_address.hash, zero_address.hash], token)
+      assert :ok = TokenBalanceOnDemand.trigger_current_fetch([{zero_address.hash, 0}, {zero_address.hash, 0}], token)
 
       ctb =
         wait_for_results(fn ->
@@ -119,6 +119,38 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
 
       assert ctb.value == Decimal.new(1_000_000_000_000_000_000_000_000)
       assert ctb.token_type == "ERC-20"
+    end
+
+    test "a failed missing balance fetch is imported with retry metadata" do
+      zero_address = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+      token = insert(:token, type: "ERC-20")
+
+      expect(
+        EthereumJSONRPC.Mox,
+        :json_rpc,
+        fn [%{id: id, method: "eth_call", params: [%{data: _, to: _}, _]}], _options ->
+          {:ok, [%{id: id, jsonrpc: "2.0", error: %{code: "-32000", message: "execution reverted"}}]}
+        end
+      )
+
+      assert :ok = TokenBalanceOnDemand.trigger_current_fetch([{zero_address.hash, 2}], token)
+
+      ctb =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(
+              ctb in CurrentTokenBalance,
+              where:
+                ctb.address_hash == ^zero_address.hash and
+                  ctb.token_contract_address_hash == ^token.contract_address_hash
+            )
+          )
+        end)
+
+      assert is_nil(ctb.value)
+      assert is_nil(ctb.value_fetched_at)
+      assert ctb.retries_count == 3
+      assert DateTime.compare(ctb.refetch_after, DateTime.utc_now()) == :gt
     end
 
     test "historic balances are imported and broadcasted" do
