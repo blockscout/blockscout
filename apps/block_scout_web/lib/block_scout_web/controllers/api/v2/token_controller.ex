@@ -131,6 +131,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
         Enum.flat_map(SmartContract.burn_address_hashes(), fn address_hash ->
           case Map.fetch(balances, address_hash) do
             :error -> [{address_hash, 0}]
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
             {:ok, %{value: nil} = row} -> if(refetch_due?(row), do: [{address_hash, row.retries_count || 0}], else: [])
             {:ok, _fetched} -> []
           end
