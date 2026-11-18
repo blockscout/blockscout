@@ -22,6 +22,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
   @behaviour BufferedTask
 
+  @current_fetch_timeout 1_000
+
   @spec trigger_fetch(String.t() | nil, Hash.Address.t()) :: :ok
   def trigger_fetch(caller \\ nil, address_hash) do
     if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
@@ -30,19 +32,24 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
   end
 
   @doc """
-  Schedules a fetch of the current balance of `token` held by `address_hash`,
-  for a pair that has no `address_current_token_balances` row yet. The balance
-  is read at the latest block and imported as the current token balance.
+  Schedules a fetch of the current balances of `token` held by `address_hashes`,
+  for pairs that have no `address_current_token_balances` row yet. The balances
+  are read at the latest block and imported as current token balances.
 
   Used to backfill burn address balances of tokens indexed before those were
-  tracked.
+  tracked. Best effort: it never raises and waits at most
+  #{@current_fetch_timeout} ms for the fetcher, so a busy or restarting fetcher
+  only leaves the work to a later call.
   """
-  @spec trigger_current_fetch(String.t() | nil, Hash.Address.t(), Token.t()) :: :ok
-  def trigger_current_fetch(caller \\ nil, address_hash, %Token{} = token) do
+  @spec trigger_current_fetch(String.t() | nil, [Hash.Address.t()], Token.t()) :: :ok
+  def trigger_current_fetch(caller \\ nil, address_hashes, token)
+
+  def trigger_current_fetch(_caller, [], %Token{}), do: :ok
+
+  def trigger_current_fetch(caller, address_hashes, %Token{} = token) when is_list(address_hashes) do
     if not __MODULE__.Supervisor.disabled?() and RateLimiter.check_rate(caller, :on_demand) == :allow do
-      BufferedTask.buffer(
-        __MODULE__,
-        [
+      entries =
+        Enum.map(address_hashes, fn address_hash ->
           {:fetch,
            %{
              token_contract_address_hash: token.contract_address_hash,
@@ -53,9 +60,14 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
              token: token,
              stale_value: nil
            }}
-        ],
-        false
-      )
+        end)
+
+      try do
+        BufferedTask.buffer(__MODULE__, entries, false, @current_fetch_timeout)
+      catch
+        :exit, reason ->
+          Logger.debug(fn -> "On-demand current token balance fetch not scheduled: #{inspect(reason)}" end)
+      end
     end
 
     :ok
@@ -112,7 +124,14 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalance do
 
     latest_block_number = latest_block_number()
 
-    fetch_data = prepare_fetch_requests(entries_by_type[:fetch], latest_block_number)
+    # The same balance can be requested several times before the first request
+    # is imported, for instance by concurrent token page views, so it is read
+    # only once per batch.
+    fetch_entries =
+      entries_by_type[:fetch] &&
+        Enum.uniq_by(entries_by_type[:fetch], &{&1.address_hash, &1.token_contract_address_hash, &1.token_id})
+
+    fetch_data = prepare_fetch_requests(fetch_entries, latest_block_number)
 
     {historic_fetch_ft_requests, historic_fetch_nft_requests} =
       prepare_historic_fetch_requests(entries_by_type[:historic_fetch])

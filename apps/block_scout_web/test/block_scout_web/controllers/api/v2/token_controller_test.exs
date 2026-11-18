@@ -114,6 +114,29 @@ defmodule BlockScoutWeb.API.V2.TokenControllerTest do
              } = json_response(request, 200)
     end
 
+    test "burned and circulating supply stay exact beyond 28 significant digits", %{conn: conn} do
+      # 10^28 + 8 and 10^28 + 5: the default Decimal context would round the sum
+      token = insert(:token, type: "ERC-20", total_supply: Decimal.new("10000000000000000000000000008"))
+      zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+      dead = insert(:address, hash: "0x000000000000000000000000000000000000dEaD")
+
+      for {address, value} <- [{zero, "10000000000000000000000000000"}, {dead, "5"}] do
+        insert(:address_current_token_balance,
+          address: address,
+          token_contract_address_hash: token.contract_address_hash,
+          token_type: "ERC-20",
+          value: Decimal.new(value)
+        )
+      end
+
+      request = get(conn, "/api/v2/tokens/#{token.contract_address.hash}")
+
+      assert %{
+               "burned_supply" => "10000000000000000000000000005",
+               "calculated_circulating_supply" => "3"
+             } = json_response(request, 200)
+    end
+
     test "calculated circulating supply is null when burned supply exceeds total supply", %{conn: conn} do
       token = insert(:token, type: "ERC-20", total_supply: 100)
       zero = insert(:address, hash: "0x0000000000000000000000000000000000000000")

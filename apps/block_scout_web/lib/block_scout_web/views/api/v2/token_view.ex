@@ -165,41 +165,48 @@ defmodule BlockScoutWeb.API.V2.TokenView do
   # token detail endpoint. `burn_address_balances` maps the burn address hashes
   # to their indexed current balances, see
   # `Explorer.Chain.Address.CurrentTokenBalance.burn_address_balances/2`.
+  #
+  # Raw amounts are `uint256`, up to 78 digits, beyond the 28 significant digits
+  # of the default `Decimal` context, so the arithmetic is done on integers and
+  # the results are rendered as integer strings.
   @spec burned_supply_fields(Token.t(), %{Hash.Address.t() => Decimal.t()}) :: map()
   defp burned_supply_fields(token, burn_address_balances) do
     balances =
-      SmartContract.burn_address_hashes()
-      |> Enum.flat_map(fn address_hash ->
-        case Map.fetch(burn_address_balances, address_hash) do
-          {:ok, value} -> [%{"address_hash" => Address.checksum(address_hash), "value" => value}]
-          :error -> []
-        end
-      end)
-
-    burned_supply =
-      if balances != [] and token.type in CurrentTokenBalance.fungible_token_types() do
-        balances
-        |> Enum.map(& &1["value"])
-        |> Enum.reduce(Decimal.new(0), &Decimal.add/2)
+      if token.type in CurrentTokenBalance.fungible_token_types() do
+        SmartContract.burn_address_hashes()
+        |> Enum.flat_map(fn address_hash ->
+          case Map.fetch(burn_address_balances, address_hash) do
+            {:ok, value} -> [{address_hash, Decimal.to_integer(value)}]
+            :error -> []
+          end
+        end)
+      else
+        []
       end
 
+    burned_supply = if balances != [], do: balances |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+
     %{
-      "burn_address_balances" => if(burned_supply, do: balances),
-      "burned_supply" => burned_supply,
+      "burn_address_balances" =>
+        if(balances != [],
+          do:
+            Enum.map(balances, fn {address_hash, value} ->
+              %{"address_hash" => Address.checksum(address_hash), "value" => Integer.to_string(value)}
+            end)
+        ),
+      "burned_supply" => burned_supply && Integer.to_string(burned_supply),
       "calculated_circulating_supply" => calculated_circulating_supply(token.total_supply, burned_supply)
     }
   end
 
   # `totalSupply()` already excludes the tokens burned by the contract itself, so
   # only the balances still held by the burn addresses are subtracted. When they
-  # exceed the total supply (a non-standard burn that also credits the zero
-  # address, or a stale total supply) there is no meaningful value.
-  defp calculated_circulating_supply(%Decimal{} = total_supply, %Decimal{} = burned_supply) do
-    if Decimal.compare(burned_supply, total_supply) == :gt do
-      nil
-    else
-      Decimal.sub(total_supply, burned_supply)
-    end
+  # exceed the total supply (for instance a stale total supply) there is no
+  # meaningful value.
+  defp calculated_circulating_supply(%Decimal{} = total_supply, burned_supply) when is_integer(burned_supply) do
+    circulating_supply = Decimal.to_integer(total_supply) - burned_supply
+
+    if circulating_supply >= 0, do: Integer.to_string(circulating_supply)
   end
 
   defp calculated_circulating_supply(_total_supply, _burned_supply), do: nil

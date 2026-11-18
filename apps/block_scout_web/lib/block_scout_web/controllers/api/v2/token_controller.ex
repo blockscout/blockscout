@@ -126,9 +126,8 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     if token.type in CurrentTokenBalance.fungible_token_types() do
       balances = CurrentTokenBalance.burn_address_balances(token.contract_address_hash, @api_true)
 
-      SmartContract.burn_address_hashes()
-      |> Enum.reject(&Map.has_key?(balances, &1))
-      |> Enum.each(&TokenBalanceOnDemand.trigger_current_fetch(ip, &1, token))
+      missing_address_hashes = Enum.reject(SmartContract.burn_address_hashes(), &Map.has_key?(balances, &1))
+      TokenBalanceOnDemand.trigger_current_fetch(ip, missing_address_hashes, token)
 
       balances
     else

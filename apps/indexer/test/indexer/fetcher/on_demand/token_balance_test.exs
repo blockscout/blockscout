@@ -97,6 +97,30 @@ defmodule Indexer.Fetcher.OnDemand.TokenBalanceTest do
       )
     end
 
+    test "a missing current balance is fetched once and imported" do
+      zero_address = insert(:address, hash: "0x0000000000000000000000000000000000000000")
+      token = insert(:token, type: "ERC-20")
+
+      success_eth_call_expectation("0x00000000000000000000000000000000000000000000d3c21bcecceda1000000")
+
+      assert :ok = TokenBalanceOnDemand.trigger_current_fetch([zero_address.hash, zero_address.hash], token)
+
+      ctb =
+        wait_for_results(fn ->
+          Repo.one!(
+            from(
+              ctb in CurrentTokenBalance,
+              where:
+                ctb.address_hash == ^zero_address.hash and
+                  ctb.token_contract_address_hash == ^token.contract_address_hash
+            )
+          )
+        end)
+
+      assert ctb.value == Decimal.new(1_000_000_000_000_000_000_000_000)
+      assert ctb.token_type == "ERC-20"
+    end
+
     test "historic balances are imported and broadcasted" do
       token_balance = insert(:token_balance, value_fetched_at: nil, value: nil, token_type: "ERC-20", block_number: 101)
 

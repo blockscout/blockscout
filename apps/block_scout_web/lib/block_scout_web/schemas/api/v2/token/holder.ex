@@ -26,9 +26,9 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.Holder do
         nullable: false,
         description:
           "Whether `address` is the zero address (`0x0000000000000000000000000000000000000000`) or the dead address " <>
-            "(`0x000000000000000000000000000000000000dEaD`). Their balances are reported as `burned_supply` by " <>
-            "`/api/v2/tokens/{address_hash}`. The zero address is listed for ERC-20 and ERC-8056 tokens but is not " <>
-            "counted in `holders_count`."
+            "(`0x000000000000000000000000000000000000dEaD`), whatever the token type. For ERC-20 and ERC-8056 tokens " <>
+            "only, `/api/v2/tokens/{address_hash}` reports their balances as `burned_supply`. The zero address is " <>
+            "listed for those tokens only, and is not counted in `holders_count`."
       },
       token_id: General.IntegerStringNullable,
       value: General.IntegerStringNullable

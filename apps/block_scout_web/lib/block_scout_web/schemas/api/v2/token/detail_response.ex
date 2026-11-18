@@ -41,6 +41,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Token.DetailResponse do
             General.IntegerStringNullable.schema(),
             "Sum of `burn_address_balances`: tokens sent to a burn address that are still counted in `total_supply`. " <>
               "Tokens destroyed by the contract itself already lowered `total_supply` and are not part of it. " <>
+              "This assumes, as standard ERC-20 implementations do, that a burn lowering `total_supply` does not also " <>
+              "credit a burn address balance. " <>
               "Raw, like `total_supply`: an ERC-8056 token takes the same `ui_multiplier` to display it."
           ),
         calculated_circulating_supply:
