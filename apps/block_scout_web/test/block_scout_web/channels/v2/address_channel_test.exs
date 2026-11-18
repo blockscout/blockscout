@@ -140,7 +140,8 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
                      },
                      :timer.seconds(5)
 
-      # nothing is reported, so no chain event is published for the notifier
+      # nothing is reported: the chain event still goes out, but with an empty
+      # list, so the notifier has no balance to push
       assert [] = import_coin_balance(address, 101, 2_000, :on_demand)
 
       refute_receive %Phoenix.Socket.Broadcast{topic: ^topic, event: "coin_balance"},
@@ -167,7 +168,8 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
 
   # Goes through `Explorer.Chain.import/1`, which publishes the chain event that
   # the realtime event handler of the application passes to the notifier.
-  # Returns the coin balances reported by the import, which are the ones published.
+  # Returns the coin balances reported by the import, which are the ones the
+  # chain event carries to the notifier.
   defp import_coin_balance(address, block_number, value, broadcast) do
     {:ok, %{address_coin_balances: address_coin_balances}} =
       Chain.import(%{
