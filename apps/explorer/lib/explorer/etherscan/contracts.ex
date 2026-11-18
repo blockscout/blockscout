@@ -13,7 +13,6 @@ defmodule Explorer.Etherscan.Contracts do
     ]
 
   alias Explorer.Chain.{Address, Hash, SmartContract}
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Repo
 
@@ -97,19 +96,22 @@ defmodule Explorer.Etherscan.Contracts do
         %{smart_contract | address_hash: address_hash, metadata_from_verified_bytecode_twin: true}
       end
 
-    updated_smart_contract =
-      if Proxy.proxy_contract?(proxy_smart_contract) do
-        implementation = Implementation.get_implementation(proxy_smart_contract)
+    # `get_implementation/1` returns `nil` when no implementation is found, so proxy status is derived
+    # from the same result as the implementation addresses to keep both consistent.
+    implementation_address_hashes =
+      case Implementation.get_implementation(proxy_smart_contract) do
+        %Implementation{address_hashes: address_hashes} -> address_hashes
+        _ -> []
+      end
 
-        smart_contract
-        |> Map.put(:is_proxy, true)
-        |> Map.put(
-          :implementation_address_hash_strings,
-          implementation.address_hashes
-        )
-      else
+    updated_smart_contract =
+      if Enum.empty?(implementation_address_hashes) do
         smart_contract
         |> Map.put(:is_proxy, false)
+      else
+        smart_contract
+        |> Map.put(:is_proxy, true)
+        |> Map.put(:implementation_address_hash_strings, implementation_address_hashes)
       end
 
     address

@@ -13,7 +13,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
       # wighawag variant bytecode pattern
       # 0x3D3D3D3D363D3D3761 (9 bytes) + extra length (2 bytes) + 0x603736393661 (6 bytes) + extra length (2 bytes) +
       # 0x013D73 (3 bytes) + implementation address (20 bytes) + 0x5AF43D3D93803E603557FD5BF3 (13 bytes) +
-      # immutable arguments data ending with its length (extra length bytes)
+      # immutable arguments data followed by its 2-byte length (extra length = data length + 2)
       bytecode =
         "0x3D3D3D3D363D3D3761" <>
           "0002" <>
@@ -22,7 +22,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
           "013D73" <>
           @test_impl_address <>
           "5AF43D3D93803E603557FD5BF3" <>
-          "0002"
+          "0000"
 
       proxy_address = insert(:address, contract_code: bytecode)
       {:ok, impl_hash} = Explorer.Chain.Hash.Address.cast("0x" <> @test_impl_address)
@@ -41,7 +41,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
           @test_impl_address <>
           "5AF43D3D93803E603557FD5BF3" <>
           "DEADBEEF1234567890" <>
-          "000B"
+          "0009"
 
       proxy_address = insert(:address, contract_code: bytecode)
       {:ok, impl_hash} = Explorer.Chain.Hash.Address.cast("0x" <> @test_impl_address)
@@ -187,7 +187,7 @@ defmodule Explorer.Chain.SmartContract.Proxy.CloneWithImmutableArgumentsTest do
           "013D73" <>
           @test_impl_address <>
           "5AF43D3D93803E603557FD5BF3" <>
-          "0002"
+          "0000"
 
       wighawag_proxy = insert(:address, contract_code: wighawag_bytecode)
 
