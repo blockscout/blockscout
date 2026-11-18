@@ -150,6 +150,60 @@ defmodule Explorer.Chain.TokenTest do
     end
   end
 
+  describe "update/2 with total supply" do
+    defp stored_supply(token) do
+      stored = Repo.get_by!(Token, contract_address_hash: token.contract_address_hash)
+      {stored.total_supply && Decimal.to_integer(stored.total_supply), stored.total_supply_updated_at_block}
+    end
+
+    test "a pinned read stores the value with its block" do
+      token = insert(:token, total_supply: 100, total_supply_updated_at_block: 5)
+
+      assert {:ok, _} = Token.update(token, %{total_supply: 90, total_supply_updated_at_block: 11})
+
+      assert stored_supply(token) == {90, 11}
+    end
+
+    test "an unpinned read with a new value clears the block" do
+      token = insert(:token, total_supply: 100, total_supply_updated_at_block: 5)
+
+      assert {:ok, _} = Token.update(token, %{total_supply: 90})
+
+      assert stored_supply(token) == {90, nil}
+    end
+
+    test "an unpinned read returning the loaded value keeps the stored pair" do
+      token = insert(:token, total_supply: 100, total_supply_updated_at_block: 5)
+
+      assert {:ok, _} = Token.update(token, %{total_supply: 100})
+
+      assert stored_supply(token) == {100, 5}
+    end
+
+    test "an unpinned write after an overlapping pinned write does not keep the pinned block" do
+      # both processes load the token at {80, 5}; the periodic updater reads 100
+      # at "latest", then the on-demand refresh reads 90 at block 11 and stores
+      # it, and only then the periodic updater writes its value
+      loaded = insert(:token, total_supply: 80, total_supply_updated_at_block: 5)
+
+      assert {:ok, _} = Token.update(loaded, %{total_supply: 90, total_supply_updated_at_block: 11})
+      assert stored_supply(loaded) == {90, 11}
+
+      assert {:ok, _} = Token.update(loaded, %{total_supply: 100})
+      assert stored_supply(loaded) == {100, nil}
+    end
+
+    test "a pinned write writes both fields even when they match the loaded token" do
+      # the loaded token is {100, 5}; meanwhile an unpinned write stored {110, nil}
+      loaded = insert(:token, total_supply: 100, total_supply_updated_at_block: 5)
+      assert {:ok, _} = Token.update(loaded, %{total_supply: 110})
+
+      assert {:ok, _} = Token.update(loaded, %{total_supply: 100, total_supply_updated_at_block: 5})
+
+      assert stored_supply(loaded) == {100, 5}
+    end
+  end
+
   describe "list_top/2" do
     test "returns market data with enabled token fetcher" do
       old_source_env = Application.get_env(:explorer, Explorer.Market.Source)

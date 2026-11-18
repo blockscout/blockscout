@@ -290,13 +290,6 @@ defmodule Explorer.Chain.Token do
         info_from_admin_panel? \\ false,
         operation_type \\ :base
       ) do
-    # `total_supply_updated_at_block` is the block at which `total_supply` was
-    # read, so only a caller that pinned its `totalSupply()` call to a block
-    # passes it. An unpinned read (at "latest") keeps the previous block: an
-    # older block than the read only makes consumers comparing it with indexed
-    # data more conservative, while the indexed head after the read could be
-    # newer than the block the node answered for.
-
     filtered_params = for({key, value} <- params, value !== "" && !is_nil(value), do: {key, value}) |> Enum.into(%{})
 
     token_changeset =
@@ -309,6 +302,7 @@ defmodule Explorer.Chain.Token do
             do: &1 |> Changeset.delete_change(:symbol) |> Changeset.delete_change(:name),
             else: &1
           )).()
+      |> clear_total_supply_block_on_unpinned_change(filtered_params)
 
     address_name_changeset =
       Address.Name.changeset(%Address.Name{}, Map.put(filtered_params, :address_hash, address_hash))
@@ -356,6 +350,35 @@ defmodule Explorer.Chain.Token do
 
       {:error, :token, changeset, _} ->
         {:error, changeset}
+    end
+  end
+
+  # `total_supply_updated_at_block` is the block at which `total_supply` was
+  # read, so the two are always written together, in the same UPDATE. A caller
+  # that pinned its `totalSupply()` call to a block passes that block. A new
+  # `total_supply` from an unpinned read (at "latest") clears the block: keeping
+  # the previous one could pair the new value with a block it was not read at,
+  # for instance a block stored meanwhile by a pinned read of another process.
+  # A pinned read always writes both, even when one of them equals the loaded
+  # token, which may be older than the row. An unpinned read that returns the
+  # loaded value changes neither.
+  defp clear_total_supply_block_on_unpinned_change(changeset, params) do
+    case params do
+      %{total_supply: _, total_supply_updated_at_block: _} ->
+        changeset
+        |> Changeset.force_change(:total_supply, Changeset.get_field(changeset, :total_supply))
+        |> Changeset.force_change(
+          :total_supply_updated_at_block,
+          Changeset.get_field(changeset, :total_supply_updated_at_block)
+        )
+
+      %{total_supply: _} ->
+        if Changeset.changed?(changeset, :total_supply),
+          do: Changeset.force_change(changeset, :total_supply_updated_at_block, nil),
+          else: changeset
+
+      _ ->
+        changeset
     end
   end
 
