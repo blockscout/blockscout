@@ -1137,17 +1137,68 @@ defmodule EthereumJSONRPC.GethTest do
                Geth.fetch_internal_transactions(transactions_params, json_rpc_named_arguments)
     end
 
-    test "fetch_internal_transactions/2 does not attribute an id-less error reply in an incomplete batch", %{
+    test "fetch_internal_transactions/2 returns an unattributable id-less error without request data", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      error = %{code: -32_000, message: "execution timeout"}
+
       expect(EthereumJSONRPC.Mox, :json_rpc, fn _requests, _ ->
-        {:ok, [%{id: nil, error: %{code: -32_000, message: "execution timeout"}}]}
+        {:ok, [%{id: nil, error: error}]}
       end)
 
-      assert {:error, {:missing_responses, missing}} =
-               Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+      # two requests without a reply, one id-less reply: not attributable
+      assert {:error, [^error]} = Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+    end
 
-      assert missing |> Enum.map(& &1.hash_data) |> Enum.sort() == Enum.sort([@transaction_hash_1, @transaction_hash_2])
+    test "fetch_internal_transactions/2 returns an attributable id-less error together with a correlated error", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+        %{id: id_1} = Enum.find(requests, &match?(%{params: [@transaction_hash_1, _]}, &1))
+
+        {:ok,
+         [
+           %{id: id_1, error: %{code: -32_000, message: "execution timeout"}},
+           %{id: nil, error: %{code: -32_000, message: "historical backend error"}}
+         ]}
+      end)
+
+      assert {:error, errors} = Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+
+      assert errors |> Enum.map(&{&1.message, &1.data.transaction_hash}) |> Enum.sort() == [
+               {:timeout, @transaction_hash_1},
+               {"historical backend error", @transaction_hash_2}
+             ]
+    end
+
+    test "fetch_internal_transactions/2 does not assign several id-less errors by reply order", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      timeout = %{code: -32_000, message: "execution timeout"}
+      historical = %{code: -32_000, message: "historical backend error"}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn _requests, _ ->
+        {:ok, [%{id: nil, error: historical}, %{id: nil, error: timeout}]}
+      end)
+
+      assert {:error, errors} = Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+      assert Enum.sort(errors) == Enum.sort([historical, timeout])
+    end
+
+    test "fetch_internal_transactions/2 returns a surplus id-less error without request data", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      error = %{code: -32_000, message: "execution timeout"}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _ ->
+        {:ok, [%{id: id, result: call_trace()}, %{id: nil, error: error}]}
+      end)
+
+      assert {:error, [^error]} =
+               Geth.fetch_internal_transactions(
+                 [%{block_number: 1, transaction_index: 0, hash_data: @transaction_hash_1}],
+                 json_rpc_named_arguments
+               )
     end
 
     test "fetch_internal_transactions/2 attributes an id-less error reply in a complete batch", %{
@@ -1167,17 +1218,18 @@ defmodule EthereumJSONRPC.GethTest do
                Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
     end
 
-    test "fetch_block_internal_transactions/2 does not attribute an id-less error reply in an incomplete batch", %{
+    test "fetch_block_internal_transactions/2 returns an unattributable id-less error to the caller", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
+      # the fetcher falls back to tracing by transactions on this message, which
+      # does not need the error to be attributed to a block
+      error = %{code: -32_000, message: "incorrect number of top-level calls"}
+
       expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{params: ["0x1", _]}, %{params: ["0x2", _]}], _ ->
-        {:ok, [%{id: nil, error: %{code: -32_000, message: "incorrect number of top-level calls"}}]}
+        {:ok, [%{id: nil, error: error}]}
       end)
 
-      assert {:error, {:missing_responses, missing}} =
-               Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
-
-      assert Enum.sort(missing) == [1, 2]
+      assert {:error, [^error]} = Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
     end
   end
 
