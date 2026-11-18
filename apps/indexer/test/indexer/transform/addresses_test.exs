@@ -310,7 +310,7 @@ defmodule Indexer.Transform.AddressesTest do
              }) == []
     end
 
-    test "a resolved payer that is equal to the sender gives one address and keeps the nonce of the sender" do
+    test "a resolved payer that is equal to the sender gives one address and keeps the fields of the transaction entry" do
       sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
 
       assert Addresses.extract_addresses(%{

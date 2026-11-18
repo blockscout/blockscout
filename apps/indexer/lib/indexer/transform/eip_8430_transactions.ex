@@ -27,7 +27,9 @@ defmodule Indexer.Transform.EIP8430Transactions do
     The function also reads the receipt fields from the `:eip_8430_receipt_fields` key: the
     resolved payer and the number of committed phases. It does not interpret them. If the key
     or one of its fields is absent, the value in the row is `nil`, and the import rejects the
-    row.
+    row. The same applies to a resolved payer that is not an address string: `0x` and 40 hex
+    digits. `resolved_payers/1` uses the same rule, so the import never stores a resolved
+    payer that has no address row.
 
     An unexpected form of `sender` or `payer` does not raise an error. The function writes a
     warning to the log, and the row gets `has_named_sender: false` or `payer_type: :unknown`.
@@ -64,7 +66,7 @@ defmodule Indexer.Transform.EIP8430Transactions do
         sender_auth: fields.sender_auth,
         payer_auth: fields.payer_auth,
         account_changes: fields.account_changes,
-        resolved_payer_address_hash: Map.get(receipt_fields, :payer),
+        resolved_payer_address_hash: resolved_payer_address_hash(Map.get(receipt_fields, :payer)),
         committed_phases_count: Map.get(receipt_fields, :committed_phases)
       }
     end)
@@ -110,6 +112,18 @@ defmodule Indexer.Transform.EIP8430Transactions do
       _transaction ->
         []
     end)
+  end
+
+  # Returns the resolved payer of the receipt if it is an address string, and `nil` for every
+  # other term. The changeset of the row accepts more forms than `resolved_payers/1` does: an
+  # integer, and a binary of 20 bytes. With `nil` in place of such a value, the import rejects
+  # the row.
+  @spec resolved_payer_address_hash(any()) :: String.t() | nil
+  defp resolved_payer_address_hash(payer) do
+    case address_bytes(payer) do
+      {:ok, _address_bytes} -> payer
+      :error -> nil
+    end
   end
 
   # Tells whether the `sender` value of the transaction object is a 20-byte address. An absent
