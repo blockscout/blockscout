@@ -103,8 +103,14 @@ defmodule Explorer.ThirdPartyIntegrations.KeycloakTest do
       assert {:ok, %Ueberauth.Auth{uid: @user_id, extra: %{raw_info: %{address_hash: @address}}}} =
                Keycloak.link_address(@user_id, @address)
 
+      # only the user profile: account state read before, e.g. enabled, would undo its concurrent change
       assert_receive {:user_put, user}
-      assert user["attributes"] == %{"settings.theme" => ["dark"], "address" => [@stored_address]}
+
+      assert user == %{
+               "username" => "user",
+               "email" => "user@example.com",
+               "attributes" => %{"settings.theme" => ["dark"], "address" => [@stored_address]}
+             }
     end
 
     # Several Blockscout instances share a realm, so a setting can be written while the address is being linked.

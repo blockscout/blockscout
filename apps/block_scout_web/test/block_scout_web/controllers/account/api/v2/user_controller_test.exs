@@ -1312,11 +1312,16 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
       test_pid = self()
       expect_missing_keycloak_extension(bypass)
 
-      expect_get_keycloak_user(bypass, %{
-        "address" => ["0x0000000000000000000000000000000000000001"],
-        "settings.a" => ["1"],
-        "settings.b" => ["2"]
-      })
+      expect_get_keycloak_user_reads(bypass, [
+        %{"address" => ["0x0000000000000000000000000000000000000001"], "settings.a" => ["1"], "settings.b" => ["2"]},
+        # setting a is declared in the user profile with a default value, which Keycloak stores on removal
+        %{
+          "address" => ["0x0000000000000000000000000000000000000001"],
+          "settings.a" => ["default"],
+          "settings.b" => ["2"],
+          "settings.c" => ["3"]
+        }
+      ])
 
       Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
         {:ok, body, conn} = Plug.Conn.read_body(conn)
@@ -1324,15 +1329,57 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
         Plug.Conn.resp(conn, 204, "")
       end)
 
-      assert conn |> patch_settings(%{"a" => nil, "c" => "3"}) |> json_response(200) == %{"b" => "2", "c" => "3"}
+      assert conn |> patch_settings(%{"a" => nil, "c" => "3"}) |> json_response(200) ==
+               %{"a" => "default", "b" => "2", "c" => "3"}
 
+      # only the user profile: account state read before, e.g. enabled, would undo its concurrent change
       assert_receive {:keycloak_put, user}
 
-      assert user["attributes"] == %{
-               "address" => ["0x0000000000000000000000000000000000000001"],
-               "settings.b" => ["2"],
-               "settings.c" => ["3"]
+      assert user == %{
+               "username" => "user",
+               "email" => "user@example.com",
+               "attributes" => %{
+                 "address" => ["0x0000000000000000000000000000000000000001"],
+                 "settings.b" => ["2"],
+                 "settings.c" => ["3"]
+               }
              }
+    end
+
+    test "returns validation error of the user profile when the Keycloak extension is not installed", %{
+      conn: conn,
+      bypass: bypass
+    } do
+      expect_missing_keycloak_extension(bypass)
+      expect_get_keycloak_user(bypass, %{})
+
+      Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
+        error = %{"field" => "settings.a", "errorMessage" => "error-invalid-length", "params" => ["settings.a", 1, 1]}
+        Plug.Conn.resp(conn, 400, Utils.JSON.encode!(error))
+      end)
+
+      assert %{"message" => "Invalid settings.a: error-invalid-length"} =
+               conn |> patch_settings(%{"a" => "12"}) |> json_response(422)
+    end
+
+    # the admin API validates all attributes, and an invalid stored one is not an error of the request
+    test "fails on validation error of another attribute when the Keycloak extension is not installed", %{
+      conn: conn,
+      bypass: bypass
+    } do
+      expect_missing_keycloak_extension(bypass)
+      expect_get_keycloak_user(bypass, %{"address" => ["0x01", "0x02"]})
+
+      Bypass.expect_once(bypass, "PUT", @keycloak_user_path, fn conn ->
+        errors = [
+          %{"field" => "settings.a", "errorMessage" => "error-invalid-length"},
+          %{"field" => "address", "errorMessage" => "error-invalid-length"}
+        ]
+
+        Plug.Conn.resp(conn, 400, Utils.JSON.encode!(%{"errors" => errors}))
+      end)
+
+      assert conn |> patch_settings(%{"a" => "12"}) |> json_response(500)
     end
 
     test "checks the number of settings when the Keycloak extension is not installed", %{conn: conn, bypass: bypass} do
@@ -1370,13 +1417,27 @@ defmodule BlockScoutWeb.Account.Api.V2.UserControllerTest do
   end
 
   defp expect_get_keycloak_user(bypass, attributes) do
-    user = %{"id" => @keycloak_user_id, "username" => "user", "email" => "user@example.com", "enabled" => true}
-    # Keycloak omits "attributes" for users without attributes
-    user = if attributes, do: Map.put(user, "attributes", attributes), else: user
+    user = keycloak_user(attributes)
 
     Bypass.expect_once(bypass, "GET", @keycloak_user_path, fn conn ->
       Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user))
     end)
+  end
+
+  # responds to consecutive reads with the users with the given attributes
+  defp expect_get_keycloak_user_reads(bypass, attributes_list) do
+    users = start_supervised!({Agent, fn -> Enum.map(attributes_list, &keycloak_user/1) end})
+
+    Bypass.expect(bypass, "GET", @keycloak_user_path, fn conn ->
+      user = Agent.get_and_update(users, fn [user | rest] -> {user, rest} end)
+      Plug.Conn.resp(conn, 200, Utils.JSON.encode!(user))
+    end)
+  end
+
+  defp keycloak_user(attributes) do
+    user = %{"id" => @keycloak_user_id, "username" => "user", "email" => "user@example.com", "enabled" => true}
+    # Keycloak omits "attributes" for users without attributes
+    if attributes, do: Map.put(user, "attributes", attributes), else: user
   end
 
   # Keycloak's response to a request to a missing endpoint

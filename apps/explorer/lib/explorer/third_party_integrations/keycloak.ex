@@ -227,9 +227,8 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
       log_extension_missing()
 
       with {:ok, user} <- get_user(user_id) do
-        user
-        |> Map.update("attributes", %{"address" => [address]}, &Map.put(&1 || %{}, "address", [address]))
-        |> then(&admin_put("#{users_path()}/#{user_id}", &1))
+        user_id
+        |> put_user_attributes(user, Map.put(user["attributes"] || %{}, "address", [address]))
         |> handle_update("Failed to link address to user")
       end
     else
@@ -297,13 +296,57 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     with {:ok, user} <- get_user(user_id),
          settings = user |> extract_settings() |> apply_settings_diff(diff),
          :ok <- validate_settings_count(settings),
-         :ok <- update_user(user_id, put_settings(user, settings)) do
-      {:ok, settings}
+         :ok <-
+           user_id
+           |> put_user_attributes(user, put_settings(user["attributes"] || %{}, settings))
+           |> handle_admin_settings_update(),
+         # the stored settings can differ from the requested ones, e.g. a removed setting that is declared in the
+         # user profile with a default value gets the default value
+         {:ok, user} <- get_user(user_id) do
+      {:ok, extract_settings(user)}
     else
       {:error, "User not found"} -> {:error, :user_not_found}
       error -> error
     end
   end
+
+  # Writes the attributes of a user read before via the admin API. Only the user profile is sent: the admin API
+  # also writes the account state of the representation, e.g. it would enable a user disabled after the read.
+  # The root attributes of the profile are sent too, as the admin API clears the editable ones that are missing.
+  defp put_user_attributes(user_id, user, attributes) do
+    body = user |> Map.take(["username", "email", "firstName", "lastName"]) |> Map.put("attributes", attributes)
+    admin_put("#{users_path()}/#{user_id}", body)
+  end
+
+  # the admin API validates the user profile, e.g. by the validators of a setting declared in it
+  defp handle_admin_settings_update({:ok, %{status_code: 400, body: body}} = response) do
+    case settings_validation_error(body) do
+      nil -> handle_update(response, "Failed to update user settings")
+      message -> {:invalid_settings, message}
+    end
+  end
+
+  defp handle_admin_settings_update(response), do: handle_update(response, "Failed to update user settings")
+
+  # The admin API responds with a single validation error or a list of them. It validates all attributes of the
+  # user, so errors of other attributes are not errors of the request.
+  defp settings_validation_error(body) do
+    errors =
+      case Utils.JSON.decode(body) do
+        {:ok, %{"errors" => [_ | _] = errors}} -> errors
+        {:ok, %{"field" => _} = error} -> [error]
+        _ -> []
+      end
+
+    if errors != [] and Enum.all?(errors, &settings_validation_error?/1) do
+      Enum.map_join(errors, ", ", &"Invalid #{&1["field"]}: #{&1["errorMessage"]}")
+    end
+  end
+
+  defp settings_validation_error?(%{"field" => @custom_settings_prefix <> _, "errorMessage" => message}),
+    do: is_binary(message)
+
+  defp settings_validation_error?(_error), do: false
 
   defp handle_settings_update({:ok, %{status_code: 200, body: body}}), do: {:ok, Utils.JSON.decode!(body)}
 
@@ -336,13 +379,11 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end)
   end
 
-  defp put_settings(user, settings) do
-    other_attributes =
-      Map.reject(user["attributes"] || %{}, fn {name, _} -> String.starts_with?(name, @custom_settings_prefix) end)
-
+  defp put_settings(attributes, settings) do
+    other_attributes = Map.reject(attributes, fn {name, _} -> String.starts_with?(name, @custom_settings_prefix) end)
     settings_attributes = Map.new(settings, fn {key, value} -> {@custom_settings_prefix <> key, [value]} end)
 
-    Map.put(user, "attributes", Map.merge(other_attributes, settings_attributes))
+    Map.merge(other_attributes, settings_attributes)
   end
 
   defp validate_settings_count(settings) when map_size(settings) > @max_settings_count,
