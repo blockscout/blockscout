@@ -562,6 +562,18 @@ defmodule Explorer.Application do
           Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
           :indexer
         ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.VacuumTokenTransfersAfterEip7708Sanitizing,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex,
+          :indexer
+        ),
         Explorer.Migrator.RefetchContractCodes
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process(:zksync),

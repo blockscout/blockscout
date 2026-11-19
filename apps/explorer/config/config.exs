@@ -210,7 +210,10 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.VacuumTokenTransfersAfterEip7708Sanitizing,
+      Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex
     ] do
   config :explorer, index_operation, enabled: true
 end
