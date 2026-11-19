@@ -25,6 +25,52 @@ defmodule EthereumJSONRPC.FilecoinTest do
 
     setup :verify_on_exit!
 
+    test "returns an error when a block reply is missing", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id_1, params: ["0x1"]}, %{params: ["0x2"]}], _ ->
+        {:ok, [%{id: id_1, result: []}]}
+      end)
+      # the block left without a reply is requested again, separately
+      |> expect(:json_rpc, fn [%{params: ["0x2"]}], _ -> {:ok, []} end)
+
+      assert {:error, {:missing_responses, [2]}} =
+               Filecoin.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
+    test "accepts a complete batch with out-of-order replies", %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id_1, params: ["0x1"]}, %{id: id_2, params: ["0x2"]}], _ ->
+        {:ok, [%{id: id_2, result: []}, %{id: id_1, result: []}]}
+      end)
+
+      assert {:ok, []} = Filecoin.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
+    test "returns the received reply error over a missing reply", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      error = %{code: -32_000, message: "boom"}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id_1, params: ["0x1"]}, %{params: ["0x2"]}], _ ->
+        {:ok, [%{id: id_1, error: error}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: ["0x2"]}], _ -> {:ok, []} end)
+
+      assert {:error, [^error]} = Filecoin.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
+    test "returns an unattributable id-less error to the caller", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      error = %{code: -32_000, message: "boom"}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{params: ["0x1"]}, %{params: ["0x2"]}], _ ->
+        {:ok, [%{id: nil, error: error}]}
+      end)
+
+      assert {:error, [^error]} = Filecoin.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
     test "is supported", %{json_rpc_named_arguments: json_rpc_named_arguments} do
       block_number = 3_663_376
       block_quantity = EthereumJSONRPC.integer_to_quantity(block_number)

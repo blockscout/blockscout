@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.Geth do
 
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
+  alias EthereumJSONRPC.{BatchCorrelation, FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
   alias EthereumJSONRPC.Geth.{Calls, PolygonTracer, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
@@ -47,14 +47,14 @@ defmodule EthereumJSONRPC.Geth do
   # request failed: the failure is returned only when there are none.
   defp fetch_transaction_traces(id_to_params, json_rpc_named_arguments, only_first_trace \\ false) do
     with {:ok, {responses, uncorrelated, unmatched}, refetch_result} <-
-           fetch_correlated(
+           BatchCorrelation.fetch(
              id_to_params,
              &debug_trace_transaction_requests(&1, only_first_trace),
              json_rpc_named_arguments
            ),
          :ok <- check_transaction_errors(responses, uncorrelated, id_to_params),
          :ok <- refetch_result,
-         :ok <- check_no_missing_responses(unmatched, id_to_params) do
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
       {:ok, responses}
     end
   end
@@ -64,19 +64,12 @@ defmodule EthereumJSONRPC.Geth do
   # are returned as they are, without request data, so they never mark the
   # block of another request.
   defp check_transaction_errors(responses, uncorrelated, id_to_params) do
-    attributed_errors =
-      responses
-      |> Enum.filter(&Map.has_key?(&1, :error))
-      |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
+    BatchCorrelation.check_errors(responses, uncorrelated, fn response ->
+      {:error, annotated_error} =
+        debug_trace_transaction_response_to_internal_transactions_params(response, id_to_params)
 
-    case attributed_errors ++ uncorrelated_errors(uncorrelated) do
-      [] -> :ok
-      errors -> reduce_internal_transactions_params(errors)
-    end
-  end
-
-  defp uncorrelated_errors(uncorrelated) do
-    for %{error: error} <- uncorrelated, do: {:error, error}
+      annotated_error
+    end)
   end
 
   def correct_timeouts(json_rpc_named_arguments) do
@@ -137,13 +130,13 @@ defmodule EthereumJSONRPC.Geth do
     id_to_params = id_to_params(block_numbers)
 
     with {:ok, {blocks_responses, uncorrelated, unmatched}, refetch_result} <-
-           fetch_correlated(id_to_params, &debug_trace_block_by_number_requests/1, json_rpc_named_arguments),
+           BatchCorrelation.fetch(id_to_params, &debug_trace_block_by_number_requests/1, json_rpc_named_arguments),
          # all errors go first, including those of replies that cannot be
          # attributed to a block, so the fetcher can still fall back to tracing
          # by transactions (e.g. on incorrect top-level calls)
-         :ok <- check_block_errors(blocks_responses, uncorrelated, id_to_params),
+         :ok <- check_block_errors(blocks_responses, uncorrelated),
          :ok <- refetch_result,
-         :ok <- check_no_missing_responses(unmatched, id_to_params) do
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
       {transactions_id_to_params, transactions_responses} =
@@ -177,152 +170,33 @@ defmodule EthereumJSONRPC.Geth do
   end
 
   @doc """
-  Matches batch replies to the requested ids.
-
-  Replies are matched by id, not by position, so a complete batch whose replies
-  arrive out of order is accepted. Only the first reply with a requested id is
-  matched: replies with an id that was not requested, and repeated replies with
-  the same id, are left uncorrelated.
-
-  Some endpoints omit the id in error replies. Such a reply is attributed to a
-  request only when the batch consists of that single request, as that is the
-  only case in which it is certain which request the reply answered: a reply
-  without an id in a bigger batch can be an error of a whole chunk of the
-  batch. It is left uncorrelated instead of being guessed from the reply order.
+  Collects the errors of the block trace replies: the errors of the replies
+  matched to a block (top-level and per-transaction), plus the errors of the
+  replies that cannot be attributed to a block.
 
   ## Parameters
-  - `responses`: raw batch replies
-  - `id_to_params`: map of request id to request params that was used to build
-    the batch
+  - `blocks_responses`: replies matched to a requested block
+  - `uncorrelated`: replies that could not be attributed to a block
 
   ## Returns
-  - `{responses, uncorrelated, unmatched}`:
-    - `responses`: replies matched to a requested id (including the attributed
-      reply without an id)
-    - `uncorrelated`: replies that could not be attributed to a request
-    - `unmatched`: requested ids without a matched reply
+  - `:ok` if there are no errors
+  - `{:error, errors}` otherwise
   """
-  @spec correlate_responses([map()], %{non_neg_integer() => any()}) :: {[map()], [map()], [non_neg_integer()]}
-  def correlate_responses(responses, id_to_params) do
-    {correlated, uncorrelated, matched_ids} =
-      Enum.reduce(responses, {[], [], MapSet.new()}, fn %{id: id} = response, {correlated, uncorrelated, matched_ids} ->
-        if Map.has_key?(id_to_params, id) and not MapSet.member?(matched_ids, id) do
-          {[response | correlated], uncorrelated, MapSet.put(matched_ids, id)}
-        else
-          {correlated, [response | uncorrelated], matched_ids}
-        end
+  @spec check_block_errors([map()], [map()]) :: :ok | {:error, list()}
+  def check_block_errors(blocks_responses, uncorrelated) do
+    attributed_errors =
+      Enum.reduce(blocks_responses, [], fn
+        %{result: result}, acc ->
+          Enum.reduce(result, acc, fn
+            %{"result" => _calls_result}, inner_acc -> inner_acc
+            %{"error" => error}, inner_acc -> [error | inner_acc]
+          end)
+
+        %{error: error}, acc ->
+          [error | acc]
       end)
 
-    unmatched = id_to_params |> Map.keys() |> Enum.reject(&MapSet.member?(matched_ids, &1))
-
-    case {map_size(id_to_params), unmatched, uncorrelated} do
-      {1, [id], [%{id: nil} = response]} -> {[%{response | id: id}], [], []}
-      _ -> {Enum.reverse(correlated), Enum.reverse(uncorrelated), unmatched}
-    end
-  end
-
-  # Sends the batch and matches the replies to the requests. The requests of a
-  # partially answered batch that are left without a reply are sent again, each
-  # one separately: a reply to a single request is always attributable, even
-  # without an id, and the replies that did arrive are kept instead of being
-  # requested again with the whole batch.
-  #
-  # The last element of the result is the result of those separate requests.
-  # When one of them fails, the replies received so far are still returned
-  # with the failure, so the caller can check them for errors first.
-  @spec fetch_correlated(
-          %{non_neg_integer() => any()},
-          (%{non_neg_integer() => any()} -> [EthereumJSONRPC.Transport.request()]),
-          EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: {:ok, {[map()], [map()], [non_neg_integer()]}, :ok | {:error, any()}} | {:error, any()}
-  defp fetch_correlated(id_to_params, requests_fun, json_rpc_named_arguments) do
-    with {:ok, raw_responses} <- id_to_params |> requests_fun.() |> json_rpc(json_rpc_named_arguments) do
-      correlation = correlate_responses(raw_responses, id_to_params)
-
-      if refetch_unmatched?(correlation, id_to_params) do
-        refetch_unmatched(correlation, id_to_params, requests_fun, json_rpc_named_arguments)
-      else
-        {:ok, correlation, :ok}
-      end
-    end
-  end
-
-  defp refetch_unmatched?({_responses, _uncorrelated, []}, _id_to_params), do: false
-
-  # a single request can't be narrowed down any further
-  defp refetch_unmatched?(_correlation, id_to_params) when map_size(id_to_params) == 1, do: false
-
-  # At most one reply and no matched ones: the batch failed as a whole (e.g. it
-  # was rate limited), so it isn't multiplied into separate requests.
-  defp refetch_unmatched?({[], uncorrelated, _unmatched}, _id_to_params) when length(uncorrelated) <= 1, do: false
-
-  defp refetch_unmatched?(_correlation, _id_to_params), do: true
-
-  # The uncorrelated replies of the batch are dropped here: the requests they
-  # could answer are sent again, and their replies are attributable this time.
-  # The separate requests stop at the first one that fails. The uncorrelated
-  # replies of the batch are returned in that case, still not attributed to a
-  # request: they are the only replies left for the requests that weren't
-  # answered separately.
-  defp refetch_unmatched(
-         {responses, batch_uncorrelated, unmatched},
-         id_to_params,
-         requests_fun,
-         json_rpc_named_arguments
-       ) do
-    Enum.reduce_while(unmatched, {:ok, {responses, [], []}, :ok}, fn id,
-                                                                     {:ok,
-                                                                      {responses_acc, uncorrelated_acc, unmatched_acc},
-                                                                      :ok} ->
-      case fetch_correlated(Map.take(id_to_params, [id]), requests_fun, json_rpc_named_arguments) do
-        {:ok, {responses, uncorrelated, unmatched}, :ok} ->
-          {:cont,
-           {:ok, {responses_acc ++ responses, uncorrelated_acc ++ uncorrelated, unmatched_acc ++ unmatched}, :ok}}
-
-        {:error, _reason} = error ->
-          {:halt, {:ok, {responses_acc, uncorrelated_acc ++ batch_uncorrelated, unmatched_acc}, error}}
-      end
-    end)
-  end
-
-  # Called once the errors are checked: a batch with requested ids left without
-  # a reply is incomplete, so the caller retries or fails instead of treating
-  # it as complete.
-  defp check_no_missing_responses([], _id_to_params), do: :ok
-
-  defp check_no_missing_responses(unmatched, id_to_params),
-    do: {:error, {:missing_responses, Enum.map(unmatched, &Map.fetch!(id_to_params, &1))}}
-
-  # Errors of the attributed block replies (top-level and per-transaction), plus
-  # the errors of replies that cannot be attributed to a block.
-  defp check_block_errors(blocks_responses, uncorrelated, id_to_params) do
-    attributed_errors =
-      case check_errors_exist(blocks_responses, id_to_params) do
-        :ok -> []
-        {:error, errors} -> errors
-      end
-
-    case attributed_errors ++ Keyword.values(uncorrelated_errors(uncorrelated)) do
-      [] -> :ok
-      errors -> {:error, errors}
-    end
-  end
-
-  @spec check_errors_exist(list(), %{non_neg_integer() => any()}) :: :ok | {:error, list()}
-  def check_errors_exist(blocks_responses, id_to_params) do
-    blocks_responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
-    |> Enum.reduce([], fn
-      %{result: result}, acc ->
-        Enum.reduce(result, acc, fn
-          %{"result" => _calls_result}, inner_acc -> inner_acc
-          %{"error" => error}, inner_acc -> [error | inner_acc]
-        end)
-
-      %{error: error}, acc ->
-        [error | acc]
-    end)
-    |> case do
+    case attributed_errors ++ BatchCorrelation.uncorrelated_errors(uncorrelated) do
       [] -> :ok
       errors -> {:error, errors}
     end
@@ -476,7 +350,6 @@ defmodule EthereumJSONRPC.Geth do
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
   end

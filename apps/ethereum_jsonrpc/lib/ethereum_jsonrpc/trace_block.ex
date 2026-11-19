@@ -4,7 +4,9 @@ defmodule EthereumJSONRPC.TraceBlock do
   Functions for processing the data from `trace_block` JSON RPC method.
   """
 
-  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
+  import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, request: 1]
+
+  alias EthereumJSONRPC.BatchCorrelation
 
   @spec fetch_block_internal_transactions(
           [non_neg_integer()],
@@ -14,12 +16,25 @@ defmodule EthereumJSONRPC.TraceBlock do
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments, traces_module) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, responses} <-
-           id_to_params
-           |> trace_block_requests()
-           |> json_rpc(json_rpc_named_arguments) do
+    with {:ok, {responses, uncorrelated, unmatched}, refetch_result} <-
+           BatchCorrelation.fetch(id_to_params, &trace_block_requests/1, json_rpc_named_arguments),
+         # all errors go first, then the failure of a separately sent request,
+         # then the blocks left without a reply
+         :ok <- check_errors(responses, uncorrelated, id_to_params),
+         :ok <- refetch_result,
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
       trace_block_responses_to_internal_transactions_params(responses, id_to_params, traces_module)
     end
+  end
+
+  # Error replies matched to a block are annotated with its number. Errors of
+  # replies that cannot be attributed are returned as they are, so they never
+  # mark another block.
+  defp check_errors(responses, uncorrelated, id_to_params) do
+    BatchCorrelation.check_errors(responses, uncorrelated, fn response ->
+      {:error, annotated_error} = trace_block_response_to_traces(response, id_to_params)
+      annotated_error
+    end)
   end
 
   defp trace_block_requests(id_to_params) when is_map(id_to_params) do
@@ -45,7 +60,6 @@ defmodule EthereumJSONRPC.TraceBlock do
 
   defp trace_block_responses_to_traces(responses, id_to_params) do
     responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&trace_block_response_to_traces(&1, id_to_params))
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> case do
