@@ -43,15 +43,17 @@ defmodule EthereumJSONRPC.Geth do
   # the batch is complete and has no errors. All errors go first, before any
   # conversion (and before the metadata requests of the opcode tracer);
   # attributed ones carry their block number, so the fetcher can still mark
-  # blocks for refetch.
+  # blocks for refetch. That includes the errors received before a separate
+  # request failed: the failure is returned only when there are none.
   defp fetch_transaction_traces(id_to_params, json_rpc_named_arguments, only_first_trace \\ false) do
-    with {:ok, {responses, uncorrelated, unmatched}} <-
+    with {:ok, {responses, uncorrelated, unmatched}, refetch_result} <-
            fetch_correlated(
              id_to_params,
              &debug_trace_transaction_requests(&1, only_first_trace),
              json_rpc_named_arguments
            ),
          :ok <- check_transaction_errors(responses, uncorrelated, id_to_params),
+         :ok <- refetch_result,
          :ok <- check_no_missing_responses(unmatched, id_to_params) do
       {:ok, responses}
     end
@@ -134,12 +136,13 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, {blocks_responses, uncorrelated, unmatched}} <-
+    with {:ok, {blocks_responses, uncorrelated, unmatched}, refetch_result} <-
            fetch_correlated(id_to_params, &debug_trace_block_by_number_requests/1, json_rpc_named_arguments),
          # all errors go first, including those of replies that cannot be
          # attributed to a block, so the fetcher can still fall back to tracing
          # by transactions (e.g. on incorrect top-level calls)
          :ok <- check_block_errors(blocks_responses, uncorrelated, id_to_params),
+         :ok <- refetch_result,
          :ok <- check_no_missing_responses(unmatched, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
@@ -223,11 +226,15 @@ defmodule EthereumJSONRPC.Geth do
   # one separately: a reply to a single request is always attributable, even
   # without an id, and the replies that did arrive are kept instead of being
   # requested again with the whole batch.
+  #
+  # The last element of the result is the result of those separate requests.
+  # When one of them fails, the replies received so far are still returned
+  # with the failure, so the caller can check them for errors first.
   @spec fetch_correlated(
           %{non_neg_integer() => any()},
           (%{non_neg_integer() => any()} -> [EthereumJSONRPC.Transport.request()]),
           EthereumJSONRPC.json_rpc_named_arguments()
-        ) :: {:ok, {[map()], [map()], [non_neg_integer()]}} | {:error, any()}
+        ) :: {:ok, {[map()], [map()], [non_neg_integer()]}, :ok | {:error, any()}} | {:error, any()}
   defp fetch_correlated(id_to_params, requests_fun, json_rpc_named_arguments) do
     with {:ok, raw_responses} <- id_to_params |> requests_fun.() |> json_rpc(json_rpc_named_arguments) do
       correlation = correlate_responses(raw_responses, id_to_params)
@@ -235,7 +242,7 @@ defmodule EthereumJSONRPC.Geth do
       if refetch_unmatched?(correlation, id_to_params) do
         refetch_unmatched(correlation, id_to_params, requests_fun, json_rpc_named_arguments)
       else
-        {:ok, correlation}
+        {:ok, correlation, :ok}
       end
     end
   end
@@ -253,15 +260,19 @@ defmodule EthereumJSONRPC.Geth do
 
   # The uncorrelated replies of the batch are dropped here: the requests they
   # could answer are sent again, and their replies are attributable this time.
+  # The separate requests stop at the first one that fails.
   defp refetch_unmatched({responses, _uncorrelated, unmatched}, id_to_params, requests_fun, json_rpc_named_arguments) do
-    Enum.reduce_while(unmatched, {:ok, {responses, [], []}}, fn id,
-                                                                {:ok, {responses_acc, uncorrelated_acc, unmatched_acc}} ->
+    Enum.reduce_while(unmatched, {:ok, {responses, [], []}, :ok}, fn id,
+                                                                     {:ok,
+                                                                      {responses_acc, uncorrelated_acc, unmatched_acc} =
+                                                                        acc, :ok} ->
       case fetch_correlated(Map.take(id_to_params, [id]), requests_fun, json_rpc_named_arguments) do
-        {:ok, {responses, uncorrelated, unmatched}} ->
-          {:cont, {:ok, {responses_acc ++ responses, uncorrelated_acc ++ uncorrelated, unmatched_acc ++ unmatched}}}
+        {:ok, {responses, uncorrelated, unmatched}, :ok} ->
+          {:cont,
+           {:ok, {responses_acc ++ responses, uncorrelated_acc ++ uncorrelated, unmatched_acc ++ unmatched}, :ok}}
 
         {:error, _reason} = error ->
-          {:halt, error}
+          {:halt, {:ok, acc, error}}
       end
     end)
   end

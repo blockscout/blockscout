@@ -1229,6 +1229,53 @@ defmodule EthereumJSONRPC.GethTest do
                [{1, @transaction_hash_1, 1}, {2, @transaction_hash_2, 2}]
     end
 
+    test "fetch_internal_transactions/2 returns the received reply errors when a separate request fails", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [_, _] = requests, _ ->
+        %{id: id} = Enum.find(requests, &match?(%{params: [@transaction_hash_1, _]}, &1))
+        {:ok, [%{id: id, error: %{code: -32_000, message: "historical backend error"}}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: [@transaction_hash_2, _]}], _ -> {:error, :timeout} end)
+
+      # the fetcher needs the annotated error to mark the block for refetch
+      assert {:error,
+              [
+                %{
+                  message: "historical backend error",
+                  data: %{block_number: 1, transaction_hash: @transaction_hash_1}
+                }
+              ]} = Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+    end
+
+    test "fetch_internal_transactions/2 returns the failure of a separate request when no error is received", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [_, _] = requests, _ ->
+        %{id: id} = Enum.find(requests, &match?(%{params: [@transaction_hash_1, _]}, &1))
+        {:ok, [%{id: id, result: call_trace()}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: [@transaction_hash_2, _]}], _ -> {:error, :timeout} end)
+
+      assert {:error, :timeout} = Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+    end
+
+    test "fetch_block_internal_transactions/2 returns the received reply errors when a separate request fails", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      error = %{code: -32_000, message: "incorrect number of top-level calls"}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id_1, params: ["0x1", _]}, %{params: ["0x2", _]}], _ ->
+        {:ok, [%{id: id_1, error: error}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: ["0x2", _]}], _ -> {:error, :timeout} end)
+
+      assert {:error, [^error]} = Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
     test "fetch_internal_transactions/2 does not match replies with a repeated or not requested id", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
