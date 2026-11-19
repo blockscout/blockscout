@@ -19,6 +19,7 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
     PendingBlockOperation,
     PendingOperationsHelper,
     PendingTransactionOperation,
+    SignedAuthorization,
     Transaction
   }
 
@@ -869,6 +870,9 @@ defmodule Explorer.Chain.Import.Runner.Transactions do
           )
 
         PendingOperationsHelper.delete_related_transaction_operations(transaction_hashes)
+
+        # the statuses were calculated for the blocks that the transactions left
+        SignedAuthorization.reset_statuses(repo, transaction_hashes, updated_at, timeout)
 
         MissingBlockRange.add_ranges_by_block_numbers(result)
 

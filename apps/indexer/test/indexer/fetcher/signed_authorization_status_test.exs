@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
   import Mox
 
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Data, SignedAuthorization, SmartContract.Proxy.Models.Implementation}
+  alias Explorer.Chain.{Data, SignedAuthorization, SmartContract.Proxy.Models.Implementation, Transaction}
   alias Explorer.TestHelper
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.SignedAuthorizationStatus
@@ -280,6 +280,53 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
                [delegate2.hash],
                nil
              ]
+    end
+
+    test "does not write a status that was computed for a block the transaction left", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      SignedAuthorizationStatus.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      block = insert(:block, number: 1010)
+      delegate = insert(:address)
+      address = insert(:address)
+
+      transaction = insert(:transaction, from_address: address, nonce: 100, type: 4) |> with_block(block)
+
+      # the nonce is known from the transaction of the same sender, so no JSON-RPC request for the nonce is needed
+      auth =
+        insert(:signed_authorization,
+          transaction: transaction,
+          index: 0,
+          address: delegate.hash,
+          authority: address.hash,
+          nonce: 101
+        )
+
+      # a reorg changes the transaction to a pending transaction after the entry was built
+      Repo.update_all(
+        from(t in Transaction, where: t.hash == ^transaction.hash),
+        set: [
+          block_hash: nil,
+          block_number: nil,
+          gas_used: nil,
+          cumulative_gas_used: nil,
+          index: nil,
+          status: nil,
+          error: nil
+        ]
+      )
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        TestHelper.get_chain_id_mock()
+      end
+
+      assert :ok = SignedAuthorizationStatus.async_fetch([transaction], [auth], false)
+
+      wait_for_tasks(SignedAuthorizationStatus)
+
+      assert %{status: nil} = Repo.get_by(SignedAuthorization, transaction_hash: transaction.hash, index: 0)
+      assert %{contract_code: nil, nonce: nil} = Repo.reload(address)
     end
   end
 

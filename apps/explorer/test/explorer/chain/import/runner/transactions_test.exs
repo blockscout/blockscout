@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Import.Runner.TransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Address, Block, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, SignedAuthorization, Transaction, Wei}
   alias Explorer.Chain.Import.Runner.Transactions
 
   describe "run/1" do
@@ -120,6 +120,56 @@ defmodule Explorer.Chain.Import.Runner.TransactionsTest do
       assert %{block_hash: nil, type: 2} = pending_transaction = Repo.get_by(Transaction, hash: reorg_transaction.hash)
       assert Decimal.eq?(pending_transaction.max_priority_fee_per_gas.value, max_priority_fee_per_gas.value)
       assert Decimal.eq?(pending_transaction.max_fee_per_gas.value, max_fee_per_gas.value)
+    end
+
+    test "signed authorizations of recollated transactions lose their statuses" do
+      reorg = insert(:block)
+
+      reorg_transaction = :transaction |> insert(type: 4) |> with_block(reorg)
+      insert(:signed_authorization, transaction: reorg_transaction, index: 0, status: :ok)
+      insert(:signed_authorization, transaction: reorg_transaction, index: 1, status: :invalid_signature)
+
+      # an authorization of a transaction that stays in its block is not changed
+      other_transaction = :transaction |> insert(type: 4) |> with_block()
+      insert(:signed_authorization, transaction: other_transaction, index: 0, status: :ok)
+
+      transaction = :transaction |> insert() |> with_block(reorg)
+      reorg |> Block.changeset(%{consensus: false}) |> Repo.update()
+      block = insert(:block, consensus: true, number: reorg.number)
+
+      transaction_params = %{
+        block_hash: block.hash,
+        block_number: block.number,
+        gas_used: transaction.gas_used,
+        cumulative_gas_used: transaction.cumulative_gas_used,
+        index: transaction.index,
+        from_address_hash: transaction.from_address.hash,
+        gas: transaction.gas,
+        gas_price: transaction.gas_price,
+        hash: transaction.hash,
+        input: transaction.input,
+        nonce: transaction.nonce,
+        r: transaction.r,
+        s: transaction.s,
+        to_address_hash: transaction.to_address.hash,
+        v: transaction.v,
+        value: transaction.value
+      }
+
+      assert {:ok, _} = run_transactions([transaction_params])
+
+      assert %{block_hash: nil} = Repo.get_by(Transaction, hash: reorg_transaction.hash)
+
+      assert [nil, nil] =
+               Repo.all(
+                 from(authorization in SignedAuthorization,
+                   where: authorization.transaction_hash == ^reorg_transaction.hash,
+                   order_by: authorization.index,
+                   select: authorization.status
+                 )
+               )
+
+      assert %{status: :ok} = Repo.get_by(SignedAuthorization, transaction_hash: other_transaction.hash, index: 0)
     end
   end
 

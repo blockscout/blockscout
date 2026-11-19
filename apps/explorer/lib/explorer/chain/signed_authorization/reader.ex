@@ -6,7 +6,7 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
 
   import Ecto.Query, only: [from: 2]
 
-  alias Explorer.Chain.{Block, Hash, SignedAuthorization}
+  alias Explorer.Chain.{Block, Hash, SignedAuthorization, Transaction}
   alias Explorer.Repo
 
   @doc """
@@ -48,6 +48,10 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
   @doc """
   Returns latest successful authorizations for a list of addresses.
 
+  Only authorizations of transactions in consensus blocks are counted. A status
+  of an authorization in a block that lost consensus was calculated for a chain
+  that is not canonical anymore.
+
   ## Parameters
 
     - `address_hashes`: The list of `authority` addresses to fetch authorizations for.
@@ -64,11 +68,45 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
     query =
       from(
         s in SignedAuthorization,
-        where: s.authority in ^address_hashes and s.status == :ok,
+        join: t in assoc(s, :transaction),
+        join: b in assoc(t, :block),
+        where: s.authority in ^address_hashes and s.status == :ok and b.consensus == true,
         select: %{authority: s.authority, nonce: max(s.nonce)},
         group_by: s.authority
       )
 
     Repo.all(query)
+  end
+
+  @doc """
+  Returns the block hash of each given transaction that is in a consensus block.
+
+  A pending transaction and a transaction of a block that lost consensus are
+  absent from the result.
+
+  ## Parameters
+
+    - `transaction_hashes`: The list of transaction hashes to look up.
+
+  ## Returns
+
+    - `%{Hash.Full.t() => Hash.Full.t()}`: The map from a transaction hash to
+      the hash of the consensus block that contains the transaction.
+  """
+  @spec transaction_hashes_to_consensus_block_hashes([Hash.Full.t()]) :: %{Hash.Full.t() => Hash.Full.t()}
+  def transaction_hashes_to_consensus_block_hashes([]), do: %{}
+
+  def transaction_hashes_to_consensus_block_hashes(transaction_hashes) do
+    query =
+      from(
+        t in Transaction,
+        join: b in assoc(t, :block),
+        where: t.hash in ^transaction_hashes and b.consensus == true,
+        select: {t.hash, t.block_hash}
+      )
+
+    query
+    |> Repo.all()
+    |> Map.new()
   end
 end

@@ -97,6 +97,49 @@ defmodule Explorer.Chain.SignedAuthorization do
   end
 
   @doc """
+  Clears the `status` of all signed authorizations of the given transactions.
+
+  The block import calls this function when the transactions leave their block
+  and become pending. A status is known only for a transaction in a block, and
+  the import of the next block that contains the transaction writes it again.
+
+  ## Parameters
+  - `repo`: The repo to run the update in.
+  - `transaction_hashes`: The hashes of the transactions that became pending.
+  - `updated_at`: The timestamp to set on the changed rows.
+  - `timeout`: The timeout of the update query.
+
+  ## Returns
+  - `:ok`
+  """
+  @spec reset_statuses(module(), [Hash.Full.t()], DateTime.t(), timeout()) :: :ok
+  def reset_statuses(_repo, [], _updated_at, _timeout), do: :ok
+
+  def reset_statuses(repo, transaction_hashes, updated_at, timeout) do
+    acquire_query =
+      from(
+        authorization in __MODULE__,
+        where: authorization.transaction_hash in ^transaction_hashes and not is_nil(authorization.status),
+        select: %{transaction_hash: authorization.transaction_hash, index: authorization.index},
+        # Enforce SignedAuthorization ShareLocks order, the same as in `Explorer.Chain.Import.Runner.SignedAuthorizations`
+        order_by: [asc: authorization.transaction_hash, asc: authorization.index],
+        lock: "FOR NO KEY UPDATE"
+      )
+
+    repo.update_all(
+      from(
+        authorization in __MODULE__,
+        join: locked in subquery(acquire_query),
+        on: authorization.transaction_hash == locked.transaction_hash and authorization.index == locked.index
+      ),
+      [set: [status: nil, updated_at: updated_at]],
+      timeout: timeout
+    )
+
+    :ok
+  end
+
+  @doc """
   Converts a `SignedAuthorization.t()` into a map of import params that can be
   fed into `Chain.import/1`. It sets synthetic contract code for EIP-7702 proxies
   and updates the nonce.

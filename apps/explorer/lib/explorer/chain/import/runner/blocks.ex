@@ -23,6 +23,7 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
     Import,
     Log,
     PendingOperationsHelper,
+    SignedAuthorization,
     SmartContract,
     Token,
     Token.Instance,
@@ -541,9 +542,12 @@ defmodule Explorer.Chain.Import.Runner.Blocks do
 
     {_num, transactions} = repo.update_all(update_query, [], timeout: timeout)
 
-    transactions
-    |> Enum.map(& &1.hash)
-    |> PendingOperationsHelper.delete_related_transaction_operations()
+    transaction_hashes = Enum.map(transactions, & &1.hash)
+
+    PendingOperationsHelper.delete_related_transaction_operations(transaction_hashes)
+
+    # the statuses were calculated for the block that the transactions left
+    SignedAuthorization.reset_statuses(repo, transaction_hashes, updated_at, timeout)
 
     {:ok, transactions}
   rescue

@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
-  alias Explorer.Chain.{Address, Block, SmartContract, Token, TokenTransfer, Transaction, Wei}
+  alias Explorer.Chain.{Address, Block, SignedAuthorization, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}
@@ -682,6 +682,35 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
       assert %{block_hash: nil, type: 2} = pending_transaction = Repo.get_by(Transaction, hash: transaction_hash)
       assert Decimal.eq?(pending_transaction.max_priority_fee_per_gas.value, max_priority_fee_per_gas.value)
       assert Decimal.eq?(pending_transaction.max_fee_per_gas.value, max_fee_per_gas.value)
+    end
+
+    test "signed authorizations of forked transactions lose their statuses",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      old_block = insert(:block, number: block_number, consensus: true)
+
+      %Transaction{hash: transaction_hash} = transaction = :transaction |> insert(type: 4) |> with_block(old_block)
+
+      insert(:signed_authorization, transaction: transaction, index: 0, status: :ok)
+      insert(:signed_authorization, transaction: transaction, index: 1, status: :invalid_nonce)
+      insert(:signed_authorization, transaction: transaction, index: 2, status: :invalid_signature)
+
+      # an authorization of a transaction that stays in its block is not changed
+      other_transaction = :transaction |> insert(type: 4) |> with_block()
+      insert(:signed_authorization, transaction: other_transaction, index: 0, status: :ok)
+
+      assert {:ok, %{fork_transactions: [%{hash: ^transaction_hash}]}} =
+               run_block_consensus_change(block, true, options)
+
+      assert [nil, nil, nil] =
+               Repo.all(
+                 from(authorization in SignedAuthorization,
+                   where: authorization.transaction_hash == ^transaction_hash,
+                   order_by: authorization.index,
+                   select: authorization.status
+                 )
+               )
+
+      assert %{status: :ok} = Repo.get_by(SignedAuthorization, transaction_hash: other_transaction.hash, index: 0)
     end
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1644
