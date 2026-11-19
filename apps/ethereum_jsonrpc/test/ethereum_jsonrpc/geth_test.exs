@@ -1276,6 +1276,39 @@ defmodule EthereumJSONRPC.GethTest do
       assert {:error, [^error]} = Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
     end
 
+    test "fetch_block_internal_transactions/2 returns the id-less errors of the batch when a separate request fails", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      # the fetcher falls back to tracing by transactions on this message
+      error = %{code: -32_000, message: "incorrect number of top-level calls"}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id_1, params: ["0x1", _]}, %{params: ["0x2", _]}], _ ->
+        {:ok, [block_trace_reply(id_1, @transaction_hash_1), %{id: nil, error: error}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: ["0x2", _]}], _ -> {:error, :timeout} end)
+
+      assert {:error, [^error]} = Geth.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+    end
+
+    test "fetch_internal_transactions/2 returns the id-less errors of the batch without request data when a separate request fails",
+         %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      error = %{code: -32_000, message: "historical backend error"}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [_, _] = requests, _ ->
+        %{id: id} = Enum.find(requests, &match?(%{params: [@transaction_hash_1, _]}, &1))
+        {:ok, [%{id: id, result: call_trace()}, %{id: nil, error: error}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: [@transaction_hash_2, _]}], _ -> {:error, :timeout} end)
+
+      assert {:error, [returned_error]} =
+               Geth.fetch_internal_transactions(transactions_params(), json_rpc_named_arguments)
+
+      # not attributed to the transaction that wasn't answered separately
+      assert returned_error == error
+    end
+
     test "fetch_internal_transactions/2 does not match replies with a repeated or not requested id", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do

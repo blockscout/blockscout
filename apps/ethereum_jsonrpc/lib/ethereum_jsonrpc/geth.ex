@@ -260,19 +260,27 @@ defmodule EthereumJSONRPC.Geth do
 
   # The uncorrelated replies of the batch are dropped here: the requests they
   # could answer are sent again, and their replies are attributable this time.
-  # The separate requests stop at the first one that fails.
-  defp refetch_unmatched({responses, _uncorrelated, unmatched}, id_to_params, requests_fun, json_rpc_named_arguments) do
+  # The separate requests stop at the first one that fails. The uncorrelated
+  # replies of the batch are returned in that case, still not attributed to a
+  # request: they are the only replies left for the requests that weren't
+  # answered separately.
+  defp refetch_unmatched(
+         {responses, batch_uncorrelated, unmatched},
+         id_to_params,
+         requests_fun,
+         json_rpc_named_arguments
+       ) do
     Enum.reduce_while(unmatched, {:ok, {responses, [], []}, :ok}, fn id,
                                                                      {:ok,
-                                                                      {responses_acc, uncorrelated_acc, unmatched_acc} =
-                                                                        acc, :ok} ->
+                                                                      {responses_acc, uncorrelated_acc, unmatched_acc},
+                                                                      :ok} ->
       case fetch_correlated(Map.take(id_to_params, [id]), requests_fun, json_rpc_named_arguments) do
         {:ok, {responses, uncorrelated, unmatched}, :ok} ->
           {:cont,
            {:ok, {responses_acc ++ responses, uncorrelated_acc ++ uncorrelated, unmatched_acc ++ unmatched}, :ok}}
 
         {:error, _reason} = error ->
-          {:halt, {:ok, acc, error}}
+          {:halt, {:ok, {responses_acc, uncorrelated_acc ++ batch_uncorrelated, unmatched_acc}, error}}
       end
     end)
   end
