@@ -100,8 +100,10 @@ defmodule Explorer.Chain.SignedAuthorization do
   Clears the `status` of all signed authorizations of the given transactions.
 
   The block import calls this function when the transactions leave their block
-  and become pending. A status is known only for a transaction in a block, and
-  the import of the next block that contains the transaction writes it again.
+  and become pending. A status is known only for a transaction in a block. When
+  a block contains the transaction again, the block import writes the statuses
+  that do not depend on the block and returns the rows with an empty status.
+  `Indexer.Fetcher.SignedAuthorizationStatus` then calculates the other statuses.
 
   ## Parameters
   - `repo`: The repo to run the update in.
@@ -119,7 +121,9 @@ defmodule Explorer.Chain.SignedAuthorization do
     acquire_query =
       from(
         authorization in __MODULE__,
-        where: authorization.transaction_hash in ^transaction_hashes and not is_nil(authorization.status),
+        # No filter on `status` here: the filter reads committed data and skips a row for which the status fetcher
+        # has an uncommitted write. Without the filter, the update waits for that write and clears its result.
+        where: authorization.transaction_hash in ^transaction_hashes,
         select: %{transaction_hash: authorization.transaction_hash, index: authorization.index},
         # Enforce SignedAuthorization ShareLocks order, the same as in `Explorer.Chain.Import.Runner.SignedAuthorizations`
         order_by: [asc: authorization.transaction_hash, asc: authorization.index],

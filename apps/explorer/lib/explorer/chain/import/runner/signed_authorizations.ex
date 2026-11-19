@@ -97,6 +97,9 @@ defmodule Explorer.Chain.Import.Runner.SignedAuthorizations do
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", authorization.updated_at)
         ]
       ],
+      # A row with an empty status is always updated, so that the import returns it.
+      # `Indexer.Fetcher.SignedAuthorizationStatus` gets only the returned rows. Without this condition, an
+      # authorization whose status was cleared after a reorg stays without a status when its transaction is in a block again.
       where:
         fragment(
           "(EXCLUDED.chain_id, EXCLUDED.address, EXCLUDED.nonce, EXCLUDED.r, EXCLUDED.s, EXCLUDED.v, EXCLUDED.authority, EXCLUDED.status) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -108,7 +111,7 @@ defmodule Explorer.Chain.Import.Runner.SignedAuthorizations do
           authorization.v,
           authorization.authority,
           authorization.status
-        )
+        ) or is_nil(authorization.status)
     )
   end
 end

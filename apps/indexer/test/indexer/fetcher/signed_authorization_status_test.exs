@@ -317,16 +317,38 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
         ]
       )
 
+      # control case: a transaction that stays in its consensus block, so the test fails if the fetcher processes nothing
+      control_block = insert(:block, number: 1020)
+      control_address = insert(:address)
+
+      control_transaction =
+        insert(:transaction, from_address: control_address, nonce: 200, type: 4) |> with_block(control_block)
+
+      control_auth =
+        insert(:signed_authorization,
+          transaction: control_transaction,
+          index: 0,
+          address: delegate.hash,
+          authority: control_address.hash,
+          nonce: 201
+        )
+
       if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
         TestHelper.get_chain_id_mock()
       end
 
-      assert :ok = SignedAuthorizationStatus.async_fetch([transaction], [auth], false)
+      assert :ok =
+               SignedAuthorizationStatus.async_fetch([transaction, control_transaction], [auth, control_auth], false)
 
       wait_for_tasks(SignedAuthorizationStatus)
 
       assert %{status: nil} = Repo.get_by(SignedAuthorization, transaction_hash: transaction.hash, index: 0)
       assert %{contract_code: nil, nonce: nil} = Repo.reload(address)
+
+      assert %{status: :ok} = Repo.get_by(SignedAuthorization, transaction_hash: control_transaction.hash, index: 0)
+
+      expected_code = %Data{bytes: <<239, 1, 0>> <> delegate.hash.bytes}
+      assert %{contract_code: ^expected_code, nonce: 201} = Repo.reload(control_address)
     end
   end
 
