@@ -8,7 +8,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
   import Mox
 
   alias Explorer.Chain.Cache.ChainId
-  alias Explorer.Chain.{Data, SignedAuthorization, SmartContract.Proxy.Models.Implementation, Transaction}
+  alias Explorer.Chain.{Block, Data, SignedAuthorization, SmartContract.Proxy.Models.Implementation, Transaction}
   alias Explorer.TestHelper
   alias Indexer.BufferedTask
   alias Indexer.Fetcher.SignedAuthorizationStatus
@@ -349,6 +349,71 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
 
       expected_code = %Data{bytes: <<239, 1, 0>> <> delegate.hash.bytes}
       assert %{contract_code: ^expected_code, nonce: 201} = Repo.reload(control_address)
+    end
+  end
+
+  describe "run/2" do
+    # A block can lose consensus as an invalid neighbor and get it back with the same hash. Its transactions keep
+    # their `block_hash`, and no new entry is queued for them, so the status must be written.
+    test "writes a status when the block of the transaction lost consensus but still contains it", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block = insert(:block, number: 1010)
+      delegate = insert(:address)
+      address = insert(:address)
+
+      transaction = insert(:transaction, from_address: address, nonce: 100, type: 4) |> with_block(block)
+
+      insert(:signed_authorization,
+        transaction: transaction,
+        index: 0,
+        address: delegate.hash,
+        authority: address.hash,
+        nonce: 101
+      )
+
+      Repo.update_all(from(b in Block, where: b.hash == ^block.hash), set: [consensus: false])
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        TestHelper.get_chain_id_mock()
+      end
+
+      assert :ok =
+               SignedAuthorizationStatus.run(
+                 [%{block_number: block.number, block_hash: block.hash}],
+                 json_rpc_named_arguments
+               )
+
+      assert %{status: :ok} = Repo.get_by(SignedAuthorization, transaction_hash: transaction.hash, index: 0)
+    end
+
+    # The same block can be in the queue two times, for example after the chain switches to another block and back.
+    test "writes statuses when one batch has two entries for the same block", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      block = insert(:block, number: 1010)
+      delegate = insert(:address)
+      address = insert(:address)
+
+      transaction = insert(:transaction, from_address: address, nonce: 100, type: 4) |> with_block(block)
+
+      insert(:signed_authorization,
+        transaction: transaction,
+        index: 0,
+        address: delegate.hash,
+        authority: address.hash,
+        nonce: 101
+      )
+
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        TestHelper.get_chain_id_mock()
+      end
+
+      entry = %{block_number: block.number, block_hash: block.hash}
+
+      assert :ok = SignedAuthorizationStatus.run([entry, entry], json_rpc_named_arguments)
+
+      assert %{status: :ok} = Repo.get_by(SignedAuthorization, transaction_hash: transaction.hash, index: 0)
     end
   end
 

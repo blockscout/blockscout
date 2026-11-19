@@ -79,10 +79,11 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
   end
 
   @doc """
-  Returns the block hash of each given transaction that is in a consensus block.
+  Returns the block hash of each given transaction that is in a block.
 
-  A pending transaction and a transaction of a block that lost consensus are
-  absent from the result.
+  A pending transaction is absent from the result. The consensus of the block
+  is not used: a block can lose consensus and get it back with the same hash,
+  and its transactions keep their `block_hash` during that time.
 
   ## Parameters
 
@@ -91,17 +92,16 @@ defmodule Explorer.Chain.SignedAuthorization.Reader do
   ## Returns
 
     - `%{Hash.Full.t() => Hash.Full.t()}`: The map from a transaction hash to
-      the hash of the consensus block that contains the transaction.
+      the hash of the block that contains the transaction.
   """
-  @spec transaction_hashes_to_consensus_block_hashes([Hash.Full.t()]) :: %{Hash.Full.t() => Hash.Full.t()}
-  def transaction_hashes_to_consensus_block_hashes([]), do: %{}
+  @spec transaction_hashes_to_block_hashes([Hash.Full.t()]) :: %{Hash.Full.t() => Hash.Full.t()}
+  def transaction_hashes_to_block_hashes([]), do: %{}
 
-  def transaction_hashes_to_consensus_block_hashes(transaction_hashes) do
+  def transaction_hashes_to_block_hashes(transaction_hashes) do
     query =
       from(
         t in Transaction,
-        join: b in assoc(t, :block),
-        where: t.hash in ^transaction_hashes and b.consensus == true,
+        where: t.hash in ^transaction_hashes and not is_nil(t.block_hash),
         select: {t.hash, t.block_hash}
       )
 

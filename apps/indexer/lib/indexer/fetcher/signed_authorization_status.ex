@@ -16,7 +16,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
     only: [
       stream_blocks_to_refetch_signed_authorizations_statuses: 2,
       address_hashes_to_latest_authorizations: 1,
-      transaction_hashes_to_consensus_block_hashes: 1
+      transaction_hashes_to_block_hashes: 1
     ]
 
   alias EthereumJSONRPC.Utility.RangesHelper
@@ -329,24 +329,30 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   # Drops the authorizations whose status was computed for a block that does not contain their transaction anymore.
   #
-  # An entry can wait in the queue or be retried while a reorg removes its block from the canonical chain.
+  # An entry can wait in the queue or be retried while a reorg moves its transactions out of the block.
   # A status computed for such a block must not be written, and the authority address must not be updated from it.
+  # The consensus of the block is not used here: a block can lose consensus and get it back with the same hash,
+  # and no new entry is queued for its transactions in that case.
+  #
+  # The same block can be in one batch two times, so the result has each authorization only once.
+  # Two rows with the same key in one upsert make PostgreSQL reject the whole command.
   #
   # `entries` and `updated_authorizations` are parallel lists: the n-th list of authorizations belongs to the n-th entry.
   @spec drop_stale_authorizations([entry()], [[SignedAuthorization.t()]]) :: [SignedAuthorization.t()]
   defp drop_stale_authorizations(entries, updated_authorizations) do
-    consensus_block_hashes =
+    current_block_hashes =
       updated_authorizations
       |> List.flatten()
       |> Enum.map(& &1.transaction_hash)
       |> Enum.uniq()
-      |> transaction_hashes_to_consensus_block_hashes()
+      |> transaction_hashes_to_block_hashes()
 
     entries
     |> Enum.zip(updated_authorizations)
     |> Enum.flat_map(fn {%{block_hash: block_hash}, authorizations} ->
-      Enum.filter(authorizations, &(Map.get(consensus_block_hashes, &1.transaction_hash) == block_hash))
+      Enum.filter(authorizations, &(Map.get(current_block_hashes, &1.transaction_hash) == block_hash))
     end)
+    |> Enum.uniq_by(&{&1.transaction_hash, &1.index})
   end
 
   @spec fetch_nonces([%{block_number: Block.block_number(), address_hash: Hash.Address.t()}], keyword()) ::

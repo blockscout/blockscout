@@ -37,23 +37,26 @@ defmodule Explorer.Chain.SignedAuthorization.ReaderTest do
     end
   end
 
-  describe "transaction_hashes_to_consensus_block_hashes/1" do
-    test "returns block hashes only for transactions in consensus blocks" do
+  describe "transaction_hashes_to_block_hashes/1" do
+    test "returns block hashes for transactions in blocks with and without consensus" do
       consensus_block = insert(:block, consensus: true)
 
       consensus_transaction = :transaction |> insert() |> with_block(consensus_block)
       non_consensus_transaction = :transaction |> insert() |> with_non_consensus_block()
       pending_transaction = insert(:transaction)
 
-      assert Reader.transaction_hashes_to_consensus_block_hashes([
+      assert Reader.transaction_hashes_to_block_hashes([
                consensus_transaction.hash,
                non_consensus_transaction.hash,
                pending_transaction.hash
-             ]) == %{consensus_transaction.hash => consensus_block.hash}
+             ]) == %{
+               consensus_transaction.hash => consensus_block.hash,
+               non_consensus_transaction.hash => non_consensus_transaction.block_hash
+             }
     end
 
     test "returns an empty map for an empty list" do
-      assert Reader.transaction_hashes_to_consensus_block_hashes([]) == %{}
+      assert Reader.transaction_hashes_to_block_hashes([]) == %{}
     end
   end
 
