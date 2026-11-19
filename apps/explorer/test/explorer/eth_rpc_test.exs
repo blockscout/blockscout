@@ -228,6 +228,34 @@ defmodule Explorer.EthRPCTest do
     assert response == %{id: 1, result: "1"}
   end
 
+  # TODO: An empty `authorizationList` does not agree with EIP-7702, because a
+  # transaction of type 4 cannot have an empty authorization list. The cause is
+  # that Blockscout does not store the authorizations of pending transactions.
+  describe "eth_getTransactionByHash" do
+    test "renders an empty authorizationList for a new pending type 4 transaction" do
+      transaction = insert(:transaction, type: 4)
+
+      assert {:ok, rendered_transaction} = EthRPC.eth_get_transaction_by_hash(to_string(transaction.hash))
+
+      assert rendered_transaction["blockHash"] == nil
+      assert rendered_transaction["type"] == "0x4"
+      assert rendered_transaction["authorizationList"] == []
+    end
+
+    test "renders an empty authorizationList for a type 4 transaction that became pending after a reorg" do
+      # A transaction that became pending after a reorg keeps the rows that the
+      # import of the lost block wrote.
+      transaction = insert(:transaction, type: 4)
+      insert(:signed_authorization, transaction: transaction, index: 0, status: :ok)
+
+      assert {:ok, rendered_transaction} = EthRPC.eth_get_transaction_by_hash(to_string(transaction.hash))
+
+      assert rendered_transaction["blockHash"] == nil
+      assert rendered_transaction["type"] == "0x4"
+      assert rendered_transaction["authorizationList"] == []
+    end
+  end
+
   describe "eth_getTransactionReceipt" do
     test "renders logs and logsBloom of a transaction with already migrated logs" do
       address = insert(:address, hash: @log_address_hash_string)
