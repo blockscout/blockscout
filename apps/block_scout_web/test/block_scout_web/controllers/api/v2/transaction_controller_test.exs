@@ -615,8 +615,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         {bid_contract, transaction} = insert_suave_bid_transaction()
 
         insert(:log,
-          transaction_hash: transaction.hash,
           transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: bid_contract,
           first_topic: "0x83481d5b04dea534715acad673a8177a46fc93882760f36bdc16ccac439d504e",
           data:
@@ -634,8 +635,9 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         # `address_hash`, `first_topic` and `data` are kept only in `address_id`,
         # `first_topic_id` and `compressed_data` since v12
         insert(:log,
-          transaction_hash: transaction.hash,
           transaction: transaction,
+          block: transaction.block,
+          block_number: transaction.block_number,
           address: bid_contract,
           address_hash: nil,
           first_topic: nil,
@@ -4291,8 +4293,10 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         Application.put_env(:explorer, Transaction, old_env)
       end)
 
+      # logs are matched by the transaction position, so the transaction is collated
       transaction =
-        insert(:transaction,
+        :transaction
+        |> insert(
           to_address_hash: bid_contract.hash,
           to_address: bid_contract,
           execution_node_hash: bid_contract.hash,
@@ -4301,6 +4305,7 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
           wrapped_input: "0x",
           wrapped_hash: transaction_hash()
         )
+        |> with_block()
 
       {bid_contract, transaction}
     end

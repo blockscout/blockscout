@@ -50,8 +50,8 @@ defmodule Explorer.Chain.Address.Counters do
   ]
   @transactions_types [:transactions_from, :transactions_to, :transactions_contract]
 
-  defp address_hash_to_logs_query(address_hash) do
-    Log.address_match_union_query(address_hash, fn address_match_dynamic -> where(Log, ^address_match_dynamic) end)
+  defp address_hash_to_logs_query(address_hash, options) do
+    Log.address_match_query(Log, address_hash, options)
   end
 
   defp address_hash_to_validated_blocks_query(address_hash) do
@@ -63,11 +63,7 @@ defmodule Explorer.Chain.Address.Counters do
   end
 
   def check_if_logs_at_address(address_hash, options \\ []) do
-    address_hash
-    |> Log.address_match_dynamics()
-    |> Enum.any?(fn address_match_dynamic ->
-      select_repo(options).exists?(where(Log, ^address_match_dynamic))
-    end)
+    select_repo(options).exists?(address_hash_to_logs_query(address_hash, options))
   end
 
   def check_if_token_transfers_at_address(address_hash, options \\ []) do
@@ -116,8 +112,8 @@ defmodule Explorer.Chain.Address.Counters do
   def address_existence_checks(address_hash, options \\ []) do
     repo = select_repo(options)
 
-    with {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, true),
-         {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, false) do
+    with {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, true, options),
+         {:error, :lock_timeout} <- run_address_existence_checks(repo, address_hash, false, options) do
       Logger.warning(fn -> "Existence checks for address #{address_hash} are unavailable: a table is locked" end)
 
       @existence_checks_unavailable
@@ -127,7 +123,9 @@ defmodule Explorer.Chain.Address.Counters do
     end
   end
 
-  defp run_address_existence_checks(repo, address_hash, check_logs?) do
+  # `options` select the same repo as `repo`, so the address id lookup of the logs check runs on the
+  # transaction connection of `LockTimeout.run/3`, with the lock timeout applied
+  defp run_address_existence_checks(repo, address_hash, check_logs?, options) do
     validated_blocks_query = address_hash |> address_hash_to_validated_blocks_query() |> select([_], 1)
     token_balances_query = address_hash |> address_hash_to_token_balances_query() |> select([_], 1)
     token_transfers_from_query = token_transfers_existence_query(address_hash, :from_address_hash)
@@ -145,21 +143,20 @@ defmodule Explorer.Chain.Address.Counters do
         }
       )
 
-    query =
-      if check_logs? do
-        # the select has to be applied inside every union branch, see `Log.address_match_union_query/3`
-        logs_query =
-          Log.address_match_union_query(address_hash, fn address_match_dynamic ->
-            Log |> where(^address_match_dynamic) |> select([_], %{one: 1})
-          end)
-
-        select_merge(query, [_], %{has_logs: exists(logs_query)})
-      else
-        query
-      end
-
-    LockTimeout.run(repo, fn repo -> repo.one(query) end)
+    LockTimeout.run(repo, fn repo ->
+      query
+      |> maybe_check_logs(address_hash, check_logs?, options)
+      |> repo.one()
+    end)
   end
+
+  defp maybe_check_logs(query, address_hash, true, options) do
+    logs_query = address_hash |> address_hash_to_logs_query(options) |> select([_], 1)
+
+    select_merge(query, [_], %{has_logs: exists(logs_query)})
+  end
+
+  defp maybe_check_logs(query, _address_hash, false, _options), do: query
 
   # Existence check of token transfers sent from / received by the address,
   # as a scalar subquery: `(SELECT 1 ... ORDER BY block_number DESC LIMIT 1)`.
@@ -445,7 +442,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :logs,
         cached_counters,
-        address_hash_to_logs_query(address_hash),
+        fn -> address_hash_to_logs_query(address_hash, options) end,
         address_hash,
         options
       )
@@ -463,7 +460,7 @@ defmodule Explorer.Chain.Address.Counters do
       configure_task(
         :internal_transactions,
         cached_counters,
-        address_hash_to_internal_transactions_limited_count_query(address_hash, options),
+        fn -> address_hash_to_internal_transactions_limited_count_query(address_hash, options) end,
         address_hash,
         options
       )
@@ -569,6 +566,9 @@ defmodule Explorer.Chain.Address.Counters do
     end
   end
 
+  # `query` is either a query or a function building it. A query whose building reads the database
+  # (e.g. resolves address ids) is passed as a function, so that it is built inside the task, after the
+  # cache check, and not by the caller.
   defp configure_task(counter_type, cache, query, address_hash, options) do
     address_hash = to_string(address_hash)
     show_scam_tokens? = options[:show_scam_tokens?] || false
@@ -577,6 +577,7 @@ defmodule Explorer.Chain.Address.Counters do
     run_or_ignore(cache[counter_type], counter_type, address_hash, show_scam_tokens?, fn ->
       result =
         query
+        |> build_counter_query()
         |> count(options, counter_type)
 
       stop = System.monotonic_time()
@@ -590,6 +591,9 @@ defmodule Explorer.Chain.Address.Counters do
       {counter_type, result}
     end)
   end
+
+  defp build_counter_query(build_query) when is_function(build_query, 0), do: build_query.()
+  defp build_counter_query(query), do: query
 
   defp count(query, options, :internal_transactions) do
     query

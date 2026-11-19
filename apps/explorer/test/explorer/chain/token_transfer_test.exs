@@ -7,6 +7,7 @@ defmodule Explorer.Chain.TokenTransferTest do
 
   import Explorer.Factory
 
+  alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Chain.TokenTransfer
   alias Explorer.PagingOptions
   alias Explorer.Utility.LogFirstTopic
@@ -379,10 +380,7 @@ defmodule Explorer.Chain.TokenTransferTest do
       assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(max(block_number - 100, 0), block_number - 1)
     end
 
-    test "matches Arc native token logs whether the address is kept in `address_id` or in `address_hash`" do
-      # both formats are present while the optimized fields migration is in progress
-      set_fill_logs_optimized_fields_migration_started()
-
+    test "matches Arc native token logs by `address_id`" do
       arc_native_token = insert(:address)
       arc_native_token_system = insert(:address)
       token = insert(:address)
@@ -405,16 +403,11 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       uncataloged_logs = [
         insert_optimized_log(token, transfer_event),
-        insert_optimized_log(arc_native_token_system, native_coin_transferred_event),
-        insert_legacy_address_log(token, transfer_event),
-        insert_legacy_address_log(arc_native_token_system, native_coin_transferred_event)
+        insert_optimized_log(arc_native_token_system, native_coin_transferred_event)
       ]
 
       # ERC-20 `Transfer` events of the native token are ignored on Arc
-      ignored_logs = [
-        insert_optimized_log(arc_native_token, transfer_event),
-        insert_legacy_address_log(arc_native_token, transfer_event)
-      ]
+      ignored_logs = [insert_optimized_log(arc_native_token, transfer_event)]
 
       block_numbers = Enum.map(uncataloged_logs ++ ignored_logs, & &1.block_number)
 
@@ -430,14 +423,105 @@ defmodule Explorer.Chain.TokenTransferTest do
 
       assert uncataloged_logs |> Enum.map(& &1.block_number) |> Enum.sort() == Enum.sort(uncataloged_block_numbers)
     end
+
+    test "ignores token transfers of a non-consensus block at the same height" do
+      block = insert(:block)
+      address = insert(:address)
+
+      transaction =
+        insert(:transaction,
+          block_number: block.number,
+          block_hash: block.hash,
+          cumulative_gas_used: 0,
+          gas_used: 0,
+          index: 0
+        )
+
+      log =
+        insert(:token_transfer_log,
+          transaction: transaction,
+          block: block,
+          address_hash: address.hash,
+          address: address
+        )
+
+      non_consensus_block = insert(:block, number: block.number, consensus: false)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: non_consensus_block,
+        block_number: non_consensus_block.number,
+        block_consensus: false,
+        log_index: log.index
+      )
+
+      block_number = block.number
+      assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+
+      insert(:token_transfer,
+        transaction: transaction,
+        block: block,
+        block_number: block.number,
+        log_index: log.index
+      )
+
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+    end
+
+    test "matches token transfers by the block consensus while the token transfers denormalization is in progress" do
+      initial_tt_denormalization_finished = BackgroundMigrations.get_tt_denormalization_finished()
+      BackgroundMigrations.set_tt_denormalization_finished(false)
+      on_exit(fn -> BackgroundMigrations.set_tt_denormalization_finished(initial_tt_denormalization_finished) end)
+
+      transaction = :transaction |> insert() |> with_block()
+      log = insert(:token_transfer_log, transaction: transaction, block: transaction.block)
+
+      # `block_consensus` of the token transfers is filled by the denormalization
+      insert(:token_transfer,
+        transaction: transaction,
+        block: transaction.block,
+        block_number: transaction.block_number,
+        block_consensus: nil,
+        log_index: log.index
+      )
+
+      block_number = transaction.block_number
+      assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+    end
+
+    # on Celo the log index is unique within a block, it is a part of the primary key
+    if @chain_identity != {:optimism, :celo} do
+      test "matches token transfers by the transaction when logs of a block share an index" do
+        block = insert(:block)
+
+        transaction_1 = :transaction |> insert() |> with_block(block, index: 0)
+        transaction_2 = :transaction |> insert() |> with_block(block, index: 1)
+
+        # some nodes return logs of different transactions with the same index
+        for transaction <- [transaction_1, transaction_2] do
+          insert(:token_transfer_log, transaction: transaction, block: block, index: 0)
+        end
+
+        insert(:token_transfer, transaction: transaction_1, block: block, block_number: block.number, log_index: 0)
+
+        block_number = block.number
+        assert [^block_number] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+
+        insert(:token_transfer, transaction: transaction_2, block: block, block_number: block.number, log_index: 0)
+
+        assert [] = TokenTransfer.uncataloged_token_transfer_block_numbers(block_number, block_number)
+      end
+    end
   end
 
   if @chain_identity == {:optimism, :celo} do
     test "returns block numbers for Celo epoch blocks with nil transaction_hash" do
+      # epoch logs are not linked to a transaction, see `Indexer.Fetcher.Celo.EpochLogs`
       log =
         insert(:token_transfer_log,
           transaction: nil,
-          transaction_hash: nil
+          transaction_hash: nil,
+          transaction_index: nil
         )
 
       block_number = log.block_number
@@ -445,10 +529,12 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
 
     test "does not return block numbers when matching token transfer exists for Celo epoch blocks" do
+      # epoch logs are not linked to a transaction, see `Indexer.Fetcher.Celo.EpochLogs`
       log =
         insert(:token_transfer_log,
           transaction: nil,
-          transaction_hash: nil
+          transaction_hash: nil,
+          transaction_index: nil
         )
 
       from_address_hash =
@@ -469,6 +555,7 @@ defmodule Explorer.Chain.TokenTransferTest do
         transaction: nil,
         transaction_hash: nil,
         block: log.block,
+        block_number: log.block_number,
         log_index: log.index,
         token_contract_address: token_contract_address,
         from_address: from_address,
@@ -516,8 +603,8 @@ defmodule Explorer.Chain.TokenTransferTest do
     end
   end
 
-  # Inserts a log in the format used since v12: `address_hash` and `first_topic`
-  # are kept only in `address_id` and `first_topic_id`.
+  # Inserts a log whose address and first topic are kept only in `address_id`
+  # and `first_topic_id`.
   defp insert_optimized_log(address, first_topic) do
     insert(:log,
       address: address,
@@ -525,11 +612,5 @@ defmodule Explorer.Chain.TokenTransferTest do
       first_topic: nil,
       first_topic_id: LogFirstTopic.find_or_create(first_topic).id
     )
-  end
-
-  # Inserts a log not processed by the `fill_logs_optimized_fields` migration
-  # yet: its address is kept only in `address_hash`.
-  defp insert_legacy_address_log(address, first_topic) do
-    insert(:log, address: address, address_mapping: nil, first_topic: first_topic)
   end
 end

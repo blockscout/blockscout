@@ -28,9 +28,7 @@ defmodule Explorer.Etherscan.Logs do
   }
 
   @log_fields [
-    :data,
     :compressed_data,
-    :first_topic,
     :first_topic_id,
     :second_topic,
     :third_topic,
@@ -72,40 +70,27 @@ defmodule Explorer.Etherscan.Logs do
   @spec list_logs(map()) :: [map()]
   def list_logs(filter, paging_options \\ @default_paging_options)
 
-  # The address is matched through `Log.address_match_union_query/3`, one
-  # `UNION ALL` branch per address condition. While the optimized fields
-  # migration is in progress, a log of the address is matched either by
-  # `address_id` or by the legacy `address_hash`, and a single `OR` condition
-  # makes the planner collect and sort every log of the address in the block
-  # range before the LIMIT. Each branch is ordered and limited on its own
-  # instead, so it stays an ordered index scan that stops at the LIMIT.
-  #
-  # Since the LIMIT is applied before `join_transaction_data/1`, consensus is
-  # checked inside the branches, for the reasons given for the topic-only
-  # clause below.
+  # The logs of the address are ordered and limited before
+  # `join_transaction_data/1`, so the query stays an ordered index scan that
+  # stops at the LIMIT. Since the LIMIT is applied first, consensus is checked
+  # before it, for the reasons given for the topic-only clause below.
   def list_logs(%{address_hash: address_hash} = filter, paging_options) when not is_nil(address_hash) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
 
-    address_hash
-    |> Log.address_match_union_query(
-      fn address_match_dynamic ->
-        # With `union_multiple_values: true` `where_topic_match/3` may turn the
-        # branch into a UNION ALL, so it is applied last and the branch is
-        # wrapped into a subquery: `where/3` on a combination query would only
-        # affect its first branch, and a combination can only be ordered
-        # through a subquery.
-        Log
-        |> where(^address_match_dynamic)
-        |> where([log], log.block_number >= ^prepared_filter.from_block)
-        |> where([log], log.block_number <= ^prepared_filter.to_block)
-        |> where_consensus()
-        |> page_logs(paging_options)
-        |> where_topic_match(prepared_filter, union_multiple_values: true)
-        |> Chain.wrapped_union_subquery()
-      end,
-      &order_and_limit/1
-    )
+    # With `union_multiple_values: true` `where_topic_match/3` may turn the
+    # query into a UNION ALL, so it is applied last and the query is wrapped
+    # into a subquery: `where/3` on a combination query would only affect its
+    # first branch, and a combination can only be ordered through a subquery.
+    Log
+    |> Log.address_match_query(address_hash, api?: true)
+    |> where([log], log.block_number >= ^prepared_filter.from_block)
+    |> where([log], log.block_number <= ^prepared_filter.to_block)
+    |> where_consensus()
+    |> page_logs(paging_options)
+    |> where_topic_match(prepared_filter, union_multiple_values: true)
+    |> Chain.wrapped_union_subquery()
+    |> order_and_limit()
     |> join_transaction_data()
     |> fetch_ordered()
   end
@@ -171,8 +156,7 @@ defmodule Explorer.Etherscan.Logs do
   # Re-selects the joined query through an outer subquery so that fields
   # taken from the `logs` subquery are loaded with their schema types (`Hash`
   # structs instead of raw binaries), then applies the final ordering and fills
-  # `data` and `first_topic` of logs stored with `compressed_data` and
-  # `first_topic_id` only.
+  # `data` and `first_topic` from `compressed_data` and `first_topic_id`.
   defp fetch_ordered(query) do
     query
     |> Chain.wrapped_union_subquery()
@@ -204,7 +188,7 @@ defmodule Explorer.Etherscan.Logs do
         block_timestamp: as(:transaction).block_timestamp,
         block_consensus: as(:transaction).block_consensus,
         transaction_hash: as(:transaction).hash,
-        address_hash: coalesce(log.address_hash, as(:address_mapping).address_hash)
+        address_hash: as(:address_mapping).address_hash
       })
       |> order_by([log], asc: log.block_number, asc: log.index)
     else
@@ -224,7 +208,7 @@ defmodule Explorer.Etherscan.Logs do
         block_timestamp: block.timestamp,
         block_consensus: block.consensus,
         transaction_hash: transaction.hash,
-        address_hash: coalesce(log.address_hash, address_mapping.address_hash)
+        address_hash: address_mapping.address_hash
       })
       |> order_by([log, _t, _am, _b], asc: log.block_number, asc: log.index)
     end
