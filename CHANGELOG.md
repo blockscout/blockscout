@@ -12,7 +12,7 @@
 
 ### 🐛 Bug Fixes
 
-- Prevent verified source and proxy status from being attributed to contracts with different code ([#15088](https://github.com/blockscout/blockscout/pull/15088))
+- fix: Skip SQL queries in Hot smart-contracts API when the functionality is disabled ([#15088](https://github.com/blockscout/blockscout/pull/15088))
 - Prevent verified source and proxy status from being attributed to contracts with different code ([#15086](https://github.com/blockscout/blockscout/pull/15086))
 - Delete zero-value internal transactions of the border block ([#15051](https://github.com/blockscout/blockscout/issues/15051))
 - Ignore void proofs in OP withdrawal status ([#15049](https://github.com/blockscout/blockscout/issues/15049))
