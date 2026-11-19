@@ -13,11 +13,13 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     id_to_params = id_to_params(transactions_params)
 
     case BatchCorrelation.fetch(id_to_params, &trace_replay_transaction_requests/1, json_rpc_named_arguments) do
-      {:ok, {responses, _uncorrelated, unmatched}, refetch_result} ->
-        # errors of the replies go first, then the failure of a separately
-        # sent request, then the transactions left without a reply
+      {:ok, {responses, uncorrelated, unmatched}, refetch_result} ->
+        # errors of the replies go first (the ones that cannot be attributed
+        # to a transaction are returned as they are), then the failure of a
+        # separately sent request, then the transactions left without a reply
         with {:ok, traces} <-
                trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module),
+             :ok <- BatchCorrelation.check_errors([], uncorrelated, & &1),
              :ok <- refetch_result,
              :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
           first_trace_result(traces, transactions_params, json_rpc_named_arguments)
@@ -40,11 +42,17 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
     end
   end
 
+  # The replies aren't ordered as the requests, so the block of the trace is
+  # the block of the transaction the trace belongs to, not of the first
+  # requested one.
   defp first_trace_result(
-         [first_trace | _],
-         [%{block_hash: block_hash, block_number: block_number} | _],
+         [%{transaction_hash: transaction_hash} = first_trace | _],
+         transactions_params,
          named_arguments
        ) do
+    %{block_hash: block_hash, block_number: block_number} =
+      Enum.find(transactions_params, &(&1.hash_data == transaction_hash))
+
     {:ok,
      [
        %{
@@ -57,7 +65,7 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   end
 
   # the transaction has no traces
-  defp first_trace_result(_traces, _transactions_params, _named_arguments), do: {:error, :not_found}
+  defp first_trace_result([], _transactions_params, _named_arguments), do: {:error, :not_found}
 
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments, traces_module)
       when is_list(block_numbers) do

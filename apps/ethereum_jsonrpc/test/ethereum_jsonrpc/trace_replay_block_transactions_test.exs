@@ -35,6 +35,8 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactionsTest do
   defp block_reply(id, transaction_hash),
     do: %{id: id, result: [%{"trace" => [trace()], "transactionHash" => transaction_hash}]}
 
+  @block_hash_2 "0x74c72ccabcb98b7ebbd7b31de938212b7e8814a002263b6569564e944d88f520"
+
   defp first_trace_params(transaction_hash \\ @transaction_hash_1) do
     %{hash_data: transaction_hash, block_hash: @block_hash, block_number: 1, transaction_index: 0}
   end
@@ -144,6 +146,38 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactionsTest do
                Nethermind.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
     end
 
+    test "returns the id-less error of the batch when a separate request gets no reply", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      error = %{code: -32_000, message: "historical backend error"}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: id_1, params: ["0x1", _]}, %{params: ["0x2", _]}], _ ->
+        {:ok, [block_reply(id_1, @transaction_hash_1), %{id: nil, error: error}]}
+      end)
+      |> expect(:json_rpc, fn [%{params: ["0x2", _]}], _ -> {:ok, []} end)
+
+      # not attributed to the block that wasn't answered separately
+      assert {:error, [returned_error]} =
+               Nethermind.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+
+      assert returned_error == error
+    end
+
+    test "does not return the block number a node put into an unattributable error", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{params: ["0x1", _]}, %{params: ["0x2", _]}], _ ->
+        {:ok, [%{id: nil, error: %{code: -32_000, message: "historical backend error", data: %{"blockNumber" => 99}}}]}
+      end)
+
+      # the fetcher marks the block of such an error for refetch
+      assert {:error, [%{message: "historical backend error", data: data}]} =
+               Nethermind.fetch_block_internal_transactions([1, 2], json_rpc_named_arguments)
+
+      assert data == %{}
+    end
+
     test "returns the failure of a separate request when no error is received", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -181,6 +215,50 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactionsTest do
       expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id}], _ -> {:ok, [%{id: id, result: %{"trace" => []}}]} end)
 
       assert {:error, :not_found} = Nethermind.fetch_first_trace([first_trace_params()], json_rpc_named_arguments)
+    end
+
+    test "returns an unattributable id-less error instead of missing replies", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      error = %{code: -32_000, message: "boom"}
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [_, _], _ -> {:ok, [%{id: nil, error: error}]} end)
+
+      assert {:error, [^error]} =
+               Nethermind.fetch_first_trace(
+                 [first_trace_params(@transaction_hash_1), first_trace_params(@transaction_hash_2)],
+                 json_rpc_named_arguments
+               )
+    end
+
+    test "returns the block of the transaction the trace belongs to", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      transactions_params = [
+        first_trace_params(@transaction_hash_1),
+        %{hash_data: @transaction_hash_2, block_hash: @block_hash_2, block_number: 2, transaction_index: 0}
+      ]
+
+      # the first requested transaction has no traces
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn requests, _ ->
+        %{id: id_1} = Enum.find(requests, &match?(%{params: [@transaction_hash_1, _]}, &1))
+        %{id: id_2} = Enum.find(requests, &match?(%{params: [@transaction_hash_2, _]}, &1))
+
+        {:ok,
+         [
+           %{id: id_2, result: %{"trace" => [trace()], "transactionHash" => @transaction_hash_2}},
+           %{id: id_1, result: %{"trace" => []}}
+         ]}
+      end)
+
+      assert {:ok,
+              [
+                %{
+                  first_trace: %{transaction_hash: @transaction_hash_2, block_number: 2},
+                  block_hash: @block_hash_2,
+                  block_number: 2
+                }
+              ]} = Nethermind.fetch_first_trace(transactions_params, json_rpc_named_arguments)
     end
 
     test "attributes an id-less error reply to the requested transaction", %{

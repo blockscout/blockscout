@@ -63,6 +63,25 @@ defmodule EthereumJSONRPC.BatchCorrelationTest do
       assert :ok = BatchCorrelation.check_errors([%{id: 0, result: "a"}], [%{id: nil, result: "b"}], & &1)
     end
 
+    test "removes the block number of an error that cannot be attributed" do
+      uncorrelated = [
+        %{id: nil, error: %{message: "boom", data: %{"blockNumber" => 99, "reason" => "kept"}}},
+        %{id: nil, error: %{message: "boom", data: %{block_number: 99}}},
+        %{id: nil, error: %{message: "boom", data: "kept"}}
+      ]
+
+      # the block to refetch must only come from an attributed error
+      assert {:error,
+              [
+                %{message: "boom", data: data},
+                %{message: "boom", data: empty_data},
+                %{message: "boom", data: "kept"}
+              ]} = BatchCorrelation.check_errors([], uncorrelated, & &1)
+
+      assert data == %{"reason" => "kept"}
+      assert empty_data == %{}
+    end
+
     test "annotates attributed errors and returns uncorrelated ones as they are" do
       uncorrelated_error = %{message: "unattributable"}
 
@@ -120,6 +139,34 @@ defmodule EthereumJSONRPC.BatchCorrelationTest do
                BatchCorrelation.fetch(@id_to_params, &requests/1, json_rpc_named_arguments)
     end
 
+    test "keeps the id-less error of the batch when a separate request gets no reply", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      id_less = %{id: nil, error: %{message: "boom"}}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [%{id: 0}, %{id: 1}], _ -> {:ok, [%{id: 0, result: "a"}, id_less]} end)
+      |> expect(:json_rpc, fn [%{id: 1}], _ -> {:ok, []} end)
+
+      # the error is the only reply left for the request, so it isn't dropped
+      assert {:ok, {[%{id: 0}], [^id_less], [1]}, :ok} =
+               BatchCorrelation.fetch(@id_to_params, &requests/1, json_rpc_named_arguments)
+    end
+
+    test "does not multiply a batch that failed in every chunk into separate requests", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      id_to_params = %{0 => :a, 1 => :b, 2 => :c, 3 => :d}
+      id_less = %{id: nil, error: %{message: "rate limited"}}
+
+      # the transport flattens the replies of the chunks: one reply per chunk
+      # of two requests, exactly one call
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [_, _, _, _], _ -> {:ok, [id_less, id_less]} end)
+
+      assert {:ok, {[], [^id_less, ^id_less], [0, 1, 2, 3]}, :ok} =
+               BatchCorrelation.fetch(id_to_params, &requests/1, json_rpc_named_arguments)
+    end
+
     test "does not multiply a batch that failed as a whole into separate requests", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
@@ -141,8 +188,23 @@ defmodule EthereumJSONRPC.BatchCorrelationTest do
       |> expect(:json_rpc, fn [%{id: 0}, %{id: 1}], _ -> {:ok, [%{id: 0, result: "a"}, id_less]} end)
       |> expect(:json_rpc, fn [%{id: 1}], _ -> {:error, :timeout} end)
 
-      assert {:ok, {[%{id: 0}], [^id_less], []}, {:error, :timeout}} =
+      assert {:ok, {[%{id: 0}], [^id_less], [1]}, {:error, :timeout}} =
                BatchCorrelation.fetch(@id_to_params, &requests/1, json_rpc_named_arguments)
+    end
+
+    test "returns the failed request and the ones not sent after it as unmatched", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      id_to_params = %{0 => :a, 1 => :b, 2 => :c, 3 => :d}
+
+      EthereumJSONRPC.Mox
+      |> expect(:json_rpc, fn [_, _, _, _], _ -> {:ok, [%{id: 0, result: "a"}]} end)
+      |> expect(:json_rpc, fn [%{id: 1}], _ -> {:ok, [%{id: 1, result: "b"}]} end)
+      |> expect(:json_rpc, fn [%{id: 2}], _ -> {:error, :timeout} end)
+
+      # the request of id 3 is not sent
+      assert {:ok, {[%{id: 0}, %{id: 1}], [], [2, 3]}, {:error, :timeout}} =
+               BatchCorrelation.fetch(id_to_params, &requests/1, json_rpc_named_arguments)
     end
 
     test "returns the failure of the batch request", %{json_rpc_named_arguments: json_rpc_named_arguments} do
