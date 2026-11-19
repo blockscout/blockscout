@@ -30,8 +30,8 @@ defmodule EthereumJSONRPC.BatchCorrelation do
   sent again, each one separately: a reply to a single request is always
   attributable, even without an id, and the replies that did arrive are kept
   instead of being requested again with the whole batch. A batch that failed as
-  a whole (no matched reply and fewer replies than requests, e.g. it was rate
-  limited) isn't multiplied into separate requests.
+  a whole (no matched reply and fewer replies than requests, all of them
+  errors, e.g. it was rate limited) isn't multiplied into separate requests.
 
   ## Parameters
   - `id_to_params`: map of request id to request params
@@ -192,14 +192,15 @@ defmodule EthereumJSONRPC.BatchCorrelation do
   # a single request can't be narrowed down any further
   defp refetch_unmatched?(_correlation, id_to_params) when map_size(id_to_params) == 1, do: false
 
-  # No matched reply and fewer replies than requests: the batch, or every chunk
-  # the transport split it into, failed as a whole (e.g. it was rate limited)
-  # and was answered with a single reply, so it isn't multiplied into separate
-  # requests. With a reply per request the replies are per-request ones that
-  # only lack an id.
+  # No matched reply and fewer replies than requests, all of them errors: the
+  # batch, or every chunk the transport split it into, failed as a whole (e.g.
+  # it was rate limited) and was answered with a single error, so it isn't
+  # multiplied into separate requests. With a reply per request the replies are
+  # per-request ones that only lack an id, and a reply with a result is never
+  # the reply of a rejected batch.
   defp refetch_unmatched?({[], uncorrelated, unmatched}, _id_to_params)
        when length(uncorrelated) < length(unmatched),
-       do: false
+       do: not Enum.all?(uncorrelated, &match?(%{error: _}, &1))
 
   defp refetch_unmatched?(_correlation, _id_to_params), do: true
 

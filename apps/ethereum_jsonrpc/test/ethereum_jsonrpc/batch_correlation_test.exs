@@ -167,6 +167,30 @@ defmodule EthereumJSONRPC.BatchCorrelationTest do
                BatchCorrelation.fetch(id_to_params, &requests/1, json_rpc_named_arguments)
     end
 
+    test "sends the requests separately when the replies without an id are not errors", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      id_to_params = %{0 => :a, 1 => :b, 2 => :c}
+
+      EthereumJSONRPC.Mox
+      # fewer replies than requests and none is matched, but a reply with a
+      # result isn't the reply of a rejected batch
+      |> expect(:json_rpc, fn [_, _, _], _ -> {:ok, [%{id: nil, result: []}, %{id: nil, result: []}]} end)
+      |> expect(:json_rpc, 3, fn [%{id: id}], _ -> {:ok, [%{id: nil, result: [id]}]} end)
+
+      assert {:ok, {[%{id: 0, result: [0]}, %{id: 1, result: [1]}, %{id: 2, result: [2]}], [], []}, :ok} =
+               BatchCorrelation.fetch(id_to_params, &requests/1, json_rpc_named_arguments)
+    end
+
+    test "does not multiply a batch that got no reply at all into separate requests", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      # exactly one call
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: 0}, %{id: 1}], _ -> {:ok, []} end)
+
+      assert {:ok, {[], [], [0, 1]}, :ok} = BatchCorrelation.fetch(@id_to_params, &requests/1, json_rpc_named_arguments)
+    end
+
     test "does not multiply a batch that failed as a whole into separate requests", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do
