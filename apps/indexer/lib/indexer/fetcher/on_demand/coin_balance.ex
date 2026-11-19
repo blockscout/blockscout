@@ -82,7 +82,7 @@ defmodule Indexer.Fetcher.OnDemand.CoinBalance do
 
     if !state do
       raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.child_spec " <>
+            ":json_rpc_named_arguments must be provided to '#{__MODULE__}.child_spec' " <>
               "to allow for json_rpc calls when running."
     end
 

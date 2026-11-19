@@ -581,7 +581,7 @@ defmodule Explorer.Chain.Transaction do
       iex> changeset.valid?
       true
 
-  A collated transaction MUST have an `index` so its position in the `block` is known and the `cumulative_gas_used` and
+  A collated transaction MUST have an `index` so its position in the `block` is known and the `cumulative_gas_used`,
   `gas_used` to know its fees.
 
   Post-Byzantium, the status must be present when a block is collated.

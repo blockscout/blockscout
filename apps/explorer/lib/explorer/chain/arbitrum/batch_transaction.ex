@@ -18,7 +18,7 @@ defmodule Explorer.Chain.Arbitrum.BatchTransaction do
   @required_attrs ~w(batch_number transaction_hash)a
 
   @typedoc """
-  Descriptor of the rollup transaction included in an Arbitrum batch:
+  Rollup transaction descriptor included in an Arbitrum batch:
     * `batch_number` - The number of the Arbitrum batch.
     * `transaction_hash` - The hash of the rollup transaction.
   """

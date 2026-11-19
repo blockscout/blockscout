@@ -17,7 +17,7 @@ defmodule Explorer.Chain.Arbitrum.L1Execution do
   @required_attrs ~w(message_id execution_id)a
 
   @typedoc """
-  Descriptor of the L1 execution transaction related to a L2 to L1 message on Arbitrum rollups:
+  L1 execution transaction descriptor related to a L2 to L1 message on Arbitrum rollups:
     * `message_id` - The ID of the message from `Explorer.Chain.Arbitrum.Message`.
                      There could be situations when an execution of a message is
                      discovered, but the message itself is not indexed yet.
