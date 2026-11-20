@@ -589,6 +589,58 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
              InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
   end
 
+  describe "fetch_by_address/2 with a failed trace batch" do
+    setup do
+      address = insert(:address)
+      id_to_hash = insert(:address_id_to_address_hash, address: address)
+
+      insert(:deleted_internal_transactions_address_placeholder,
+        address_id: id_to_hash.address_id,
+        block_number: 1,
+        count_tos: 1,
+        count_froms: 1
+      )
+
+      block = insert(:block, number: 1)
+      :transaction |> insert() |> with_block(block)
+
+      stub(EthereumJSONRPC.Mox, :json_rpc, fn _requests, _ ->
+        {:error, %{code: -32000, message: "trace failed"}}
+      end)
+
+      %{address: address, opts: [paging_options: %PagingOptions{page_size: 2}]}
+    end
+
+    for block_traceable? <- [true, false] do
+      @block_traceable? block_traceable?
+
+      test "returns empty list by default (block_traceable?: #{block_traceable?})", %{address: address, opts: opts} do
+        put_geth_env(@block_traceable?)
+
+        assert InternalTransactionOnDemand.fetch_by_address(address.hash, opts) == []
+      end
+
+      test "raises with raise_on_fetch_error: true (block_traceable?: #{block_traceable?})", %{
+        address: address,
+        opts: opts
+      } do
+        put_geth_env(@block_traceable?)
+
+        assert_raise RuntimeError, ~r/Failed to fetch internal transactions on demand/, fn ->
+          InternalTransactionOnDemand.fetch_by_address(address.hash, [raise_on_fetch_error: true] ++ opts)
+        end
+      end
+    end
+
+    defp put_geth_env(block_traceable?) do
+      Application.put_env(:ethereum_jsonrpc, EthereumJSONRPC.Geth,
+        tracer: "call_tracer",
+        debug_trace_timeout: "5s",
+        block_traceable?: block_traceable?
+      )
+    end
+  end
+
   test "fetch_by_address/2 (no suitable placeholders)" do
     address = insert(:address)
     address_hash_str = to_string(address.hash)

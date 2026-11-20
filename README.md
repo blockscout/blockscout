@@ -32,7 +32,7 @@ See the [project documentation](https://docs.blockscout.com/) for instructions:
 - [Kubernetes deployment](https://docs.blockscout.com/for-developers/deployment/kubernetes-deployment)
 - [Manual deployment (backend + old UI)](https://docs.blockscout.com/for-developers/deployment/manual-old-ui)
 - [Ansible deployment](https://docs.blockscout.com/for-developers/ansible-deployment)
-- [ENV variables](https://docs.blockscout.com/setup/env-variables)
+- ENV variables ([common](https://docs.blockscout.com/setup/env-variables/backend-env-variables), [chain-specific](https://docs.blockscout.com/setup/env-variables/backend-envs-chain-specific), [integrations](https://docs.blockscout.com/setup/env-variables/backend-envs-integrations))
 - [Configuration options](https://docs.blockscout.com/for-developers/configuration-options)
 
 ## Acknowledgements

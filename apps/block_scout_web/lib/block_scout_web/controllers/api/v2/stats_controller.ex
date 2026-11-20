@@ -22,6 +22,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
 
   alias BlockScoutWeb.API.V2.Helper
   alias BlockScoutWeb.Chain.MarketHistoryChartController
+  alias BlockScoutWeb.Plug.CheckFeature
+  alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.{Chain, Market}
   alias Explorer.Chain.Cache.Counters.{AddressesAggregates, AverageBlockTime, BlocksCount, TransactionsCount}
   alias Explorer.Chain.Cache.GasPriceOracle
@@ -30,6 +32,13 @@ defmodule BlockScoutWeb.API.V2.StatsController do
   alias Explorer.Stats.{HotSmartContracts, HotSmartContractsCache}
   alias Plug.Conn
   alias Timex.Duration
+
+  # Halts before any database query when the Hot smart-contracts fetcher is disabled.
+  plug(
+    CheckFeature,
+    [feature_check: &HotSmartContracts.enabled?/0, error_message: "Hot smart-contracts functionality is disabled"]
+    when action in [:hot_smart_contracts]
+  )
 
   plug(OpenApiSpex.Plug.CastAndValidate, json_render_error_v2: true)
 
@@ -289,7 +298,8 @@ defmodule BlockScoutWeb.API.V2.StatsController do
            }
          )},
       unprocessable_entity: JsonErrorResponse.response(),
-      forbidden: ForbiddenResponse.response()
+      forbidden: ForbiddenResponse.response(),
+      not_found: NotFoundResponse.response()
     ]
 
   @spec hot_smart_contracts(Plug.Conn.t(), map()) :: Plug.Conn.t()

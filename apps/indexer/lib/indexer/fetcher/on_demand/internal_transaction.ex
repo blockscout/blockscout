@@ -239,6 +239,10 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         transactions either to or from the address will be returned.
       - `:from_block` - lower boundary for block number
       - `:to_block` - upper boundary for block number
+      - `:raise_on_fetch_error` - when `true`, a failed trace batch raises instead of
+        being logged and skipped, so callers that need a complete result (e.g. CSV
+        export) fail explicitly rather than return a partial or empty list.
+        Defaults to `false`.
 
     ## Returns
     - List of InternalTransaction structs for the given address
@@ -585,19 +589,20 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       variant = Keyword.fetch!(json_rpc_named_arguments, :variant)
 
       if variant in InternalTransactionFetcher.block_traceable_variants() do
-        fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments)
+        fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments, options)
       else
         block_numbers
         |> transactions_to_trace(options)
-        |> fetch_transactions_internal_transactions(json_rpc_named_arguments)
+        |> fetch_transactions_internal_transactions(json_rpc_named_arguments, options)
       end
     end
   end
 
   # Traces blocks in batches of `blocks_batch_size()` sent in parallel. Any
   # failed batch fails the whole fetch (as a failed batch did before batching
-  # was introduced) to avoid silent gaps in paginated results.
-  defp fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments) do
+  # was introduced) to avoid silent gaps in paginated results. With
+  # `raise_on_fetch_error: true` the failure is raised instead.
+  defp fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments, options) do
     chunk_results =
       block_numbers
       |> Enum.chunk_every(blocks_batch_size())
@@ -617,6 +622,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
         {chunk, error} ->
           Logger.error("Failed to fetch internal transactions for blocks #{inspect(chunk)}: #{inspect(error)}")
       end)
+
+      maybe_raise_fetch_error(options, "blocks")
 
       []
     end
@@ -648,8 +655,9 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
 
   # Traces transactions in cross-block batches of `transactions_batch_size()`
   # sent in parallel, instead of one batch per block. A failed batch is skipped
-  # with a log, the same way a failed per-block batch was skipped before.
-  defp fetch_transactions_internal_transactions(transactions, json_rpc_named_arguments) do
+  # with a log, the same way a failed per-block batch was skipped before, unless
+  # `raise_on_fetch_error: true` is set.
+  defp fetch_transactions_internal_transactions(transactions, json_rpc_named_arguments, options) do
     transactions
     |> Enum.chunk_every(transactions_batch_size())
     |> Task.async_stream(
@@ -665,8 +673,18 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
           "Failed to fetch internal transactions for transactions #{inspect(Enum.map(chunk, & &1.hash_data))}: #{inspect(error_or_ignore)}"
         )
 
+        maybe_raise_fetch_error(options, "transactions")
+
         []
     end)
+  end
+
+  defp maybe_raise_fetch_error(options, source) do
+    if Keyword.get(options, :raise_on_fetch_error, false) do
+      raise "Failed to fetch internal transactions on demand for #{source}"
+    end
+
+    :ok
   end
 
   defp do_fetch_transactions_internal_transactions(chunk, json_rpc_named_arguments) do

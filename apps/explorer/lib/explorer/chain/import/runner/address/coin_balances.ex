@@ -84,20 +84,97 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
       |> Enum.sort_by(&{&1.address_hash, &1.block_number})
       |> Enum.dedup()
 
-    {:ok, _} =
+    {:ok, written} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
         conflict_target: [:address_hash, :block_number],
         on_conflict: on_conflict,
         for: CoinBalance,
+        returning: [:address_hash, :block_number],
         timeout: timeout,
         timestamps: timestamps
       )
 
-    {:ok, Enum.map(ordered_changes_list, &Map.take(&1, ~w(address_hash block_number value)a))}
+    written_keys = MapSet.new(written, &{&1.address_hash, &1.block_number})
+
+    unless Map.has_key?(options, :on_conflict) do
+      confirm_unchanged(repo, ordered_changes_list, written_keys, options)
+    end
+
+    imported =
+      ordered_changes_list
+      |> Enum.filter(&imported?(&1, written_keys))
+      |> Enum.map(&Map.take(&1, ~w(address_hash block_number value)a))
+
+    {:ok, imported}
   end
 
+  # A fetched value that `default_on_conflict/0` did not write is either older
+  # than the stored one or the same value fetched again. The latter still moves
+  # `value_fetched_at` forward, so that an observation fetched earlier and
+  # imported late is rejected by the timestamp check instead of overwriting the
+  # confirmed value. It is not reported: the value did not change.
+  defp confirm_unchanged(repo, ordered_changes_list, written_keys, %{timeout: timeout, timestamps: timestamps}) do
+    case Enum.reject(ordered_changes_list, &imported?(&1, written_keys)) do
+      [] ->
+        :ok
+
+      unchanged_changes_list ->
+        {:ok, _} =
+          Import.insert_changes_list(
+            repo,
+            unchanged_changes_list,
+            conflict_target: [:address_hash, :block_number],
+            on_conflict: confirm_on_conflict(),
+            for: CoinBalance,
+            timeout: timeout,
+            timestamps: timestamps
+          )
+
+        :ok
+    end
+  end
+
+  defp confirm_on_conflict do
+    from(
+      balance in CoinBalance,
+      update: [
+        set: [
+          value_fetched_at: fragment("EXCLUDED.value_fetched_at"),
+          updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at)
+        ]
+      ],
+      where:
+        fragment("EXCLUDED.value = ?", balance.value) and
+          fragment("EXCLUDED.value_fetched_at > ?", balance.value_fetched_at)
+    )
+  end
+
+  # A row without a value stays in the result whether it was written or not:
+  # the importers of blocks, block rewards and internal transactions schedule
+  # the fetch of the balances from it, and a block that is imported again (after
+  # a reorg, for instance) has to have its balances fetched again even though
+  # the rows are already there.
+  #
+  # A fetched value is in the result only when it was written. The same balance
+  # is fetched more than once (by the realtime and the on-demand fetchers, for
+  # instance), and a fetch that brings the value already stored writes nothing,
+  # so it must not be broadcast again as a new balance of the address.
+  defp imported?(changes, written_keys) do
+    is_nil(Map.get(changes, :value)) or MapSet.member?(written_keys, {changes.address_hash, changes.block_number})
+  end
+
+  @doc """
+  The default `ON CONFLICT` clause of the coin balances import.
+
+  A stored balance is replaced only by a value fetched later, and only when it is
+  not fetched yet or the new value is different, so that the rows it returns are
+  the balances that changed. A newer fetch of the same value only moves
+  `value_fetched_at` forward, in a separate statement of the import, and is not
+  reported.
+  """
+  @spec default_on_conflict() :: Ecto.Query.t()
   def default_on_conflict do
     from(
       balance in CoinBalance,
@@ -135,7 +212,9 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalances do
       ],
       where:
         fragment("EXCLUDED.value IS NOT NULL") and
-          (is_nil(balance.value_fetched_at) or fragment("EXCLUDED.value_fetched_at > ?", balance.value_fetched_at))
+          (is_nil(balance.value_fetched_at) or
+             (fragment("EXCLUDED.value_fetched_at > ?", balance.value_fetched_at) and
+                fragment("EXCLUDED.value IS DISTINCT FROM ?", balance.value)))
     )
   end
 end

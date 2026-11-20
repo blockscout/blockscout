@@ -9,6 +9,7 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
   import Mox
 
   alias Explorer.Chain.{Address, Hash, Wei}
+  alias Explorer.Chain.Address.{CoinBalance, CoinBalanceDaily}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.TestHelper
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
@@ -385,6 +386,46 @@ defmodule Indexer.Fetcher.CoinBalance.CatchupTest do
                  [{address_hash_bytes, good_block_number}, {address_hash_bytes, bad_block_number}],
                  json_rpc_named_arguments
                )
+    end
+
+    test "imports balances with a known block day and retries the ones whose block timestamp is not fetched", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      %Hash{bytes: good_address_hash_bytes} = good_address_hash = address_hash()
+      %Hash{bytes: bad_address_hash_bytes} = bad_address_hash = address_hash()
+      good_block_number = block_number()
+      bad_block_number = block_number()
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [
+                                                  %{id: first_id, method: "eth_getBalance"},
+                                                  %{id: second_id, method: "eth_getBalance"}
+                                                ],
+                                                _ ->
+        {:ok, [%{id: first_id, result: "0x1"}, %{id: second_id, result: "0x2"}]}
+      end)
+
+      # Block timestamps are requested in ascending order of block numbers
+      assert good_block_number < bad_block_number
+
+      TestHelper.eth_get_block_by_number_expectation(good_block_number)
+
+      expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_getBlockByNumber"}], _ ->
+        {:ok, [%{id: id, error: %{code: -32000, message: "header not found"}}]}
+      end)
+
+      BlockNumber.set_max(bad_block_number)
+
+      assert {:retry, [{^bad_address_hash_bytes, ^bad_block_number}]} =
+               CoinBalanceCatchup.run(
+                 [{good_address_hash_bytes, good_block_number}, {bad_address_hash_bytes, bad_block_number}],
+                 json_rpc_named_arguments
+               )
+
+      assert [%CoinBalance{address_hash: ^good_address_hash, block_number: ^good_block_number}] =
+               Repo.all(CoinBalance)
+
+      assert [%CoinBalanceDaily{address_hash: ^good_address_hash}] = Repo.all(CoinBalanceDaily)
+      refute Repo.get(Address, bad_address_hash)
     end
   end
 

@@ -52,6 +52,22 @@ defmodule Explorer.Chain.PendingTransactionOperation do
   end
 
   @doc """
+  Returns the lowest block number among the transactions that have pending
+  operations, or `nil` when there are none.
+
+  The table has no block number of its own, so every pending operation is
+  looked up in `transactions` by the primary key: the cost grows with the number
+  of pending operations.
+  """
+  @spec min_block_number() :: non_neg_integer() | nil
+  def min_block_number do
+    __MODULE__
+    |> join(:inner, [pto], t in assoc(pto, :transaction))
+    |> select([_pto, t], min(t.block_number))
+    |> Repo.one(timeout: :infinity)
+  end
+
+  @doc """
   Returns a stream of all transactions with unfetched internal transactions, using
   the `pending_transaction_operation` table.
       iex> unfetched_block = insert(:block)

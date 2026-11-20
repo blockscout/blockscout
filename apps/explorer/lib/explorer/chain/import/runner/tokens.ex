@@ -186,7 +186,16 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
             total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
             decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
-            type: fragment("COALESCE(EXCLUDED.type, ?)", token.type),
+            # the block fetcher derives the type from the one it read before the
+            # import, so it may still be the legacy type of a token retyped to
+            # ERC-404 meanwhile, see `Explorer.Chain.Token.Erc404`
+            type:
+              fragment(
+                "CASE WHEN ? = 'ERC-404' AND EXCLUDED.type IN ('ERC-20', 'ERC-721') THEN ? ELSE COALESCE(EXCLUDED.type, ?) END",
+                token.type,
+                token.type,
+                token.type
+              ),
             cataloged: fragment("COALESCE(EXCLUDED.cataloged, ?)", token.cataloged),
             bridged: fragment("COALESCE(EXCLUDED.bridged, ?)", token.bridged),
             skip_metadata: fragment("COALESCE(EXCLUDED.skip_metadata, ?)", token.skip_metadata),
@@ -221,7 +230,16 @@ defmodule Explorer.Chain.Import.Runner.Tokens do
             symbol: fragment("COALESCE(EXCLUDED.symbol, ?)", token.symbol),
             total_supply: fragment("COALESCE(EXCLUDED.total_supply, ?)", token.total_supply),
             decimals: fragment("COALESCE(EXCLUDED.decimals, ?)", token.decimals),
-            type: fragment("COALESCE(EXCLUDED.type, ?)", token.type),
+            # the block fetcher derives the type from the one it read before the
+            # import, so it may still be the legacy type of a token retyped to
+            # ERC-404 meanwhile, see `Explorer.Chain.Token.Erc404`
+            type:
+              fragment(
+                "CASE WHEN ? = 'ERC-404' AND EXCLUDED.type IN ('ERC-20', 'ERC-721') THEN ? ELSE COALESCE(EXCLUDED.type, ?) END",
+                token.type,
+                token.type,
+                token.type
+              ),
             cataloged: fragment("COALESCE(EXCLUDED.cataloged, ?)", token.cataloged),
             skip_metadata: fragment("COALESCE(EXCLUDED.skip_metadata, ?)", token.skip_metadata),
             # `holder_count`, `transfer_count` and `counters_updated_at` are not updated: pre-existing tokens are maintained by

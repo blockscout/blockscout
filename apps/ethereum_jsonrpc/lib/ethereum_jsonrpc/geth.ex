@@ -8,7 +8,7 @@ defmodule EthereumJSONRPC.Geth do
 
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.{FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
+  alias EthereumJSONRPC.{BatchCorrelation, FetchedBalance, FetchedCode, PendingTransaction, Utility.CommonHelper}
   alias EthereumJSONRPC.Geth.{Calls, PolygonTracer, Tracer}
 
   @behaviour EthereumJSONRPC.Variant
@@ -30,16 +30,46 @@ defmodule EthereumJSONRPC.Geth do
 
     json_rpc_named_arguments_corrected_timeout = correct_timeouts(json_rpc_named_arguments)
 
-    with {:ok, responses} <-
-           id_to_params
-           |> debug_trace_transaction_requests()
-           |> json_rpc(json_rpc_named_arguments_corrected_timeout) do
+    with {:ok, responses} <- fetch_transaction_traces(id_to_params, json_rpc_named_arguments_corrected_timeout) do
       debug_trace_transaction_responses_to_internal_transactions_params(
         responses,
         id_to_params,
         json_rpc_named_arguments
       )
     end
+  end
+
+  # Requests the traces of the transactions and returns the replies only when
+  # the batch is complete and has no errors. All errors go first, before any
+  # conversion (and before the metadata requests of the opcode tracer);
+  # attributed ones carry their block number, so the fetcher can still mark
+  # blocks for refetch. That includes the errors received before a separate
+  # request failed: the failure is returned only when there are none.
+  defp fetch_transaction_traces(id_to_params, json_rpc_named_arguments, only_first_trace \\ false) do
+    with {:ok, {responses, uncorrelated, unmatched}, refetch_result} <-
+           BatchCorrelation.fetch(
+             id_to_params,
+             &debug_trace_transaction_requests(&1, only_first_trace),
+             json_rpc_named_arguments
+           ),
+         :ok <- check_transaction_errors(responses, uncorrelated, id_to_params),
+         :ok <- refetch_result,
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
+      {:ok, responses}
+    end
+  end
+
+  # Annotates the error replies attributed to a request with its params, the
+  # same way the converter does. Errors of replies that cannot be attributed
+  # are returned as they are, without request data, so they never mark the
+  # block of another request.
+  defp check_transaction_errors(responses, uncorrelated, id_to_params) do
+    BatchCorrelation.check_errors(responses, uncorrelated, fn response ->
+      {:error, annotated_error} =
+        debug_trace_transaction_response_to_internal_transactions_params(response, id_to_params)
+
+      annotated_error
+    end)
   end
 
   def correct_timeouts(json_rpc_named_arguments) do
@@ -67,9 +97,7 @@ defmodule EthereumJSONRPC.Geth do
     json_rpc_named_arguments_corrected_timeout = correct_timeouts(json_rpc_named_arguments)
 
     with {:ok, responses} <-
-           id_to_params
-           |> debug_trace_transaction_requests(true)
-           |> json_rpc(json_rpc_named_arguments_corrected_timeout),
+           fetch_transaction_traces(id_to_params, json_rpc_named_arguments_corrected_timeout, true),
          {:ok, traces} <-
            debug_trace_transaction_responses_to_internal_transactions_params(
              responses,
@@ -101,11 +129,14 @@ defmodule EthereumJSONRPC.Geth do
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, blocks_responses} <-
-           id_to_params
-           |> debug_trace_block_by_number_requests()
-           |> json_rpc(json_rpc_named_arguments),
-         :ok <- check_errors_exist(blocks_responses, id_to_params) do
+    with {:ok, {blocks_responses, uncorrelated, unmatched}, refetch_result} <-
+           BatchCorrelation.fetch(id_to_params, &debug_trace_block_by_number_requests/1, json_rpc_named_arguments),
+         # all errors go first, including those of replies that cannot be
+         # attributed to a block, so the fetcher can still fall back to tracing
+         # by transactions (e.g. on incorrect top-level calls)
+         :ok <- check_block_errors(blocks_responses, uncorrelated),
+         :ok <- refetch_result,
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
       {transactions_id_to_params, transactions_responses} =
@@ -138,21 +169,34 @@ defmodule EthereumJSONRPC.Geth do
     end
   end
 
-  @spec check_errors_exist(list(), %{non_neg_integer() => any()}) :: :ok | {:error, list()}
-  def check_errors_exist(blocks_responses, id_to_params) do
-    blocks_responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
-    |> Enum.reduce([], fn
-      %{result: result}, acc ->
-        Enum.reduce(result, acc, fn
-          %{"result" => _calls_result}, inner_acc -> inner_acc
-          %{"error" => error}, inner_acc -> [error | inner_acc]
-        end)
+  @doc """
+  Collects the errors of the block trace replies: the errors of the replies
+  matched to a block (top-level and per-transaction), plus the errors of the
+  replies that cannot be attributed to a block.
 
-      %{error: error}, acc ->
-        [error | acc]
-    end)
-    |> case do
+  ## Parameters
+  - `blocks_responses`: replies matched to a requested block
+  - `uncorrelated`: replies that could not be attributed to a block
+
+  ## Returns
+  - `:ok` if there are no errors
+  - `{:error, errors}` otherwise
+  """
+  @spec check_block_errors([map()], [map()]) :: :ok | {:error, list()}
+  def check_block_errors(blocks_responses, uncorrelated) do
+    attributed_errors =
+      Enum.reduce(blocks_responses, [], fn
+        %{result: result}, acc ->
+          Enum.reduce(result, acc, fn
+            %{"result" => _calls_result}, inner_acc -> inner_acc
+            %{"error" => error}, inner_acc -> [error | inner_acc]
+          end)
+
+        %{error: error}, acc ->
+          [error | acc]
+      end)
+
+    case attributed_errors ++ BatchCorrelation.uncorrelated_errors(uncorrelated) do
       [] -> :ok
       errors -> {:error, errors}
     end
@@ -306,7 +350,6 @@ defmodule EthereumJSONRPC.Geth do
        )
        when is_list(responses) and is_map(id_to_params) do
     responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&debug_trace_transaction_response_to_internal_transactions_params(&1, id_to_params))
     |> reduce_internal_transactions_params()
   end
