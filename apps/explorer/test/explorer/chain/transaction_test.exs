@@ -13,6 +13,41 @@ defmodule Explorer.Chain.TransactionTest do
 
   doctest Transaction
 
+  # The `nonce_key` value of the nonce-free mode of EIP-8430: `2^256 - 1`.
+  @nonce_free_nonce_key Bitwise.bsl(1, 256) - 1
+
+  # The scenarios of the `dropped/replaced` rule with nonce channels. Each scenario has one
+  # pending transaction and one mined transaction of the same sender with the same `nonce`.
+  #
+  # The fields of a scenario: the test name, the options of the pending transaction, the
+  # options of the mined transaction, and the expected result: `true` if the mined transaction
+  # replaces the pending transaction.
+  #
+  # The options: `:type` is the transaction type. `:nonce_key` is the nonce key of the row in
+  # `eip_8430_transactions`. Without `:nonce_key`, the transaction has no row.
+  @nonce_channel_scenarios [
+    {"applies the rule to two transactions without a type", [], [], true},
+    {"applies the rule to EIP-8430 transactions in the same nonce channel", [type: 0x79, nonce_key: 1],
+     [type: 0x79, nonce_key: 1], true},
+    {"does not apply the rule to EIP-8430 transactions in different nonce channels", [type: 0x79, nonce_key: 1],
+     [type: 0x79, nonce_key: 2], false},
+    {"applies the rule to the nonce channel 0 and a transaction of a different type", [type: 0x79, nonce_key: 0],
+     [type: 2], true},
+    {"applies the rule to the nonce channel 0 and a transaction with a NULL type", [type: 0x79, nonce_key: 0],
+     [type: nil], true},
+    {"does not apply the rule to a non-zero nonce channel and a transaction of a different type",
+     [type: 0x79, nonce_key: 5], [type: 2], false},
+    {"does not apply the rule to two transactions in the nonce-free mode",
+     [type: 0x79, nonce_key: @nonce_free_nonce_key, nonce: 0], [type: 0x79, nonce_key: @nonce_free_nonce_key, nonce: 0],
+     false},
+    {"does not apply the rule to a pending transaction in the nonce-free mode",
+     [type: 0x79, nonce_key: @nonce_free_nonce_key, nonce: 0], [type: 2, nonce: 0], false},
+    {"does not apply the rule to a mined transaction in the nonce-free mode", [type: 2, nonce: 0],
+     [type: 0x79, nonce_key: @nonce_free_nonce_key, nonce: 0], false},
+    {"does not apply the rule to a pending EIP-8430 transaction without a row", [type: 0x79], [type: 2], false},
+    {"does not apply the rule to a mined EIP-8430 transaction without a row", [type: 2], [type: 0x79], false}
+  ]
+
   setup :set_mox_global
 
   setup :verify_on_exit!
@@ -1245,7 +1280,8 @@ defmodule Explorer.Chain.TransactionTest do
           %{
             block_hash: mined_transaction.block_hash,
             nonce: mined_transaction.nonce,
-            from_address_hash: mined_transaction.from_address_hash
+            from_address_hash: mined_transaction.from_address_hash,
+            hash: mined_transaction.hash
           }
         ])
 
@@ -1263,6 +1299,93 @@ defmodule Explorer.Chain.TransactionTest do
 
       assert second_mined_transaction.status == nil
       assert second_mined_transaction.error == nil
+    end
+
+    for {description, pending_options, mined_options, expected} <- @nonce_channel_scenarios do
+      test description do
+        {pending, mined} = insert_replacement_candidates(unquote(pending_options), unquote(mined_options))
+
+        assert replaced?(:update_replaced_transactions, pending, mined) == unquote(expected)
+        assert %Transaction{error: nil} = Repo.get(Transaction, mined.hash)
+      end
+    end
+
+    test "applies the rule for each of two mined transactions with the same nonce in different nonce channels" do
+      address = insert(:address)
+
+      mined_in_channel_1 = insert_replacement_candidate(:mined, address, type: 0x79, nonce_key: 1)
+      mined_in_channel_2 = insert_replacement_candidate(:mined, address, type: 0x79, nonce_key: 2)
+
+      pending_in_channel_1 = insert_replacement_candidate(:pending, address, type: 0x79, nonce_key: 1)
+      pending_in_channel_2 = insert_replacement_candidate(:pending, address, type: 0x79, nonce_key: 2)
+      pending_in_channel_3 = insert_replacement_candidate(:pending, address, type: 0x79, nonce_key: 3)
+
+      assert {2, _} =
+               Transaction.update_replaced_transactions([
+                 mined_entry(mined_in_channel_1),
+                 mined_entry(mined_in_channel_2)
+               ])
+
+      assert %Transaction{error: "dropped/replaced"} = Repo.get(Transaction, pending_in_channel_1.hash)
+      assert %Transaction{error: "dropped/replaced"} = Repo.get(Transaction, pending_in_channel_2.hash)
+      assert %Transaction{error: nil} = Repo.get(Transaction, pending_in_channel_3.hash)
+    end
+
+    test "does not apply the rule if the mined transaction is not in a block now" do
+      address = insert(:address)
+      block = insert(:block)
+
+      # A reorg removed the block of this transaction after the entry was made.
+      transaction_without_block = insert_replacement_candidate(:pending, address, [])
+      pending = insert_replacement_candidate(:pending, address, [])
+
+      assert {0, _} =
+               Transaction.update_replaced_transactions([
+                 %{
+                   block_hash: block.hash,
+                   nonce: transaction_without_block.nonce,
+                   from_address_hash: transaction_without_block.from_address_hash,
+                   hash: transaction_without_block.hash
+                 }
+               ])
+
+      assert %Transaction{error: nil} = Repo.get(Transaction, pending.hash)
+      assert %Transaction{error: nil} = Repo.get(Transaction, transaction_without_block.hash)
+    end
+  end
+
+  describe "find_and_update_replaced_transactions/2" do
+    for {description, pending_options, mined_options, expected} <- @nonce_channel_scenarios do
+      test description do
+        {pending, mined} = insert_replacement_candidates(unquote(pending_options), unquote(mined_options))
+
+        assert replaced?(:find_and_update_replaced_transactions, pending, mined) == unquote(expected)
+        assert %Transaction{error: nil} = Repo.get(Transaction, mined.hash)
+      end
+    end
+
+    test "returns no updates for an empty list" do
+      assert {0, []} = Transaction.find_and_update_replaced_transactions([])
+    end
+  end
+
+  describe "replaced_pending_transactions_query/1" do
+    for {description, pending_options, mined_options, expected} <- @nonce_channel_scenarios do
+      test description do
+        {pending, mined} = insert_replacement_candidates(unquote(pending_options), unquote(mined_options))
+
+        assert replaced?(:replaced_pending_transactions_query, pending, mined) == unquote(expected)
+      end
+    end
+
+    test "does not return a transaction that is marked as dropped/replaced" do
+      {pending, _mined} = insert_replacement_candidates([], [])
+
+      pending
+      |> Changeset.change(error: "dropped/replaced", status: :error)
+      |> Repo.update!()
+
+      assert Transaction |> Transaction.replaced_pending_transactions_query() |> Repo.all() == []
     end
   end
 
@@ -1304,5 +1427,64 @@ defmodule Explorer.Chain.TransactionTest do
 
       assert [transaction_params] == Transaction.filter_non_traceable_transactions([transaction_params])
     end
+  end
+
+  # Inserts a pending transaction and a mined transaction of one sender with the same `nonce`.
+  # See `@nonce_channel_scenarios` for the options.
+  defp insert_replacement_candidates(pending_options, mined_options) do
+    address = insert(:address)
+
+    pending = insert_replacement_candidate(:pending, address, pending_options)
+    mined = insert_replacement_candidate(:mined, address, mined_options)
+
+    {pending, mined}
+  end
+
+  defp insert_replacement_candidate(kind, address, options) do
+    transaction =
+      insert(:transaction,
+        from_address: address,
+        nonce: Keyword.get(options, :nonce, 7),
+        type: Keyword.get(options, :type)
+      )
+
+    transaction =
+      case kind do
+        :pending -> transaction
+        :mined -> with_block(transaction, status: :ok)
+      end
+
+    case Keyword.fetch(options, :nonce_key) do
+      {:ok, nonce_key} -> insert(:eip_8430_transaction, transaction: transaction, nonce_key: nonce_key)
+      :error -> :ok
+    end
+
+    transaction
+  end
+
+  # The entry of a mined transaction in the form that `Indexer.Fetcher.ReplacedTransaction` builds.
+  defp mined_entry(%Transaction{} = mined) do
+    Map.take(mined, [:block_hash, :nonce, :from_address_hash, :hash])
+  end
+
+  # Runs the given function of the `dropped/replaced` rule and tells if it selects the pending
+  # transaction as replaced.
+  defp replaced?(:update_replaced_transactions, pending, mined) do
+    Transaction.update_replaced_transactions([mined_entry(mined)])
+
+    Repo.get(Transaction, pending.hash).error == "dropped/replaced"
+  end
+
+  defp replaced?(:find_and_update_replaced_transactions, pending, _mined) do
+    Transaction.find_and_update_replaced_transactions([Map.take(pending, [:hash, :nonce, :from_address_hash])])
+
+    Repo.get(Transaction, pending.hash).error == "dropped/replaced"
+  end
+
+  defp replaced?(:replaced_pending_transactions_query, pending, _mined) do
+    Transaction
+    |> Transaction.replaced_pending_transactions_query()
+    |> Repo.all()
+    |> Enum.any?(&(&1.hash == pending.hash))
   end
 end

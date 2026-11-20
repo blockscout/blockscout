@@ -693,8 +693,10 @@ defmodule EthereumJSONRPC.Transaction do
   #
   # For EIP-8430 transactions the fields go under the nested `:eip_8430_fields` key in the form
   # that the node returns. An absent field becomes `nil`. The step does not interpret `sender`
-  # and `payer`: this function also handles pending transactions on every poll, so the
-  # classification and its log warnings belong to the block import.
+  # and `payer`. `Indexer.Transform.EIP8430Transactions.parse/2` does the classification, for
+  # the block import and for the import of pending transactions. This function also handles
+  # pending transactions on every poll, so only the block import writes the log warnings about
+  # unexpected values.
   @spec transaction_type_fields(%{atom() => any()}, %{String.t() => any()}) :: %{atom() => any()}
   defp transaction_type_fields(params, %{"type" => @eip_8430_transaction_type} = elixir) do
     Map.put(params, :eip_8430_fields, %{

@@ -2,6 +2,10 @@
 defmodule Indexer.Fetcher.ReplacedTransaction do
   @moduledoc """
   Finds and updates replaced transactions.
+
+  A pending transaction is replaced if a mined transaction has the same `from_address_hash`, the same nonce channel,
+  and the same `nonce`. The nonce channel is the `nonce_key` of an EIP-8430 transaction (EIP-2718 type `0x79`), and
+  `0` for each other transaction. See `Explorer.Chain.Transaction.update_replaced_transactions/2` for the full rule.
   """
 
   use Indexer.Fetcher, restart: :permanent
@@ -18,12 +22,19 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   @default_max_batch_size 10
   @default_max_concurrency 4
 
+  @doc """
+  Asynchronously marks the pending transactions that the given mined transactions replace.
+
+  Each entry contains the hash of the mined transaction, because the database query needs it to find the nonce
+  channel of the mined transaction.
+  """
   @spec async_fetch(
           [
             %{
               required(:nonce) => non_neg_integer,
               required(:from_address_hash) => Hash.Address.t(),
-              required(:block_hash) => Hash.Full.t()
+              required(:block_hash) => Hash.Full.t(),
+              required(:hash) => Hash.Full.t()
             }
           ],
           boolean()
@@ -40,8 +51,8 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   @doc """
   Asynchronously checks freshly imported pending transactions against already mined ones.
 
-  If a mined transaction with the same `from_address_hash` and `nonce` already exists in the DB, the pending
-  transaction is marked as `dropped/replaced`. This covers the case when a pending transaction is imported after
+  If a mined transaction with the same `from_address_hash`, nonce channel, and `nonce` already exists in the DB, the
+  pending transaction is marked as `dropped/replaced`. This covers the case when a pending transaction is imported after
   the block with its replacement has already been processed, so `async_fetch/3` could not catch it.
   """
   @spec async_fetch_pending(
@@ -85,8 +96,8 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
     ]
   end
 
-  # Streams only pending transactions that already have a mined duplicate (same `from_address_hash` and `nonce`),
-  # so that the periodic re-scan is not limited to an arbitrary sample of all pending transactions.
+  # Streams only pending transactions that already have a mined duplicate (same `from_address_hash`, nonce channel,
+  # and `nonce`), so that the periodic re-scan is not limited to an arbitrary sample of all pending transactions.
   @impl BufferedTask
   def init(initial, reducer, _) do
     {:ok, final} =
@@ -106,10 +117,11 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
   defp entry(%{
          block_hash: %Hash{bytes: block_hash_bytes},
          nonce: nonce,
-         from_address_hash: %Hash{bytes: from_address_hash_bytes}
+         from_address_hash: %Hash{bytes: from_address_hash_bytes},
+         hash: %Hash{bytes: hash_bytes}
        })
        when is_integer(nonce) do
-    {block_hash_bytes, nonce, from_address_hash_bytes}
+    {block_hash_bytes, nonce, from_address_hash_bytes, hash_bytes}
   end
 
   defp pending_entry(%{
@@ -120,12 +132,13 @@ defmodule Indexer.Fetcher.ReplacedTransaction do
     {:pending, nonce, from_address_hash_bytes, hash}
   end
 
-  defp params({block_hash_bytes, nonce, from_address_hash_bytes})
+  defp params({block_hash_bytes, nonce, from_address_hash_bytes, hash_bytes})
        when is_integer(nonce) do
     {:ok, from_address_hash} = Hash.Address.cast(from_address_hash_bytes)
     {:ok, block_hash} = Hash.Full.cast(block_hash_bytes)
+    {:ok, hash} = Hash.Full.cast(hash_bytes)
 
-    %{nonce: nonce, from_address_hash: from_address_hash, block_hash: block_hash}
+    %{nonce: nonce, from_address_hash: from_address_hash, block_hash: block_hash, hash: hash}
   end
 
   defp pending_params({:pending, nonce, from_address_hash, hash}) do

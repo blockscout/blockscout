@@ -6,7 +6,7 @@ defmodule Indexer.Fetcher.PendingTransactionTest do
 
   import Mox
 
-  alias Explorer.Chain.Transaction
+  alias Explorer.Chain.{EIP8430Transaction, Transaction}
   alias Indexer.Fetcher.{PendingTransaction, ReplacedTransaction}
 
   # MUST use global mode because we aren't guaranteed to get PendingTransactionFetcher's pid back fast enough to `allow`
@@ -16,6 +16,62 @@ defmodule Indexer.Fetcher.PendingTransactionTest do
   setup :verify_on_exit!
 
   @moduletag [capture_log: true, no_geth: true]
+
+  @eip_8430_transaction_hash "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c"
+
+  # An EIP-8430 transaction (EIP-2718 type `0x79`) of an OP Stack test network in the form of
+  # a pending transaction: without a block. The `calls` list and the block timestamps of the
+  # node response are removed.
+  @pending_eip_8430_transaction %{
+    "accountChanges" => [],
+    "blockHash" => nil,
+    "blockNumber" => nil,
+    "chainId" => "0x509f455",
+    "from" => "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a",
+    "gas" => "0x1255c",
+    "gasPrice" => "0x7744d640",
+    "hash" => @eip_8430_transaction_hash,
+    "input" => "0x",
+    "maxFeePerGas" => "0x77541880",
+    "maxPriorityFeePerGas" => "0x3baa0c40",
+    "metadata" => "0x53706f6e736f726564207472616e73616374696f6e",
+    "nonce" => "0x0",
+    "nonceKey" => "0x5",
+    "payer" => "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+    "payerAuth" =>
+      "0x0000000000000000000000000000000000000001c1a1dc1e515204f16a2d6c18b8f9caacab7c1d49c27b73c1c1786b2f23500a3c0409bd58182d6efbd9a48ebfceadd469dc03f80bd708eca95d539c92082571da1c",
+    "sender" => "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a",
+    "senderAuth" =>
+      "0x0000000000000000000000000000000000000001f4646b5a9fcff6e29768f4d61a65b4479946e37a094a3116f5b76486ce466abf1a514af6b3ed852c8b30fcc82fb76a3e8bb6f9c92c2a77e7055c42bdbb8bdccc1b",
+    "to" => nil,
+    "transactionIndex" => nil,
+    "type" => "0x79",
+    "validAfter" => "0x0",
+    "validBefore" => "0x1a1c2b2a0b1",
+    "value" => "0x0"
+  }
+
+  @legacy_transaction_hash "0x4a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
+  @second_legacy_transaction_hash "0x5a3eb134e6792ce9403ea4188e5e79693de9e4c94e499db132be086400da79e6"
+
+  # A pending transaction of a different type.
+  @pending_legacy_transaction %{
+    "blockHash" => nil,
+    "blockNumber" => nil,
+    "chainId" => "0x509f455",
+    "from" => "0xe8ddc5c7a2d2f0d7a9798459c0104fdf5e987aca",
+    "gas" => "0x5208",
+    "gasPrice" => "0x174876e800",
+    "hash" => @legacy_transaction_hash,
+    "input" => "0x",
+    "nonce" => "0x0",
+    "r" => "0xad3733df250c87556335ffe46c23e34dbaffde93097ef92f52c88632a40f0c75",
+    "s" => "0x72caddc0371451a58de2ca6ab64e0f586ccdb9465ff54e1c82564940e89291e3",
+    "to" => "0xffc87239eb0267bc3ca2cd51d12fbf278e02ccb4",
+    "transactionIndex" => nil,
+    "v" => "0xbd",
+    "value" => "0x1"
+  }
 
   describe "start_link/1" do
     # this test may fail if Sokol so low volume that the pending transactions are empty for too long
@@ -78,6 +134,64 @@ defmodule Indexer.Fetcher.PendingTransactionTest do
       )
 
       assert Repo.aggregate(Transaction, :count, :hash) >= 1
+    end
+
+    test "imports the row of a pending EIP-8430 transaction without the receipt values", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        stub(EthereumJSONRPC.Mox, :json_rpc, fn _json, _options -> {:ok, [@pending_eip_8430_transaction]} end)
+
+        ReplacedTransaction.Supervisor.Case.start_supervised!()
+        PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+        row =
+          wait_for_results(
+            fn ->
+              Repo.one!(from(row in EIP8430Transaction, where: row.transaction_hash == ^@eip_8430_transaction_hash))
+            end,
+            60
+          )
+
+        assert Decimal.eq?(row.nonce_key, 5)
+        assert Decimal.eq?(row.valid_before, 0x1A1C2B2A0B1)
+        assert row.payer_type == :named
+        assert row.has_named_sender == true
+        assert row.resolved_payer_address_hash == nil
+        assert row.committed_phases_count == nil
+
+        assert %Transaction{block_hash: nil, type: 0x79} = Repo.get!(Transaction, @eip_8430_transaction_hash)
+      end
+    end
+
+    test "imports no transaction of a chunk if the row of an EIP-8430 transaction is not valid", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # The first response contains an EIP-8430 transaction without `nonceKey`, so its row is
+        # not valid. The fetcher polls in a separate process. Thus each next response contains
+        # one valid transaction: when this transaction is in the database, the fetcher is done
+        # with the first response.
+        EthereumJSONRPC.Mox
+        |> expect(:json_rpc, fn _json, _options ->
+          {:ok, [Map.delete(@pending_eip_8430_transaction, "nonceKey"), @pending_legacy_transaction]}
+        end)
+        |> stub(:json_rpc, fn _json, _options ->
+          {:ok, [%{@pending_legacy_transaction | "hash" => @second_legacy_transaction_hash, "nonce" => "0x1"}]}
+        end)
+
+        ReplacedTransaction.Supervisor.Case.start_supervised!()
+        PendingTransaction.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+        wait_for_results(
+          fn -> Repo.one!(from(t in Transaction, where: t.hash == ^@second_legacy_transaction_hash)) end,
+          60
+        )
+
+        assert Repo.get(Transaction, @eip_8430_transaction_hash) == nil
+        assert Repo.get(Transaction, @legacy_transaction_hash) == nil
+        assert Repo.aggregate(EIP8430Transaction, :count) == 0
+      end
     end
   end
 end
