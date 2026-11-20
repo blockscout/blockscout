@@ -2381,6 +2381,12 @@ defmodule Explorer.Chain.Transaction do
   A transaction whose `signed_authorizations` are already loaded is returned
   as is.
 
+  A pending transaction always gets an empty list, also when its
+  `signed_authorizations` are already loaded. The pending transaction fetcher
+  does not import authorizations, so only a transaction that became pending
+  after a reorg has rows in the DB. The `status` of these rows belongs to the
+  block that lost consensus.
+
   ## Parameters
   - `transaction`: The transaction to preload.
   - `options`: Keyword list with `api?` used to pick the replica repo.
@@ -2389,6 +2395,10 @@ defmodule Explorer.Chain.Transaction do
   - The transaction with `signed_authorizations` loaded (or set to `[]`).
   """
   @spec preload_signed_authorizations(t(), Keyword.t()) :: t()
+  def preload_signed_authorizations(%__MODULE__{block_hash: nil} = transaction, _options) do
+    %{transaction | signed_authorizations: []}
+  end
+
   def preload_signed_authorizations(%__MODULE__{signed_authorizations: signed_authorizations} = transaction, _options)
       when is_list(signed_authorizations) do
     transaction
