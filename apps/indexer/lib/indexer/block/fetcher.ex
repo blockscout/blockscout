@@ -758,8 +758,14 @@ defmodule Indexer.Block.Fetcher do
   def async_import_replaced_transactions(%{transactions: transactions}, realtime?) do
     transactions
     |> Enum.flat_map(fn
-      %Transaction{block_hash: %Hash{} = block_hash, nonce: nonce, from_address_hash: %Hash{} = from_address_hash} ->
-        [%{block_hash: block_hash, nonce: nonce, from_address_hash: from_address_hash}]
+      %Transaction{
+        block_hash: %Hash{} = block_hash,
+        nonce: nonce,
+        from_address_hash: %Hash{} = from_address_hash,
+        hash: %Hash{} = hash
+      } ->
+        # `Indexer.Fetcher.ReplacedTransaction` needs the hash to find the nonce channel of the mined transaction.
+        [%{block_hash: block_hash, nonce: nonce, from_address_hash: from_address_hash, hash: hash}]
 
       %Transaction{block_hash: nil} ->
         []

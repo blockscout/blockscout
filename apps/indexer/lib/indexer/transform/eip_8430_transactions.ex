@@ -26,38 +26,51 @@ defmodule Indexer.Transform.EIP8430Transactions do
 
     The function also reads the receipt fields from the `:eip_8430_receipt_fields` key: the
     resolved payer and the number of committed phases. If the key or one of its fields is
-    absent, the value in the row is `nil`, and the import rejects the row.
+    absent, the value in the row is `nil`. The block import rejects such a row. The import of
+    pending transactions accepts it, because a pending transaction has no receipt.
 
     The function keeps the resolved payer without change if it is an address string: `0x` and
     40 hex digits. For every other value, the function writes a warning to the log and puts
-    `nil` into the row, so the import rejects the row. `resolved_payers/1` uses the same rule.
+    `nil` into the row, so the block import rejects the row. `resolved_payers/1` uses the same
+    rule.
 
     An unexpected form of `sender` or `payer` does not raise an error. The function writes a
     warning to the log, and the row gets `has_named_sender: false` or `payer_type: :unknown`.
 
     ## Parameters
-    - `transactions_with_receipts`: A list of transactions with receipts.
+    - `transactions_with_receipts`: A list of transactions with receipts. A pending
+      transaction has no receipt fields.
+    - `options`: A keyword list:
+      - `:log_unexpected_values?`: If `false`, the function does not write the warnings about
+        an unexpected `sender` or `payer`. The rows are the same. The default is `true`.
+        `Indexer.Fetcher.PendingTransaction` sets `false`, because it imports the full
+        transaction pool again in each poll, and each poll would write the same warnings.
 
     ## Returns
     A list of rows ready for database import.
   """
-  @spec parse([
-          %{
-            optional(:eip_8430_fields) => EthereumJSONRPC.Transaction.eip_8430_fields(),
-            optional(:eip_8430_receipt_fields) => EthereumJSONRPC.Receipt.eip_8430_receipt_fields(),
-            optional(any()) => any()
-          }
-        ]) :: [EIP8430Transaction.to_import()]
-  def parse(transactions_with_receipts) do
+  @spec parse(
+          [
+            %{
+              optional(:eip_8430_fields) => EthereumJSONRPC.Transaction.eip_8430_fields(),
+              optional(:eip_8430_receipt_fields) => EthereumJSONRPC.Receipt.eip_8430_receipt_fields(),
+              optional(any()) => any()
+            }
+          ],
+          log_unexpected_values?: boolean()
+        ) :: [EIP8430Transaction.to_import()]
+  def parse(transactions_with_receipts, options \\ []) do
+    log? = Keyword.get(options, :log_unexpected_values?, true)
+
     transactions_with_receipts
     |> Enum.filter(&Map.has_key?(&1, :eip_8430_fields))
     |> Enum.map(fn %{hash: transaction_hash, eip_8430_fields: fields} = transaction ->
-      {payer_type, payer} = classify_payer(fields.payer, transaction_hash)
+      {payer_type, payer} = classify_payer(fields.payer, transaction_hash, log?)
       receipt_fields = Map.get(transaction, :eip_8430_receipt_fields, %{})
 
       %{
         transaction_hash: transaction_hash,
-        has_named_sender: named_sender?(fields.sender, transaction_hash),
+        has_named_sender: named_sender?(fields.sender, transaction_hash, log?),
         nonce_key: fields.nonce_key,
         valid_after: fields.valid_after,
         valid_before: fields.valid_before,
@@ -150,20 +163,22 @@ defmodule Indexer.Transform.EIP8430Transactions do
 
   # Tells whether the `sender` value of the transaction object is a 20-byte address. An absent
   # value, `nil`, and `0x` mean an empty sender: the node recovers the sender from the
-  # authorization.
-  @spec named_sender?(any(), EthereumJSONRPC.hash()) :: boolean()
-  defp named_sender?(nil, _transaction_hash), do: false
-  defp named_sender?("0x", _transaction_hash), do: false
+  # authorization. If `log?` is `false`, an unexpected value writes no warning.
+  @spec named_sender?(any(), EthereumJSONRPC.hash(), boolean()) :: boolean()
+  defp named_sender?(nil, _transaction_hash, _log?), do: false
+  defp named_sender?("0x", _transaction_hash, _log?), do: false
 
-  defp named_sender?(sender, transaction_hash) do
+  defp named_sender?(sender, transaction_hash, log?) do
     case address_bytes(sender) do
       {:ok, _address_bytes} ->
         true
 
       :error ->
-        Logger.warning(
-          "Unexpected sender value #{inspect(sender)} in EIP-8430 transaction #{transaction_hash}. The sender is recorded as not named."
-        )
+        if log? do
+          Logger.warning(
+            "Unexpected sender value #{inspect(sender)} in EIP-8430 transaction #{transaction_hash}. The sender is recorded as not named."
+          )
+        end
 
         false
     end
@@ -171,38 +186,42 @@ defmodule Indexer.Transform.EIP8430Transactions do
 
   # Tells what the `payer` value of the transaction object means and returns the value to
   # store. The value stays as the node returned it. The only exception is a value that is not
-  # a hex string of bytes: it cannot go to a `bytea` column, so `nil` replaces it.
-  @spec classify_payer(any(), EthereumJSONRPC.hash()) :: {EIP8430Transaction.payer_type(), String.t() | nil}
-  defp classify_payer(nil, _transaction_hash), do: {:self, nil}
-  defp classify_payer("0x", _transaction_hash), do: {:self, "0x"}
+  # a hex string of bytes: it cannot go to a `bytea` column, so `nil` replaces it. If `log?` is
+  # `false`, an unexpected value writes no warning.
+  @spec classify_payer(any(), EthereumJSONRPC.hash(), boolean()) ::
+          {EIP8430Transaction.payer_type(), String.t() | nil}
+  defp classify_payer(nil, _transaction_hash, _log?), do: {:self, nil}
+  defp classify_payer("0x", _transaction_hash, _log?), do: {:self, "0x"}
 
-  defp classify_payer(payer, transaction_hash) do
+  defp classify_payer(payer, transaction_hash, log?) do
     case address_bytes(payer) do
       {:ok, address_bytes} when address_bytes != @zero_address_bytes -> {:named, payer}
-      _ -> classify_non_address_payer(payer, transaction_hash)
+      _ -> classify_non_address_payer(payer, transaction_hash, log?)
     end
   end
 
   # Classifies a `payer` value that is not a non-zero 20-byte address.
-  @spec classify_non_address_payer(any(), EthereumJSONRPC.hash()) ::
+  @spec classify_non_address_payer(any(), EthereumJSONRPC.hash(), boolean()) ::
           {EIP8430Transaction.payer_type(), String.t() | nil}
-  defp classify_non_address_payer(payer, transaction_hash) do
+  defp classify_non_address_payer(payer, transaction_hash, log?) do
     case bytes(payer) do
       {:ok, @open_payer_bytes} ->
         {:open, payer}
 
       {:ok, _bytes} ->
-        log_unknown_payer(payer, transaction_hash)
+        log_unknown_payer(payer, transaction_hash, log?)
         {:unknown, payer}
 
       :error ->
-        log_unknown_payer(payer, transaction_hash)
+        log_unknown_payer(payer, transaction_hash, log?)
         {:unknown, nil}
     end
   end
 
-  @spec log_unknown_payer(any(), EthereumJSONRPC.hash()) :: :ok
-  defp log_unknown_payer(payer, transaction_hash) do
+  @spec log_unknown_payer(any(), EthereumJSONRPC.hash(), boolean()) :: :ok
+  defp log_unknown_payer(_payer, _transaction_hash, false), do: :ok
+
+  defp log_unknown_payer(payer, transaction_hash, true) do
     Logger.warning(
       "Unexpected payer value #{inspect(payer)} in EIP-8430 transaction #{transaction_hash}. The payer type is recorded as unknown."
     )

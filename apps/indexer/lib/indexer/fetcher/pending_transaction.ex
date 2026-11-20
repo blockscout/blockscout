@@ -6,9 +6,15 @@ defmodule Indexer.Fetcher.PendingTransaction do
   *NOTE*: Pending transactions are imported with with `on_conflict: :nothing`, so that they don't overwrite their own
   validated version that may make it to the database first.
 
+  For each pending EIP-8430 transaction (EIP-2718 type `0x79`), the fetcher also imports a row to
+  `eip_8430_transactions`. The row contains `nonce_key`, the nonce channel of the transaction, and no receipt values.
+  The row is imported with `on_conflict: :nothing` also, so it does not replace the row of a mined transaction.
+
   After a successful import the inserted transactions are handed to `Indexer.Fetcher.ReplacedTransaction`, so that a
-  pending transaction whose replacement (same `from_address_hash` and `nonce`) has already been mined gets marked as
-  `dropped/replaced` even though the block import happened before the pending transaction reached the database.
+  pending transaction whose replacement has already been mined gets marked as `dropped/replaced` even though the block
+  import happened before the pending transaction reached the database. A replacement is a mined transaction with the
+  same `from_address_hash`, nonce channel, and `nonce`. See `Explorer.Chain.Transaction.update_replaced_transactions/2`
+  for the full rule.
   """
   use GenServer
   use Indexer.Fetcher, restart: :permanent
@@ -21,7 +27,7 @@ defmodule Indexer.Fetcher.PendingTransaction do
   alias Explorer.Chain
   alias Explorer.Chain.Cache.Accounts
   alias Indexer.Fetcher.{PendingTransaction, ReplacedTransaction}
-  alias Indexer.Transform.Addresses
+  alias Indexer.Transform.{Addresses, EIP8430Transactions}
 
   @chunk_size 250
 
@@ -171,13 +177,23 @@ defmodule Indexer.Fetcher.PendingTransaction do
   defp import_chunk(transactions_params) do
     addresses_params = Addresses.extract_addresses(%{transactions: transactions_params}, pending: true)
 
+    # The fetcher imports the full transaction pool again in each poll. Thus the warnings about unexpected values are
+    # off: only the block import writes them.
+    eip_8430_transactions_params = EIP8430Transactions.parse(transactions_params, log_unexpected_values?: false)
+
     # There’s no need to serialize fetching the address balance, as such transactions are still pending and therefore cannot
     # have affected it.
     # The address balance is determined at a specific block, whereas these transactions have not yet been included in any block.
     case Chain.import(%{
            addresses: %{params: addresses_params, on_conflict: :nothing},
            broadcast: :realtime,
-           transactions: %{params: transactions_params, on_conflict: :nothing}
+           transactions: %{params: transactions_params, on_conflict: :nothing},
+           # A pending transaction has no receipt, so `:pending_changeset` does not require the receipt values.
+           eip_8430_transactions: %{
+             params: eip_8430_transactions_params,
+             on_conflict: :nothing,
+             with: :pending_changeset
+           }
          }) do
       {:ok, imported} ->
         Accounts.drop(imported[:addresses])

@@ -93,7 +93,7 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
     "type" => "0x79"
   }
 
-  describe "parse/1" do
+  describe "parse/2" do
     test "builds the row from a raw transaction and a raw receipt of the node" do
       assert [@raw_transaction] |> to_params() |> EIP8430Transactions.parse() == [
                %{
@@ -226,6 +226,25 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
 
       assert [%{resolved_payer_address_hash: nil, committed_phases_count: nil, payer_type: :named}] =
                EIP8430Transactions.parse(transactions)
+    end
+
+    test "writes no warnings about an unexpected sender or payer if the option is off" do
+      transactions = to_params([Map.merge(@raw_transaction, %{"sender" => "0x0102", "payer" => "0x0102"})])
+
+      {rows_with_warnings, log_with_warnings} =
+        with_log(fn -> EIP8430Transactions.parse(transactions) end)
+
+      {rows, log} =
+        with_log(fn -> EIP8430Transactions.parse(transactions, log_unexpected_values?: false) end)
+
+      assert log_with_warnings =~ "Unexpected sender value"
+      assert log_with_warnings =~ "Unexpected payer value"
+
+      refute log =~ "Unexpected sender value"
+      refute log =~ "Unexpected payer value"
+
+      assert [%{has_named_sender: false, payer_type: :unknown, payer: "0x0102"}] = rows
+      assert rows == rows_with_warnings
     end
 
     test "classifies a payer address as a named payer" do

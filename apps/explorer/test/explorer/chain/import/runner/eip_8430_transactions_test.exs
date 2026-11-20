@@ -173,7 +173,83 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
     end
   end
 
+  describe "EIP8430Transaction.pending_changeset/2" do
+    test "accepts a row without the receipt values" do
+      attrs = %{params(transaction_hash()) | resolved_payer_address_hash: nil, committed_phases_count: nil}
+
+      changeset = EIP8430Transaction.pending_changeset(%EIP8430Transaction{}, attrs)
+
+      assert changeset.valid?
+      refute Map.has_key?(changeset.changes, :resolved_payer_address_hash)
+      refute Map.has_key?(changeset.changes, :committed_phases_count)
+    end
+
+    test "rejects a row without a value that each transaction has" do
+      for field <- [:nonce_key, :valid_after, :valid_before] do
+        attrs = %{params(transaction_hash()) | field => nil}
+
+        changeset = EIP8430Transaction.pending_changeset(%EIP8430Transaction{}, attrs)
+
+        refute changeset.valid?
+        assert Keyword.has_key?(changeset.errors, field)
+      end
+    end
+  end
+
   describe "Chain.import/1" do
+    test "imports the row of a pending transaction without the receipt values" do
+      from_address = insert(:address)
+      transaction_hash = to_string(transaction_hash())
+
+      assert {:ok, %{eip_8430_transactions: [imported]}} =
+               import_pending(from_address, pending_params(transaction_hash, 5))
+
+      assert to_string(imported.transaction_hash) == transaction_hash
+      assert Decimal.eq?(imported.nonce_key, 5)
+      assert imported.resolved_payer_address_hash == nil
+      assert imported.committed_phases_count == nil
+    end
+
+    test "does not replace the row of a mined transaction with the row of a pending transaction" do
+      from_address = insert(:address)
+      transaction_hash = to_string(transaction_hash())
+
+      assert {:ok, %{eip_8430_transactions: [_]}} =
+               Chain.import(%{
+                 transactions: %{params: [transaction_params(from_address, transaction_hash)]},
+                 eip_8430_transactions: %{params: [params(transaction_hash)]}
+               })
+
+      # The pending row has a different nonce key, so the test can tell the two rows apart.
+      assert {:ok, %{eip_8430_transactions: []}} =
+               import_pending(from_address, pending_params(transaction_hash, 5))
+
+      assert [row] = Repo.all(EIP8430Transaction)
+      assert Decimal.eq?(row.nonce_key, 0)
+      assert to_string(row.resolved_payer_address_hash) == @payer
+      assert row.committed_phases_count == 1
+    end
+
+    test "adds the receipt values to the row of a pending transaction in a block import" do
+      from_address = insert(:address)
+      transaction_hash = to_string(transaction_hash())
+
+      assert {:ok, %{eip_8430_transactions: [pending]}} =
+               import_pending(from_address, pending_params(transaction_hash, 0))
+
+      assert pending.resolved_payer_address_hash == nil
+
+      assert {:ok, %{eip_8430_transactions: [mined]}} =
+               Chain.import(%{
+                 transactions: %{params: [transaction_params(from_address, transaction_hash)]},
+                 eip_8430_transactions: %{params: [params(transaction_hash)]}
+               })
+
+      assert to_string(mined.resolved_payer_address_hash) == @payer
+      assert mined.committed_phases_count == 1
+      assert Repo.aggregate(EIP8430Transaction, :count) == 1
+    end
+
     test "imports a transaction and its EIP-8430 fields in one call" do
       from_address = insert(:address)
       transaction_hash = to_string(transaction_hash())
@@ -286,6 +362,41 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
   end
 
   defp changeset(attrs), do: EIP8430Transaction.changeset(%EIP8430Transaction{}, attrs)
+
+  # Imports a pending transaction and its row with the same options as
+  # `Indexer.Fetcher.PendingTransaction`.
+  defp import_pending(from_address, %{transaction_hash: transaction_hash} = row) do
+    Chain.import(%{
+      transactions: %{params: [transaction_params(from_address, transaction_hash)], on_conflict: :nothing},
+      eip_8430_transactions: %{params: [row], on_conflict: :nothing, with: :pending_changeset}
+    })
+  end
+
+  # The row of a pending transaction: a pending transaction has no receipt.
+  defp pending_params(transaction_hash, nonce_key) do
+    %{
+      params(transaction_hash)
+      | nonce_key: nonce_key,
+        resolved_payer_address_hash: nil,
+        committed_phases_count: nil
+    }
+  end
+
+  defp transaction_params(from_address, transaction_hash) do
+    %{
+      from_address_hash: to_string(from_address.hash),
+      gas: 0x1255C,
+      gas_price: 0x7744D640,
+      hash: transaction_hash,
+      input: "0x",
+      nonce: 0,
+      r: 0,
+      s: 0,
+      v: 0,
+      value: 0,
+      type: 0x79
+    }
+  end
 
   defp params(transaction_hash) do
     %{

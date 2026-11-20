@@ -24,8 +24,9 @@ defmodule Explorer.Repo.Migrations.CreateEip8430Transactions do
       add(:sender_auth, :bytea, null: true)
       add(:payer_auth, :bytea, null: true)
       add(:account_changes, :jsonb, null: true)
-      add(:resolved_payer_address_hash, :bytea, null: false)
-      add(:committed_phases_count, :integer, null: false)
+      # The two receipt values are empty for a transaction that was imported as pending.
+      add(:resolved_payer_address_hash, :bytea, null: true)
+      add(:committed_phases_count, :integer, null: true)
 
       timestamps(null: false, type: :utc_datetime_usec)
     end

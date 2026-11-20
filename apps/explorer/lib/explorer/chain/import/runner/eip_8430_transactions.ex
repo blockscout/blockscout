@@ -2,6 +2,14 @@
 defmodule Explorer.Chain.Import.Runner.EIP8430Transactions do
   @moduledoc """
   Bulk imports `t:Explorer.Chain.EIP8430Transaction.t/0`.
+
+  The block import uses the default `on_conflict`, which replaces the row. Thus the row of a
+  mined transaction gets the receipt values, also if the row was written for the pending
+  transaction before.
+
+  `Indexer.Fetcher.PendingTransaction` imports the rows of pending transactions with
+  `on_conflict: :nothing`. Such a row has no receipt values, and it does not replace the row of
+  a mined transaction.
   """
 
   require Ecto.Query
