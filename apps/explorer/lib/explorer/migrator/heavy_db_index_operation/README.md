@@ -1,6 +1,6 @@
 # Heavy Database Index Operations
 
-This document describes the framework for managing heavy database index operations in Blockscout, particularly focusing on creating and dropping indexes on large tables.
+This document describes the framework for managing heavy database index operations in Blockscout, particularly focusing on creating, dropping and rebuilding indexes on large tables, and vacuuming those tables.
 
 ## Overview
 
@@ -8,11 +8,13 @@ The modules under `Explorer.Migrator.HeavyDbIndexOperation` provide a standardiz
 
 ## Operation Types
 
-The framework supports three types of operations (`@operation_type`):
+The framework supports five types of operations (`@operation_type`):
 
 - `:create` - Creates a new index on a table
 - `:drop` - Removes an existing index from a table
 - `:rename` - Renames an existing index (typically used as the final step in a create → drop → rename workflow for zero-downtime index replacement)
+- `:reindex` - Rebuilds an existing index with `REINDEX INDEX CONCURRENTLY`
+- `:vacuum` - Vacuums a table with `VACUUM`
 
 ## Index Creation Methods
 
@@ -74,6 +76,40 @@ end
 - The migration name will be `heavy_indexes_rename_{new_index_name_lowercase}`
 - Rename operations are typically dependent on a drop operation completing first
 - `db_index_operation_status/0` should check both old and new index existence to determine status
+
+### 4. Reindex Operations
+
+A reindex operation only needs the table, the index and the operation type; all the callbacks are generated:
+
+```elixir
+@table_name :token_transfers
+@index_name "token_transfers_token_contract_address_hash_token_ids_index"
+@operation_type :reindex
+```
+
+The migration name is `heavy_indexes_reindex_{lower_case_index_name}`.
+
+- If the index doesn't exist, the operation is completed without a rebuild.
+- A `REINDEX INDEX CONCURRENTLY` which was interrupted (e.g. by an application restart) leaves an invalid index with the `_ccnew` or `_ccold` suffix behind. Such leftovers of the index being rebuilt (matched by the name derived from the index name and by the index definition) are dropped before the rebuild is started again. Invalid indexes of the other operations on the table are left untouched, and the cleanup waits until the operation is ready to start: its dependencies are completed and no other heavy operation is running on the table.
+- The rebuild needs free disk space for a second copy of the index.
+
+### 5. Vacuum Operations
+
+A vacuum operation has no index. Instead of `@index_name`, it declares `@migration_name_suffix`, which tells one vacuum of the table from another:
+
+```elixir
+@table_name :token_transfers
+@operation_type :vacuum
+@migration_name_suffix "after_eip7708_sanitizing"
+```
+
+The migration name is `heavy_indexes_vacuum_{table_name}_{migration_name_suffix}`.
+
+A plain `VACUUM` skips index vacuuming when less than 2% of the table pages hold dead rows. If the goal is to remove the entries of the deleted rows from an index of a large table, follow the vacuum with a reindex operation of that index, which depends on the vacuum through `dependent_from_migrations/0`.
+
+### Completion of Reindex and Vacuum Operations
+
+A finished `REINDEX` or `VACUUM` cannot be told from the one which hasn't been started by looking at the DB schema, unlike a created or dropped index. That's why these operations record their completion in the `meta` of the migration status (`"db_operation_finished": true`) once the statement returns, and the migration is marked as completed based on it. If the application is restarted before that, the operation is run again from scratch.
 
 ## Zero-Downtime Index Replacement Workflow
 
