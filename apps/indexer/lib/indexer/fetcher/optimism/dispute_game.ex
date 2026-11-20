@@ -324,8 +324,16 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     error_message = &"Cannot fetch game count from the DisputeGameFactory contract. Error: #{inspect(&1)}"
 
     case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries) do
-      {:ok, count} -> quantity_to_integer(count)
-      _ -> nil
+      {:ok, "0x"} ->
+        # there is no contract at the address, or the contract doesn't have the getter
+        Logger.error(error_message.("empty response"))
+        nil
+
+      {:ok, count} ->
+        quantity_to_integer(count)
+
+      _ ->
+        nil
     end
   end
 
