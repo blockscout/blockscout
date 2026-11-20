@@ -16,33 +16,41 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.General do
 
   alias Explorer.Chain.Block, as: FullBlock
 
+  @default_chunk_size 500
+
   @doc """
     Retrieves full details of rollup blocks, including associated transactions, for each
     block number specified in the input list.
 
+    The query is chunked into bounded batches (default: 500 blocks) to prevent database
+    connection timeouts when processing unusually wide batches (#14749).
+
     ## Parameters
     - `list_of_block_numbers`: A list of block numbers for which full block details are to be retrieved.
+    - `chunk_size`: Optional maximum number of blocks per database query chunk. Defaults to 500.
 
     ## Returns
     - A list of `Explorer.Chain.Block` instances containing detailed information for each
       block number in the input list. Returns an empty list if no blocks are found for the given numbers.
   """
-  @spec rollup_blocks([FullBlock.block_number()]) :: [FullBlock.t()]
-  def rollup_blocks(list_of_block_numbers)
+  @spec rollup_blocks([FullBlock.block_number()], pos_integer()) :: [FullBlock.t()]
+  def rollup_blocks(list_of_block_numbers, chunk_size \\ @default_chunk_size)
 
-  def rollup_blocks([]), do: []
+  def rollup_blocks([], _chunk_size), do: []
 
-  def rollup_blocks(list_of_block_numbers) do
-    query =
+  def rollup_blocks(list_of_block_numbers, chunk_size) when is_integer(chunk_size) and chunk_size > 0 do
+    list_of_block_numbers
+    |> Enum.uniq()
+    |> Enum.chunk_every(chunk_size)
+    |> Enum.flat_map(fn chunk ->
       from(
         block in FullBlock,
-        where: block.number in ^list_of_block_numbers
+        where: block.number in ^chunk
       )
-
-    query
-    # :optional is used since a block may not have any transactions
-    |> Chain.join_associations(%{:transactions => :optional})
-    |> Repo.all()
+      # :optional is used since a block may not have any transactions
+      |> Chain.join_associations(%{:transactions => :optional})
+      |> Repo.all()
+    end)
   end
 
   @doc """
