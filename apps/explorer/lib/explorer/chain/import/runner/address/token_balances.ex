@@ -11,6 +11,7 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Import
+  alias Explorer.Chain.Token.Erc404
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Utility.MissingBalanceOfToken
 
@@ -55,7 +56,12 @@ defmodule Explorer.Chain.Import.Runner.Address.TokenBalances do
     end)
     |> Multi.run(:address_token_balances, fn repo, %{filter_placeholders: filtered_changes_list} ->
       Instrumenter.block_import_stage_runner(
-        fn -> insert(repo, filtered_changes_list, insert_options) end,
+        fn ->
+          # the legacy-typed balances of a token retyped to ERC-404, see the function docs
+          repo
+          |> Erc404.normalize_imported_token_balances(filtered_changes_list)
+          |> then(&insert(repo, &1, insert_options))
+        end,
         :block_referencing,
         :token_balances,
         :address_token_balances

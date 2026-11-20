@@ -491,6 +491,67 @@ defmodule BlockScoutWeb.API.RPC.ContractControllerTest do
       assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
     end
 
+    test "with an unverified proxy of a verified implementation", %{conn: conn} do
+      implementation_contract = insert(:smart_contract, name: "Implementation")
+      implementation_address_hash_string = to_string(implementation_contract.address_hash)
+      "0x" <> implementation_address_hash_hex = implementation_address_hash_string
+
+      proxy_address =
+        insert(:address,
+          contract_code: "0x363d3d373d3d3d363d73" <> implementation_address_hash_hex <> "5af43d82803e903d91602b57fd5bf3"
+        )
+
+      params = %{
+        "module" => "contract",
+        "action" => "getsourcecode",
+        "address" => to_string(proxy_address.hash)
+      }
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert response["status"] == "1"
+      assert [result] = response["result"]
+
+      # sources of the implementation are returned for convenience,
+      # but the answer states that they belong to the implementation of a proxy
+      assert result["Address"] == to_string(proxy_address.hash)
+      assert result["SourceCode"] == implementation_contract.contract_source_code
+      assert result["ContractName"] == "Implementation"
+      assert result["IsProxy"] == "true"
+      assert result["ImplementationAddress"] == implementation_address_hash_string
+      assert result["ImplementationAddresses"] == [implementation_address_hash_string]
+      assert :ok = ExJsonSchema.Validator.validate(getsourcecode_schema(), response)
+    end
+
+    test "with an unverified non-proxy bytecode twin of a verified contract", %{conn: conn} do
+      contract = insert(:smart_contract)
+      verified_address = Repo.get!(Address, contract.address_hash)
+      twin_address = insert(:address, contract_code: verified_address.contract_code)
+
+      params = %{
+        "module" => "contract",
+        "action" => "getsourcecode",
+        "address" => to_string(twin_address.hash)
+      }
+
+      EthereumJSONRPC.Mox
+      |> TestHelper.mock_generic_proxy_requests()
+
+      assert response =
+               conn
+               |> get("/api", params)
+               |> json_response(200)
+
+      assert [result] = response["result"]
+      assert result["Address"] == to_string(twin_address.hash)
+      assert result["SourceCode"] == contract.contract_source_code
+      assert result["IsProxy"] == "false"
+      refute Map.has_key?(result, "ImplementationAddress")
+    end
+
     test "with a verified proxy contract address", %{conn: conn} do
       implementation_contract =
         insert(:smart_contract,

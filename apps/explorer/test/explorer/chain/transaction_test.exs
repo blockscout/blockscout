@@ -606,6 +606,36 @@ defmodule Explorer.Chain.TransactionTest do
     insert(:transaction, to_address: proxy_smart_contract.address, input: "0x" <> input_data)
   end
 
+  describe "preload_signed_authorizations/2" do
+    test "loads the authorizations of a type 4 transaction that a block contains" do
+      transaction = :transaction |> insert(type: 4) |> with_block()
+      authorization = insert(:signed_authorization, transaction: transaction, index: 0)
+
+      assert %Transaction{signed_authorizations: [loaded]} = Transaction.preload_signed_authorizations(transaction, [])
+      assert loaded.authority == authorization.authority
+    end
+
+    test "returns an empty list for a pending type 4 transaction that has authorizations in the DB" do
+      # A transaction that became pending after a reorg keeps the rows that the
+      # import of the lost block wrote.
+      transaction = insert(:transaction, type: 4)
+      insert(:signed_authorization, transaction: transaction, index: 0, status: :ok)
+
+      assert %Transaction{signed_authorizations: []} = Transaction.preload_signed_authorizations(transaction, [])
+    end
+
+    test "returns an empty list for a pending type 4 transaction with loaded authorizations" do
+      transaction = insert(:transaction, type: 4)
+      insert(:signed_authorization, transaction: transaction, index: 0, status: :ok)
+
+      loaded_transaction = Repo.preload(transaction, :signed_authorizations)
+      assert [_] = loaded_transaction.signed_authorizations
+
+      assert %Transaction{signed_authorizations: []} =
+               Transaction.preload_signed_authorizations(loaded_transaction, [])
+    end
+  end
+
   describe "Utils.JSON.encode!/1" do
     test "encodes transaction input" do
       assert %{

@@ -10,7 +10,7 @@ Runs Blockscout locally in Docker containers with [docker-compose](https://githu
 
 ## Building Docker containers from source
 
-**Note**: in all below examples, you can use `docker compose` instead of `docker-compose`, if compose v2 plugin is installed in Docker.
+**Note**: in all the examples below, you can use `docker compose` instead of `docker-compose`, if the Docker Compose v2 plugin is installed.
 
 ```bash
 cd ./docker-compose
@@ -57,7 +57,7 @@ The repo contains built-in configs for different JSON RPC clients without need t
 
 All of the configs assume the Ethereum JSON RPC is running at http://localhost:8545.
 
-In order to stop launched containers, run `docker-compose -f config_file.yml down`, replacing `config_file.yml` with the file name of the config which was previously launched.
+To stop the running containers, execute `docker-compose -f config.yml down`, replacing `config.yml` with the name of the configuration file used to launch them.
 
 You can adjust BlockScout environment variables:
 
@@ -67,10 +67,7 @@ You can adjust BlockScout environment variables:
 - for visualizer in `./envs/common-visualizer.env`
 - for user-ops-indexer in `./envs/common-user-ops-indexer.env`
 
-Descriptions of the ENVs are available
-
-- for [backend](https://docs.blockscout.com/setup/env-variables)
-- for [frontend](https://github.com/blockscout/frontend/blob/main/docs/ENVS.md).
+Descriptions of the ENVs are available for backend ([common](https://docs.blockscout.com/setup/env-variables/backend-env-variables), [chain-specific](https://docs.blockscout.com/setup/env-variables/backend-envs-chain-specific), [integrations](https://docs.blockscout.com/setup/env-variables/backend-envs-integrations)) and for [frontend](https://docs.blockscout.com/setup/env-variables/frontend-common-envs/envs).
 
 ## Running Docker containers via Makefile
 

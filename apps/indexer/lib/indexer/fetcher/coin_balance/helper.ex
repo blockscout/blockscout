@@ -21,7 +21,7 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
 
     if !state do
       raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{module}.child_spec " <>
+            ":json_rpc_named_arguments must be provided to '#{module}.child_spec' " <>
               "to allow for json_rpc calls when running."
     end
 
@@ -94,56 +94,101 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     end)
   end
 
+  @doc """
+  Imports fetched coin balances along with the daily balances and the current
+  balances of the addresses.
+
+  The daily balance is imported only for the balances whose block timestamp
+  could be fetched; the other balances are still imported, just without the
+  daily row.
+
+  ## Parameters
+  - `params_list`: fetched balances, `t:EthereumJSONRPC.FetchedBalance.params/0`.
+  - `broadcast_type`: broadcast type passed to `Explorer.Chain.import/1`.
+
+  ## Returns
+  - The result of `Explorer.Chain.import/1`.
+  """
+  @spec import_fetched_balances([map()], atom() | false) ::
+          {:ok, map()} | {:error, any()} | {:error, any(), any(), map()}
   def import_fetched_balances(params_list, broadcast_type \\ false) do
-    value_fetched_at = DateTime.utc_now()
-
-    importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
-
     json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
 
-    importable_balances_daily_params = balances_daily_params(params_list, json_rpc_named_arguments)
-
-    addresses_params = balances_params_to_address_params(importable_balances_params)
-
-    Chain.import(%{
-      addresses: %{params: addresses_params, with: :balance_changeset},
-      address_coin_balances: %{params: importable_balances_params},
-      address_coin_balances_daily: %{params: importable_balances_daily_params},
-      broadcast: broadcast_type
-    })
+    params_list
+    |> balances_import_options(broadcast_type, block_timestamp_map)
+    |> Chain.import()
   end
 
+  @doc """
+  Same as `import_fetched_balances/2`, but does not import the balances
+  themselves: only the daily balances and the current balances of the addresses.
+  """
+  @spec import_fetched_daily_balances([map()], atom() | false) ::
+          {:ok, map()} | {:error, any()} | {:error, any(), any(), map()}
   def import_fetched_daily_balances(params_list, broadcast_type \\ false) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
+
+    params_list
+    |> balances_import_options(broadcast_type, block_timestamp_map)
+    |> Map.delete(:address_coin_balances)
+    |> Chain.import()
+  end
+
+  defp balances_import_options(params_list, broadcast_type, block_timestamp_map) do
     value_fetched_at = DateTime.utc_now()
 
     importable_balances_params = Enum.map(params_list, &Map.put(&1, :value_fetched_at, value_fetched_at))
 
-    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
-
-    importable_balances_daily_params = balances_daily_params(params_list, json_rpc_named_arguments)
-
-    addresses_params = balances_params_to_address_params(importable_balances_params)
-
-    Chain.import(%{
-      addresses: %{params: addresses_params, with: :balance_changeset},
-      address_coin_balances_daily: %{params: importable_balances_daily_params},
+    %{
+      addresses: %{params: balances_params_to_address_params(importable_balances_params), with: :balance_changeset},
+      address_coin_balances: %{params: importable_balances_params},
+      address_coin_balances_daily: %{params: balances_daily_params(params_list, block_timestamp_map)},
       broadcast: broadcast_type
-    })
+    }
   end
 
+  # Imports the fetched balances whose block day is known and retries the rest.
+  #
+  # A balance whose block timestamp could not be fetched is not imported at all:
+  # its daily balance can't be attributed to a day, so the entry is returned for
+  # a retry together with the entries which failed on the balance fetch itself.
   defp run_fetched_balances(%FetchedBalances{errors: errors, params_list: params_list}, fetcher_type) do
-    with {:ok, imported} <- import_fetched_balances(params_list, fetcher_type) do
+    json_rpc_named_arguments = Application.get_env(:explorer, :json_rpc_named_arguments)
+    block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
+
+    {importable_params_list, unresolved_params_list} =
+      Enum.split_with(params_list, &Map.has_key?(block_timestamp_map, "#{&1.block_number}"))
+
+    import_fetched_balances(importable_params_list, fetcher_type, block_timestamp_map)
+
+    retry(errors, unresolved_params_list)
+  end
+
+  defp import_fetched_balances([], _broadcast_type, _block_timestamp_map), do: :ok
+
+  defp import_fetched_balances(params_list, broadcast_type, block_timestamp_map) do
+    with {:ok, imported} <-
+           params_list
+           |> balances_import_options(broadcast_type, block_timestamp_map)
+           |> Chain.import() do
       Accounts.drop(imported[:addresses])
     end
-
-    retry(errors)
   end
 
-  defp retry([]), do: :ok
+  defp retry([], []), do: :ok
 
-  defp retry(errors) when is_list(errors) do
-    retried_entries = fetched_balances_errors_to_entries(errors)
+  defp retry(errors, unresolved_params_list) when is_list(errors) and is_list(unresolved_params_list) do
+    log_fetch_errors(errors)
+    log_unresolved_block_timestamps(unresolved_params_list)
 
+    {:retry, fetched_balances_errors_to_entries(errors) ++ Enum.map(unresolved_params_list, &params_to_entry/1)}
+  end
+
+  defp log_fetch_errors([]), do: :ok
+
+  defp log_fetch_errors(errors) do
     Logger.error(
       fn ->
         [
@@ -151,10 +196,24 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
           fetched_balance_errors_to_iodata(errors)
         ]
       end,
-      error_count: Enum.count(retried_entries)
+      error_count: Enum.count(errors)
     )
+  end
 
-    {:retry, retried_entries}
+  defp log_unresolved_block_timestamps([]), do: :ok
+
+  defp log_unresolved_block_timestamps(unresolved_params_list) do
+    block_numbers = unresolved_params_list |> Enum.map(& &1.block_number) |> Enum.uniq() |> Enum.sort()
+
+    Logger.error(
+      fn -> ["failed to fetch block timestamps for coin balances at blocks: ", inspect(block_numbers)] end,
+      error_count: Enum.count(unresolved_params_list)
+    )
+  end
+
+  defp params_to_entry(%{address_hash: address_hash, block_number: block_number}) do
+    {:ok, %Hash{bytes: address_hash_bytes}} = Hash.Address.cast(address_hash)
+    {address_hash_bytes, block_number}
   end
 
   defp fetched_balances_errors_to_entries(errors) when is_list(errors) do
@@ -187,6 +246,20 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
     [hash_data, "@", block_quantity |> quantity_to_integer() |> to_string(), ": (", to_string(code), ") ", message, ?\n]
   end
 
+  @doc """
+  Fetches the days of the blocks referenced by the given balances.
+
+  A block whose timestamp can't be fetched is left out of the map and does not
+  affect the other blocks.
+
+  ## Parameters
+  - `params_list`: maps with `:block_number`.
+  - `json_rpc_named_arguments`: JSON RPC connection arguments.
+
+  ## Returns
+  - A map of the block number (as a string) to the `t:Date.t/0` of the block.
+  """
+  @spec block_timestamp_map([map()], EthereumJSONRPC.json_rpc_named_arguments()) :: %{String.t() => Date.t()}
   def block_timestamp_map(params_list, json_rpc_named_arguments) do
     block_numbers =
       params_list
@@ -201,29 +274,40 @@ defmodule Indexer.Fetcher.CoinBalance.Helper do
           Map.put(map, "#{block_number}", day)
 
         _ ->
-          %{}
+          map
       end
     end)
   end
 
-  defp balances_daily_params(params_list, json_rpc_named_arguments) do
-    block_timestamp_map = block_timestamp_map(params_list, json_rpc_named_arguments)
-
+  defp balances_daily_params(params_list, block_timestamp_map) do
     params_list
-    |> Enum.map(fn balance_param ->
-      if Map.has_key?(block_timestamp_map, "#{balance_param.block_number}") do
-        day = Map.get(block_timestamp_map, "#{balance_param.block_number}")
-
-        incoming_balance_daily_param = %{
-          address_hash: balance_param.address_hash,
-          day: day,
-          value: balance_param.value
-        }
-
-        incoming_balance_daily_param
-      else
-        nil
+    |> Enum.flat_map(fn balance_param ->
+      case Map.fetch(block_timestamp_map, "#{balance_param.block_number}") do
+        {:ok, day} -> [%{address_hash: balance_param.address_hash, day: day, value: balance_param.value}]
+        :error -> []
       end
     end)
+    |> reduce_daily_params_to_max_value()
+  end
+
+  @doc """
+  Reduces daily balance params to a single entry per `{address_hash, day}`,
+  keeping the one with the greatest `value`.
+
+  One batch can carry balances of the same address at several blocks of the
+  same day, while `address_coin_balances_daily` stores only the greatest
+  value of the day.
+
+  ## Parameters
+  - `daily_params`: list of `%{address_hash: _, day: _, value: _}` maps.
+
+  ## Returns
+  - The list with at most one map per `{address_hash, day}`.
+  """
+  @spec reduce_daily_params_to_max_value([map()]) :: [map()]
+  def reduce_daily_params_to_max_value(daily_params) do
+    daily_params
+    |> Enum.group_by(&{&1.address_hash, &1.day})
+    |> Enum.map(fn {_key, params} -> Enum.max_by(params, & &1.value) end)
   end
 end

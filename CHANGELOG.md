@@ -12,6 +12,8 @@
 
 ### 🐛 Bug Fixes
 
+- fix: Skip SQL queries in Hot smart-contracts API when the functionality is disabled ([#15088](https://github.com/blockscout/blockscout/pull/15088))
+- Prevent verified source and proxy status from being attributed to contracts with different code ([#15086](https://github.com/blockscout/blockscout/pull/15086))
 - Delete zero-value internal transactions of the border block ([#15051](https://github.com/blockscout/blockscout/issues/15051))
 - Ignore void proofs in OP withdrawal status ([#15049](https://github.com/blockscout/blockscout/issues/15049))
 - Pin validated IP addresses in SafeFetch to prevent DNS rebinding ([#15046](https://github.com/blockscout/blockscout/issues/15046))
@@ -2464,7 +2466,7 @@
 - Add request to /cache/{tx_hash} of transaction interpreter ([#11279](https://github.com/blockscout/blockscout/issues/11279))
 - Switch DB requests from replica to master in case of replica inaccessibility ([#11020](https://github.com/blockscout/blockscout/issues/11020))
 - Add gzip encoding option ([#11292](https://github.com/blockscout/blockscout/issues/11292))
-- Add Stylus verification support ([#11183](https://github.com/blockscout/blockscout/issues/11183))
+- Add Stylus smart-contracts verification support ([#11183](https://github.com/blockscout/blockscout/issues/11183))
 - Multiple json rpc urls ([#10934](https://github.com/blockscout/blockscout/issues/10934))
 - Gas prices with base fee if no transactions ([#11132](https://github.com/blockscout/blockscout/issues/11132))
 - Zilliqa consensus data related to block  ([#10699](https://github.com/blockscout/blockscout/issues/10699))
@@ -6359,7 +6361,7 @@ fixed menu hovers in dark mode desktop view
 - [#2617](https://github.com/blockscout/blockscout/pull/2617) - skip cache update if there are no blocks inserted
 - [#2611](https://github.com/blockscout/blockscout/pull/2611) - fix js dependency vulnerabilities
 - [#2594](https://github.com/blockscout/blockscout/pull/2594) - do not start genesis data fetching periodically
-- [#2590](https://github.com/blockscout/blockscout/pull/2590) - restore backward compatibility with old releases
+- [#2590](https://github.com/blockscout/blockscout/pull/2590) - restore backward support with old releases
 - [#2577](https://github.com/blockscout/blockscout/pull/2577) - Need recompile column in the env vars table
 - [#2574](https://github.com/blockscout/blockscout/pull/2574) - limit request body in json rpc error
 - [#2566](https://github.com/blockscout/blockscout/pull/2566) - upgrade absinthe phoenix

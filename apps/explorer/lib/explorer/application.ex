@@ -211,6 +211,7 @@ defmodule Explorer.Application do
         configure_mode_dependent_process(Explorer.Migrator.SanitizeScaledUIAmountTokenTransferTypes, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.SanitizeEip7708TokenTransfers, :indexer),
+        configure_mode_dependent_process(Explorer.Migrator.SanitizeErc404Tokens, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TransactionBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.TokenTransferBlockConsensus, :indexer),
         configure_mode_dependent_process(Explorer.Migrator.RestoreOmittedWETHTransfers, :indexer),
@@ -560,6 +561,18 @@ defmodule Explorer.Application do
         ),
         configure_mode_dependent_process(
           Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.VacuumTokenTransfersAfterEip7708Sanitizing,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex,
+          :indexer
+        ),
+        configure_mode_dependent_process(
+          Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex,
           :indexer
         ),
         Explorer.Migrator.RefetchContractCodes

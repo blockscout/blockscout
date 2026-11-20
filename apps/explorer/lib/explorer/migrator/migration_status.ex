@@ -130,25 +130,23 @@ defmodule Explorer.Migrator.MigrationStatus do
   @doc """
   Checks if there are any running heavy migrations except the current.
 
-  A heavy migration is identified by its name starting with "heavy_indexes_create_{table_name}", "heavy_indexes_drop_{table_name}", or "heavy_indexes_rename_{table_name}" prefixes.
+  A heavy migration is identified by its name starting with the
+  "heavy_indexes_{operation_type}_{table_name}" prefix, where the operation type is one of
+  "create", "drop", "rename", "vacuum" or "reindex".
   """
   @spec running_other_heavy_migration_for_table_exists?(Ecto.Queryable.t(), atom(), String.t()) :: boolean()
   def running_other_heavy_migration_for_table_exists?(query \\ __MODULE__, table_name, migration_name) do
-    heavy_migrations_create_prefix =
-      "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}create_#{to_string(table_name)}%"
+    heavy_migration_for_table? =
+      Enum.reduce(~w(create drop rename vacuum reindex), dynamic(false), fn operation_type, acc ->
+        prefix =
+          "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}#{operation_type}_#{table_name}%"
 
-    heavy_migrations_rename_prefix =
-      "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}rename_#{to_string(table_name)}%"
-
-    heavy_migrations_drop_prefix =
-      "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}drop_#{to_string(table_name)}%"
+        dynamic([ms], ^acc or ilike(ms.migration_name, ^prefix))
+      end)
 
     query =
       from(ms in query,
-        where:
-          ilike(ms.migration_name, ^heavy_migrations_create_prefix) or
-            ilike(ms.migration_name, ^heavy_migrations_rename_prefix) or
-            ilike(ms.migration_name, ^heavy_migrations_drop_prefix),
+        where: ^heavy_migration_for_table?,
         where: ms.migration_name != ^migration_name,
         where: ms.status == ^"started"
       )

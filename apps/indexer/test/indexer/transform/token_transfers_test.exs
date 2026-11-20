@@ -726,6 +726,64 @@ defmodule Indexer.Transform.TokenTransfersTest do
     end
   end
 
+  describe "parse/1 with standard Transfer logs of ERC-404 tokens" do
+    test "gives both legs the ERC-404 shape when the token is stored as ERC-404" do
+      %{contract_address_hash: hash} = insert(:token, type: "ERC-404")
+      contract_address_hash = to_string(hash)
+
+      erc20_leg = %{
+        address_hash: contract_address_hash,
+        block_number: 3_530_917,
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+        data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+        first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+        third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+        fourth_topic: nil,
+        index: 8,
+        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
+      }
+
+      erc721_leg = %{
+        erc20_leg
+        | data: "0x",
+          fourth_topic: "0x0000000000000000000000000000000000000000000000000000000000000007",
+          index: 9
+      }
+
+      %{token_transfers: token_transfers, tokens: tokens} = TokenTransfers.parse([erc20_leg, erc721_leg])
+
+      assert [%{type: "ERC-404"}] = tokens
+
+      assert [erc20_transfer] = Enum.filter(token_transfers, &(&1.log_index == 8))
+      assert %{token_type: "ERC-404", token_ids: [], amounts: [amount]} = erc20_transfer
+      assert is_nil(erc20_transfer.amount)
+      assert Decimal.equal?(amount, Decimal.new(17_000_000_000_000_000_000))
+
+      assert [%{token_type: "ERC-404", token_ids: [7], amounts: []}] =
+               Enum.filter(token_transfers, &(&1.log_index == 9))
+    end
+
+    test "keeps the ERC-20 and ERC-721 shapes when the token is stored as ERC-721" do
+      %{contract_address_hash: hash} = insert(:token, type: "ERC-721")
+
+      log = %{
+        address_hash: to_string(hash),
+        block_number: 3_530_917,
+        block_hash: "0x79594150677f083756a37eee7b97ed99ab071f502104332cb3835bac345711ca",
+        data: "0x000000000000000000000000000000000000000000000000ebec21ee1da40000",
+        first_topic: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        second_topic: "0x000000000000000000000000556813d9cc20acfe8388af029a679d34a63388db",
+        third_topic: "0x00000000000000000000000092148dd870fa1b7c4700f2bd7f44238821c26f73",
+        fourth_topic: nil,
+        index: 8,
+        transaction_hash: "0x43dfd761974e8c3351d285ab65bee311454eb45b149a015fe7804a33252f19e5"
+      }
+
+      assert %{token_transfers: [%{token_type: "ERC-20", token_ids: nil}]} = TokenTransfers.parse([log])
+    end
+  end
+
   describe "parse/1 with ERC-8056 logs" do
     @erc8056_contract "0xf2eec76e45b328df99a34fa696320a262cb92154"
     @transfer_topic "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"

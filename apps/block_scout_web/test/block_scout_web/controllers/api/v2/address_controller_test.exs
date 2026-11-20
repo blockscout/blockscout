@@ -364,7 +364,7 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
              } = json_response
     end
 
-    test "get minimal_proxy contract shows is_verified true", %{conn: conn} do
+    test "get minimal_proxy contract shows is_verified false", %{conn: conn} do
       implementation_contract = insert(:smart_contract, contract_code_md5: "abc")
 
       proxy_address = insert(:contract_address)
@@ -386,7 +386,8 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
 
       json_response = json_response(request, 200)
 
-      assert json_response["is_verified"] == true
+      # minimal_proxy is detected by a partial bytecode match, so it is not treated as verified
+      assert json_response["is_verified"] == false
       assert json_response["proxy_type"] == "minimal_proxy"
     end
 

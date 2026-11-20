@@ -94,6 +94,9 @@ config :explorer, Explorer.TokenInstanceOwnerAddressMigration.Supervisor, enable
 
 config :explorer, Explorer.Migrator.DeleteZeroValueInternalTransactions, enabled: false
 
+# ERC-404 tokens exist on a few chains only, so the sanitizer is opt-in
+config :explorer, Explorer.Migrator.SanitizeErc404Tokens, enabled: false
+
 config :explorer, Explorer.Utility.VersionConstantsUpdater, enabled: true
 
 config :explorer, Explorer.Utility.VersionUpgrade, enabled: true
@@ -210,7 +213,10 @@ for index_operation <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsFirstTopicIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateLogsAddressIdFirstTopicIdSecondTopicBlockNumberIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateAddressCurrentTokenBalancesTokenHoldersIndex,
-      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex
+      Explorer.Migrator.HeavyDbIndexOperation.DropAddressCurrentTokenBalancesTokenContractAddressHashValueIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.VacuumTokenTransfersAfterEip7708Sanitizing,
+      Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex
     ] do
   config :explorer, index_operation, enabled: true
 end

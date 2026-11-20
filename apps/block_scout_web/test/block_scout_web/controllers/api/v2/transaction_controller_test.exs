@@ -286,6 +286,20 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
       assert "set_code_transaction" in response["transaction_types"]
     end
 
+    test "returns empty authorization list for pending EIP-7702 (type 4) transaction that has authorizations in the DB",
+         %{conn: conn} do
+      # A transaction that became pending after a reorg keeps the rows that the
+      # import of the lost block wrote.
+      transaction = insert(:transaction, type: 4)
+      insert(:signed_authorization, transaction: transaction, index: 0, status: :ok)
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert response["authorization_list"] == []
+      assert "set_code_transaction" in response["transaction_types"]
+    end
+
     test "returns empty authorization list for non-EIP-7702 transaction", %{conn: conn} do
       transaction =
         :transaction
