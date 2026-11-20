@@ -39,7 +39,7 @@ defmodule Indexer.Fetcher.UncleBlockTest do
   describe "child_spec/1" do
     test "raises ArgumentError is `json_rpc_named_arguments is not provided" do
       assert_raise ArgumentError,
-                   ":json_rpc_named_arguments must be provided to `Elixir.Indexer.Fetcher.UncleBlock.child_spec " <>
+                   ":json_rpc_named_arguments must be provided to 'Elixir.Indexer.Fetcher.UncleBlock.child_spec' " <>
                      "to allow for json_rpc calls when running.",
                    fn ->
                      start_supervised({UncleBlock, [[], []]})
