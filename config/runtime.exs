@@ -1134,6 +1134,9 @@ config :explorer, Explorer.Chain.Cache.ScamAddresses,
 
 config :explorer, Explorer.Chain.Cache.AddressTags, ttl: ConfigHelper.parse_time_env_var("CACHE_ADDRESS_TAGS_TTL", "5m")
 
+config :explorer, Explorer.Utility.AddressIdToAddressHash,
+  cache_max_size: ConfigHelper.parse_integer_env_var("ADDRESS_ID_CACHE_MAX_SIZE", 1_000_000, min: 0)
+
 rate_limiter_redis_url = ConfigHelper.parse_url_env_var("RATE_LIMITER_REDIS_URL")
 rate_limiter_redis_sentinel_urls = ConfigHelper.safe_get_env("RATE_LIMITER_REDIS_SENTINEL_URLS", "")
 

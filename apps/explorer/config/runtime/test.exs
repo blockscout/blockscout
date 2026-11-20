@@ -55,6 +55,10 @@ config :explorer, Explorer.Utility.Hammer.ETS, enabled: true
 
 config :explorer, Explorer.Chain.Health.Monitor, enabled: false
 
+# The cache would outlive the data of a test, which is rolled back at its end,
+# and share it with the tests running at the same time.
+config :explorer, Explorer.Utility.AddressIdToAddressHash, cache_max_size: 0
+
 for migrator <- [
       # Background migrations
       Explorer.Migrator.TransactionsDenormalization,
