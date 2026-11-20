@@ -15,7 +15,11 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
 
   @btree_index_name "token_transfers_token_contract_address_hash__block_number_DESC_"
   @gin_index_name "token_transfers_token_contract_address_hash_token_ids_index"
-  @leftover_index_name "token_transfers_token_contract_address_hash__block_number_ccnew"
+
+  # The names PostgreSQL gives to the transient indexes of `REINDEX INDEX CONCURRENTLY`: the
+  # name of the rebuilt index, truncated to fit into 63 bytes together with the suffix.
+  @btree_leftover_index_name "token_transfers_token_contract_address_hash__block_number_ccnew"
+  @gin_leftover_index_name "token_transfers_token_contract_address_hash_token_ids_ind_ccnew"
 
   setup do
     configuration = Application.get_env(:explorer, HeavyDbIndexOperation)
@@ -41,7 +45,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
 
       index_file_before = index_file(@btree_index_name)
 
-      ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex.start_link([])
+      {:ok, pid} = ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex.start_link([])
       Process.sleep(300)
 
       # Should not start until the vacuum is completed
@@ -54,7 +58,7 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
       assert index_file(@btree_index_name) == index_file_before
 
       MigrationStatus.set_status(vacuum_migration_name, "completed")
-      Process.sleep(500)
+      await_normal_termination(pid)
 
       assert %{status: "completed", meta: %{"db_operation_finished" => true}} = MigrationStatus.fetch(migration_name)
 
@@ -77,24 +81,20 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
       # Emulates `REINDEX INDEX CONCURRENTLY` interrupted in the middle
       insert(:db_migration_status, migration_name: migration_name, status: "started")
 
-      Repo.query!(
-        ~s(CREATE INDEX "#{@leftover_index_name}" ON token_transfers \(token_contract_address_hash, block_number DESC, log_index DESC\))
+      create_invalid_index(
+        @btree_leftover_index_name,
+        "btree (token_contract_address_hash, block_number DESC, log_index DESC)"
       )
 
-      Repo.query!("UPDATE pg_index SET indisvalid = false WHERE indexrelid = $1::text::regclass", [
-        ~s("#{@leftover_index_name}")
-      ])
-
-      assert Helper.db_index_exists_and_valid?(@leftover_index_name) == %{exists?: true, valid?: false}
-      assert Helper.db_index_reindexing_status(:token_transfers, migration_name) == :not_completed
+      assert Helper.db_index_reindexing_status(@btree_index_name, migration_name) == :not_completed
 
       index_file_before = index_file(@btree_index_name)
 
-      ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex.start_link([])
-      Process.sleep(500)
+      {:ok, pid} = ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex.start_link([])
+      await_normal_termination(pid)
 
       assert MigrationStatus.get_status(migration_name) == "completed"
-      assert Helper.db_index_exists_and_valid?(@leftover_index_name) == %{exists?: false, valid?: nil}
+      assert Helper.db_index_exists_and_valid?(@btree_leftover_index_name) == %{exists?: false, valid?: nil}
       assert index_file(@btree_index_name) != index_file_before
     end
   end
@@ -113,17 +113,60 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
 
       index_file_before = index_file(@gin_index_name)
 
-      ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex.start_link([])
+      {:ok, pid} = ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex.start_link([])
       Process.sleep(300)
 
       assert MigrationStatus.get_status(migration_name) == nil
 
       insert(:db_migration_status, migration_name: previous_migration_name, status: "completed")
-      Process.sleep(500)
+      await_normal_termination(pid)
 
       assert MigrationStatus.get_status(migration_name) == "completed"
       assert index_file(@gin_index_name) != index_file_before
       assert Helper.db_index_exists_and_valid?(@gin_index_name) == %{exists?: true, valid?: true}
+    end
+
+    test "drops only its own leftovers, and only once the previous index is rebuilt" do
+      migration_name = ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex.migration_name()
+
+      previous_migration_name =
+        ReindexTokenTransfersTokenContractAddressHashBlockNumberDescLogIndexDescIndex.migration_name()
+
+      insert(:block)
+
+      # Emulates the rebuild of the previous index being in progress: its transient index
+      # is invalid until the rebuild finishes.
+      insert(:db_migration_status, migration_name: previous_migration_name, status: "started")
+
+      create_invalid_index(
+        @btree_leftover_index_name,
+        "btree (token_contract_address_hash, block_number DESC, log_index DESC)"
+      )
+
+      # An invalid index of another operation is not a leftover of this one
+      assert Helper.db_index_reindexing_status(@gin_index_name, migration_name) == :not_initialized
+      assert Helper.drop_interrupted_reindex_leftovers(@gin_index_name) == :ok
+      assert Helper.db_index_exists_and_valid?(@btree_leftover_index_name) == %{exists?: true, valid?: false}
+
+      # Emulates the rebuild of this index interrupted in the middle
+      insert(:db_migration_status, migration_name: migration_name, status: "started")
+      create_invalid_index(@gin_leftover_index_name, "gin (token_contract_address_hash, token_ids)")
+
+      assert Helper.db_index_reindexing_status(@gin_index_name, migration_name) == :not_completed
+
+      {:ok, pid} = ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex.start_link([])
+      Process.sleep(300)
+
+      # The cleanup doesn't start until the previous index is rebuilt
+      assert Helper.db_index_exists_and_valid?(@gin_leftover_index_name) == %{exists?: true, valid?: false}
+      assert Helper.db_index_exists_and_valid?(@btree_leftover_index_name) == %{exists?: true, valid?: false}
+
+      MigrationStatus.set_status(previous_migration_name, "completed")
+      await_normal_termination(pid)
+
+      assert MigrationStatus.get_status(migration_name) == "completed"
+      assert Helper.db_index_exists_and_valid?(@gin_leftover_index_name) == %{exists?: false, valid?: nil}
+      assert Helper.db_index_exists_and_valid?(@btree_leftover_index_name) == %{exists?: true, valid?: false}
     end
 
     test "is completed without a rebuild if the index doesn't exist" do
@@ -134,10 +177,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
         status: "completed"
       )
 
+      # On an empty DB the operation is run right on start, and the process isn't started
+      insert(:block)
       Repo.query!(~s(DROP INDEX "#{@gin_index_name}"))
 
-      ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex.start_link([])
-      Process.sleep(500)
+      {:ok, pid} = ReindexTokenTransfersTokenContractAddressHashTokenIdsIndex.start_link([])
+      await_normal_termination(pid)
 
       assert MigrationStatus.get_status(migration_name) == "completed"
       assert Helper.db_index_exists_and_valid?(@gin_index_name) == %{exists?: false, valid?: nil}
@@ -163,6 +208,23 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.ReindexTokenTransfersTokenCont
       assert MigrationStatus.running_other_heavy_migration_for_table_exists?(:token_transfers, "other")
       refute MigrationStatus.running_other_heavy_migration_for_table_exists?(:token_transfers, reindex_migration_name)
     end
+  end
+
+  # Waits for the migrator to finish. The process may have terminated before it is
+  # monitored, in which case the monitor reports `:noproc`.
+  defp await_normal_termination(pid) do
+    ref = Process.monitor(pid)
+
+    assert_receive {:DOWN, ^ref, :process, ^pid, reason}, :timer.seconds(30)
+    assert reason in [:normal, :noproc]
+  end
+
+  defp create_invalid_index(index_name, definition) do
+    Repo.query!(~s(CREATE INDEX "#{index_name}" ON token_transfers USING #{definition}))
+
+    Repo.query!("UPDATE pg_index SET indisvalid = false WHERE indexrelid = $1::text::regclass", [~s("#{index_name}")])
+
+    assert Helper.db_index_exists_and_valid?(index_name) == %{exists?: true, valid?: false}
   end
 
   defp index_file(index_name) do

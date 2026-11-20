@@ -34,8 +34,15 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   the one which hasn't been started by looking at the DB schema. That's why these
   operations record their completion in the meta of the migration status, and
   `db_index_operation_status/0` relies on it. A `REINDEX INDEX CONCURRENTLY` which was
-  interrupted leaves invalid indexes behind: they are reported as `:not_completed` and
-  dropped by `restart_db_index_operation/0` before the next attempt.
+  interrupted leaves invalid indexes behind: the ones which belong to the index of the
+  operation are reported as `:not_completed` and dropped by
+  `restart_db_index_operation/0` before the next attempt.
+
+  ## Restart of an interrupted operation
+
+  `restart_db_index_operation/0` is called for an operation in the `:not_completed`
+  status only when the operation is ready to start: its dependencies are completed and
+  no other heavy operation is running on the table.
   """
 
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper
@@ -258,7 +265,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             {:noreply, state}
 
           {:db_index_operation_status, :not_completed} ->
-            Process.send(self(), :restart_db_index_operation, [])
+            # The cleanup of an interrupted operation is as intrusive as the operation itself,
+            # so it also waits for the dependencies and the other heavy operations on the table.
+            if db_operation_is_ready_to_start?() do
+              Process.send(self(), :restart_db_index_operation, [])
+            else
+              schedule_next_db_operation_readiness_check()
+            end
+
             {:noreply, state}
 
           {:db_index_operation_status, :unknown} ->
@@ -519,13 +533,13 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
       {:db_index_operation_status, 0,
        quote do
          def db_index_operation_status do
-           Helper.db_index_reindexing_status(@table_name, migration_name())
+           Helper.db_index_reindexing_status(@index_name, migration_name())
          end
        end},
       {:restart_db_index_operation, 0,
        quote do
          def restart_db_index_operation do
-           Helper.drop_interrupted_reindex_leftovers(@table_name)
+           Helper.drop_interrupted_reindex_leftovers(@index_name)
          end
        end}
     ]

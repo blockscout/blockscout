@@ -90,7 +90,7 @@ A reindex operation only needs the table, the index and the operation type; all 
 The migration name is `heavy_indexes_reindex_{lower_case_index_name}`.
 
 - If the index doesn't exist, the operation is completed without a rebuild.
-- A `REINDEX INDEX CONCURRENTLY` which was interrupted (e.g. by an application restart) leaves an invalid index with the `_ccnew` or `_ccold` suffix behind. Such indexes of the table are dropped before the rebuild is started again.
+- A `REINDEX INDEX CONCURRENTLY` which was interrupted (e.g. by an application restart) leaves an invalid index with the `_ccnew` or `_ccold` suffix behind. Such leftovers of the index being rebuilt (matched by the name derived from the index name and by the index definition) are dropped before the rebuild is started again. Invalid indexes of the other operations on the table are left untouched, and the cleanup waits until the operation is ready to start: its dependencies are completed and no other heavy operation is running on the table.
 - The rebuild needs free disk space for a second copy of the index.
 
 ### 5. Vacuum Operations
