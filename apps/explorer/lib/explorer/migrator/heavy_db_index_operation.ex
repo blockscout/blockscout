@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @moduledoc """
-  Provides a template for making heavy DB operations such as creation/deletion of new indexes in the large tables
-  with tracking status of those migrations.
+  Provides a template for making heavy DB operations such as creation/deletion/rebuild of indexes in the large
+  tables or vacuuming of those tables with tracking status of those migrations.
 
   ## Default callback implementations
 
@@ -11,7 +11,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   compile time by `__before_compile__/1` unless the module defines them itself:
 
   - `table_name/0`, `operation_type/0`, `index_name/0` return `@table_name`,
-    `@operation_type` and `@index_name` respectively.
+    `@operation_type` and `@index_name` respectively. `index_name/0` is generated only
+    if `@index_name` is declared: a `:vacuum` operation has no index.
+  - `migration_name/0` is built from the operation type and the index name. For `:vacuum`
+    operations, which have no index, it is built from `@table_name` and
+    `@migration_name_suffix` (which tells one vacuum of the table from another) instead:
+    `heavy_indexes_vacuum_{table_name}_{migration_name_suffix}`.
   - `dependent_from_migrations/0` returns `[]`.
   - `update_cache/0` is a no-op.
   - `running_other_heavy_migration_exists?/1` checks `Explorer.Migrator.MigrationStatus`
@@ -19,8 +24,25 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   - `db_index_operation/0`, `check_db_index_operation_progress/0`,
     `db_index_operation_status/0` and `restart_db_index_operation/0` are generated for
     `:create` operations that declare either `@query_string` or `@table_columns`
-    (optionally with `@unique_index true`), and for `:drop` operations. `:rename`
-    operations and any other custom operation must implement them explicitly.
+    (optionally with `@unique_index true`), and for `:drop`, `:reindex` and `:vacuum`
+    operations. `:rename` operations and any other custom operation must implement
+    them explicitly.
+
+  ## Completion of `:reindex` and `:vacuum` operations
+
+  Unlike index creation/deletion, a finished `REINDEX` or `VACUUM` cannot be told from
+  the one which hasn't been started by looking at the DB schema. That's why these
+  operations record their completion in the meta of the migration status, and
+  `db_index_operation_status/0` relies on it. A `REINDEX INDEX CONCURRENTLY` which was
+  interrupted leaves invalid indexes behind: the ones which belong to the index of the
+  operation are reported as `:not_completed` and dropped by
+  `restart_db_index_operation/0` before the next attempt.
+
+  ## Restart of an interrupted operation
+
+  `restart_db_index_operation/0` is called for an operation in the `:not_completed`
+  status only when the operation is ready to start: its dependencies are completed and
+  no other heavy operation is running on the table.
   """
 
   alias Explorer.Migrator.HeavyDbIndexOperation.Helper
@@ -29,7 +51,9 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   @doc """
   Returns the name of the migration. The name is used to track the operation's status in
   `Explorer.Migrator.MigrationStatus`.
-  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}`, `heavy_indexes_drop_{lower_case_index_name}`, or `heavy_indexes_rename_{lower_case_index_name}`
+  Heavy DB migration is either `heavy_indexes_create_{lower_case_index_name}`, `heavy_indexes_drop_{lower_case_index_name}`,
+  `heavy_indexes_rename_{lower_case_index_name}`, `heavy_indexes_reindex_{lower_case_index_name}`,
+  or `heavy_indexes_vacuum_{table_name}_{migration_name_suffix}`
   """
   @callback migration_name :: String.t()
 
@@ -64,13 +88,19 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   - `:create` - Indicates that the operation is to add a new index.
   - `:drop` - Indicates that the operation is to drop an existing index.
   - `:rename` - Indicates that the operation is to rename an existing index.
+  - `:reindex` - Indicates that the operation is to rebuild an existing index.
+  - `:vacuum` - Indicates that the operation is to vacuum the table.
   """
-  @callback operation_type :: :create | :drop | :rename
+  @callback operation_type :: :create | :drop | :rename | :reindex | :vacuum
 
   @doc """
   Returns the name of the index as a string.
+
+  The callback is optional, since a `:vacuum` operation has no index.
   """
   @callback index_name :: String.t()
+
+  @optional_callbacks index_name: 0
 
   @doc """
   Returns a list of migration names that the current migration depends on.
@@ -235,7 +265,14 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
             {:noreply, state}
 
           {:db_index_operation_status, :not_completed} ->
-            Process.send(self(), :restart_db_index_operation, [])
+            # The cleanup of an interrupted operation is as intrusive as the operation itself,
+            # so it also waits for the dependencies and the other heavy operations on the table.
+            if db_operation_is_ready_to_start?() do
+              Process.send(self(), :restart_db_index_operation, [])
+            else
+              schedule_next_db_operation_readiness_check()
+            end
+
             {:noreply, state}
 
           {:db_index_operation_status, :unknown} ->
@@ -306,16 +343,6 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
           timeout || :timer.seconds(10)
         )
       end
-
-      @impl Explorer.Migrator.HeavyDbIndexOperation
-      def migration_name do
-        index_name_lower_case = String.downcase(index_name())
-
-        db_operation_prefix =
-          "#{HeavyDbIndexOperationHelper.heavy_db_operation_migration_name_prefix()}#{to_string(operation_type())}"
-
-        "#{db_operation_prefix}_#{index_name_lower_case}"
-      end
     end
   end
 
@@ -323,25 +350,49 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
   defmacro __before_compile__(env) do
     module = env.module
 
-    {:__block__, [], default_getters(module) ++ default_index_operation_callbacks(module)}
+    {:__block__, [],
+     default_getters(module) ++ default_migration_name(module) ++ default_index_operation_callbacks(module)}
+  end
+
+  # Generates `migration_name/0`, unless the module defines it itself. A `:vacuum`
+  # operation has no index to build the migration name from.
+  defp default_migration_name(module) do
+    definition =
+      if Module.get_attribute(module, :operation_type) == :vacuum do
+        quote do
+          def migration_name do
+            "#{Helper.heavy_db_operation_migration_name_prefix()}vacuum_#{@table_name}_#{@migration_name_suffix}"
+          end
+        end
+      else
+        quote do
+          def migration_name do
+            index_name_lower_case = String.downcase(index_name())
+
+            db_operation_prefix =
+              "#{Helper.heavy_db_operation_migration_name_prefix()}#{to_string(operation_type())}"
+
+            "#{db_operation_prefix}_#{index_name_lower_case}"
+          end
+        end
+      end
+
+    emit_undefined(module, [{:migration_name, 0, definition}])
   end
 
   # Generates the callbacks which only return module attributes or constants,
   # unless the module defines them itself.
   defp default_getters(module) do
-    defaults = [
-      {:table_name, 0, quote(do: def(table_name, do: @table_name))},
-      {:operation_type, 0, quote(do: def(operation_type, do: @operation_type))},
-      {:index_name, 0, quote(do: def(index_name, do: @index_name))},
-      {:dependent_from_migrations, 0, quote(do: def(dependent_from_migrations, do: []))},
-      {:update_cache, 0, quote(do: def(update_cache, do: :ok))},
-      {:running_other_heavy_migration_exists?, 1,
-       quote do
-         def running_other_heavy_migration_exists?(migration_name) do
-           MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
-         end
-       end}
-    ]
+    index_name_getter =
+      if Module.has_attribute?(module, :index_name) do
+        [{:index_name, 0, quote(do: def(index_name, do: @index_name))}]
+      else
+        []
+      end
+
+    defaults =
+      index_name_getter ++
+        default_non_index_getters()
 
     for {name, arity, definition} <- defaults, not Module.defines?(module, {name, arity}) do
       quote do
@@ -351,8 +402,24 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
     end
   end
 
+  defp default_non_index_getters do
+    [
+      {:table_name, 0, quote(do: def(table_name, do: @table_name))},
+      {:operation_type, 0, quote(do: def(operation_type, do: @operation_type))},
+      {:dependent_from_migrations, 0, quote(do: def(dependent_from_migrations, do: []))},
+      {:update_cache, 0, quote(do: def(update_cache, do: :ok))},
+      {:running_other_heavy_migration_exists?, 1,
+       quote do
+         def running_other_heavy_migration_exists?(migration_name) do
+           MigrationStatus.running_other_heavy_migration_for_table_exists?(@table_name, migration_name)
+         end
+       end}
+    ]
+  end
+
   # Generates the callbacks performing the index operation itself for plain
-  # `:create` and `:drop` operations, unless the module defines them itself.
+  # `:create`, `:drop`, `:reindex` and `:vacuum` operations, unless the module
+  # defines them itself.
   defp default_index_operation_callbacks(module) do
     operation_type = Module.get_attribute(module, :operation_type)
     query_string? = Module.has_attribute?(module, :query_string)
@@ -373,6 +440,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
 
       {:drop, _, _} ->
         drop_index_callbacks(module)
+
+      {:reindex, _, _} ->
+        reindex_callbacks(module)
+
+      {:vacuum, _, _} ->
+        vacuum_callbacks(module)
 
       _ ->
         []
@@ -435,6 +508,69 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation do
        quote do
          def restart_db_index_operation do
            Helper.safely_drop_db_index(@index_name)
+         end
+       end}
+    ]
+
+    emit_undefined(module, defaults)
+  end
+
+  defp reindex_callbacks(module) do
+    defaults = [
+      {:db_index_operation, 0,
+       quote do
+         def db_index_operation do
+           Helper.reindex_db_index(@index_name, migration_name())
+         end
+       end},
+      {:check_db_index_operation_progress, 0,
+       quote do
+         def check_db_index_operation_progress do
+           operation = Helper.reindex_index_query_string(@index_name)
+           Helper.check_db_index_operation_progress(@index_name, operation)
+         end
+       end},
+      {:db_index_operation_status, 0,
+       quote do
+         def db_index_operation_status do
+           Helper.db_index_reindexing_status(@index_name, migration_name())
+         end
+       end},
+      {:restart_db_index_operation, 0,
+       quote do
+         def restart_db_index_operation do
+           Helper.drop_interrupted_reindex_leftovers(@index_name)
+         end
+       end}
+    ]
+
+    emit_undefined(module, defaults)
+  end
+
+  defp vacuum_callbacks(module) do
+    defaults = [
+      {:db_index_operation, 0,
+       quote do
+         def db_index_operation do
+           Helper.vacuum_table(@table_name, migration_name())
+         end
+       end},
+      {:check_db_index_operation_progress, 0,
+       quote do
+         def check_db_index_operation_progress do
+           Helper.check_vacuum_progress(@table_name)
+         end
+       end},
+      {:db_index_operation_status, 0,
+       quote do
+         def db_index_operation_status do
+           Helper.vacuuming_status(@table_name, migration_name())
+         end
+       end},
+      {:restart_db_index_operation, 0,
+       quote do
+         def restart_db_index_operation do
+           Helper.restart_vacuum(@table_name)
          end
        end}
     ]

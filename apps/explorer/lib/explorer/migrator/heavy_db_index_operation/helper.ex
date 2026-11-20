@@ -7,7 +7,12 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   require Logger
 
   alias Ecto.Adapters.SQL
+  alias Explorer.Migrator.MigrationStatus
   alias Explorer.Repo
+
+  # `VACUUM` and `REINDEX` leave nothing in the DB schema to tell a finished operation from
+  # the one which hasn't been started, so their completion is recorded in the migration meta.
+  @db_operation_finished_meta_key "db_operation_finished"
 
   @doc """
   Checks the progress of DB index operation by its name.
@@ -196,6 +201,195 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   end
 
   @doc """
+  Vacuums the given table and records the completion in the meta of the given migration.
+  """
+  @spec vacuum_table(atom(), String.t()) :: :ok | :error
+  # sobelow_skip ["SQL"]
+  def vacuum_table(table_name, migration_name) do
+    case SQL.query(Repo, vacuum_query_string(table_name), [], timeout: :infinity) do
+      {:ok, _} ->
+        mark_db_operation_finished(migration_name)
+
+      {:error, error} ->
+        Logger.error("Failed to vacuum the '#{table_name}' table: #{inspect(error)}")
+        :error
+    end
+  end
+
+  @doc """
+  Returns status of the vacuum performed on the given table by the given migration.
+
+  `:not_completed` means that the vacuum is still running.
+  """
+  @spec vacuuming_status(atom(), String.t()) :: :not_initialized | :not_completed | :completed | :unknown
+  def vacuuming_status(table_name, migration_name) do
+    if db_operation_finished?(migration_name) do
+      :completed
+    else
+      case check_vacuum_progress(table_name) do
+        :finished_or_not_started -> :not_initialized
+        :in_progress -> :not_completed
+        :unknown -> :unknown
+      end
+    end
+  end
+
+  @doc """
+  Checks the progress of the vacuum of the given table.
+  """
+  @spec check_vacuum_progress(atom()) :: :finished_or_not_started | :unknown | :in_progress
+  def check_vacuum_progress(table_name) do
+    check_db_index_operation_progress(to_string(table_name), vacuum_query_string(table_name))
+  end
+
+  @doc """
+  Tells if the vacuum of the given table can be started again.
+
+  A vacuum leaves nothing to clean up, so a running one is waited for (`:error` makes the restart
+  be retried later) instead of being cancelled.
+  """
+  @spec restart_vacuum(atom()) :: :ok | :error
+  def restart_vacuum(table_name) do
+    case check_vacuum_progress(table_name) do
+      :finished_or_not_started -> :ok
+      _ -> :error
+    end
+  end
+
+  @doc """
+  Rebuilds DB index with the given name and records the completion in the meta of the given migration.
+
+  If the index doesn't exist, there is nothing to rebuild, and the operation is considered finished.
+  """
+  @spec reindex_db_index(String.t(), String.t()) :: :ok | :error
+  # sobelow_skip ["SQL"]
+  def reindex_db_index(raw_index_name, migration_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
+    case db_index_exists_and_valid?(index_name) do
+      %{exists?: false} ->
+        Logger.warning("DB index '#{index_name}' doesn't exist, skipping its rebuild")
+        mark_db_operation_finished(migration_name)
+
+      %{exists?: true} ->
+        case SQL.query(Repo, reindex_index_query_string(index_name), [], timeout: :infinity) do
+          {:ok, _} ->
+            mark_db_operation_finished(migration_name)
+
+          {:error, error} ->
+            Logger.error("Failed to rebuild DB index '#{index_name}': #{inspect(error)}")
+            :error
+        end
+
+      :unknown ->
+        :error
+    end
+  end
+
+  @doc """
+  Returns status of the rebuild of the index with the given name performed by the given migration.
+
+  `:not_completed` means that a previous rebuild of this index was interrupted and left invalid
+  indexes behind, see `drop_interrupted_reindex_leftovers/1`.
+  """
+  @spec db_index_reindexing_status(String.t(), String.t()) :: :not_initialized | :not_completed | :completed | :unknown
+  def db_index_reindexing_status(raw_index_name, migration_name) do
+    if db_operation_finished?(migration_name) do
+      :completed
+    else
+      case interrupted_reindex_leftovers(raw_index_name) do
+        {:ok, []} -> :not_initialized
+        {:ok, _leftovers} -> :not_completed
+        :error -> :unknown
+      end
+    end
+  end
+
+  @doc """
+  Drops the invalid indexes left by an interrupted `REINDEX INDEX CONCURRENTLY` of the index with
+  the given name.
+
+  A concurrent rebuild which didn't finish (e.g. the application was restarted in the middle of it)
+  leaves an invalid index with the `_ccnew` or `_ccold` suffix behind. Such an index is as large as
+  the original one and is updated on every write, so it must be dropped before the next attempt.
+
+  Only the leftovers of the given index are dropped, see `interrupted_reindex_leftovers/1`. Nothing
+  is dropped while a rebuild of the index is running (`:error` makes the cleanup be retried later):
+  its transient index is invalid until the rebuild finishes.
+  """
+  @spec drop_interrupted_reindex_leftovers(String.t()) :: :ok | :error
+  def drop_interrupted_reindex_leftovers(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
+    with :finished_or_not_started <-
+           check_db_index_operation_progress(index_name, reindex_index_query_string(index_name)),
+         {:ok, leftovers} <- interrupted_reindex_leftovers(index_name) do
+      if leftovers |> Enum.map(&safely_drop_db_index/1) |> Enum.all?(&(&1 == :ok)), do: :ok, else: :error
+    else
+      _ -> :error
+    end
+  end
+
+  # Returns the names of the invalid indexes left by an interrupted concurrent rebuild of the
+  # given index. An index is considered a leftover of the given one only if:
+  #
+  # - it has the name PostgreSQL gives to the transient index of the rebuild: the name of the
+  #   rebuilt index, truncated to fit into 63 bytes together with the `_ccnew`/`_ccold` suffix
+  #   (which is followed by a number if the name is already taken),
+  # - and it is built on the same table, with the same access method, columns, operator classes
+  #   and ordering options.
+  #
+  # The invalid indexes of the other operations on the same table are thus left untouched.
+  defp interrupted_reindex_leftovers(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+
+    case SQL.query(
+           Repo,
+           """
+           SELECT leftover_class.relname
+           FROM pg_class AS original_class
+           JOIN pg_index AS original ON original.indexrelid = original_class.oid
+           JOIN pg_index AS leftover ON leftover.indrelid = original.indrelid
+           JOIN pg_class AS leftover_class ON leftover_class.oid = leftover.indexrelid
+           CROSS JOIN LATERAL substring(leftover_class.relname from '_cc(?:new|old)[0-9]*$') AS suffix
+           WHERE original_class.relname = $1
+             AND leftover.indexrelid <> original.indexrelid
+             AND NOT leftover.indisvalid
+             AND suffix IS NOT NULL
+             AND left(leftover_class.relname, length(leftover_class.relname) - length(suffix)) =
+               left(original_class.relname, 63 - length(suffix))
+             AND leftover_class.relam = original_class.relam
+             AND leftover.indkey = original.indkey
+             AND leftover.indclass = original.indclass
+             AND leftover.indoption = original.indoption;
+           """,
+           [index_name]
+         ) do
+      {:ok, %Postgrex.Result{rows: rows}} ->
+        {:ok, List.flatten(rows)}
+
+      {:error, error} ->
+        Logger.error("Failed to look for the leftovers of the '#{index_name}' index rebuild: #{inspect(error)}")
+        :error
+    end
+  end
+
+  defp mark_db_operation_finished(migration_name) do
+    case MigrationStatus.update_meta(migration_name, %{@db_operation_finished_meta_key => true}) do
+      {:error, error} ->
+        Logger.error("Failed to record the completion of the '#{migration_name}' migration: #{inspect(error)}")
+        :error
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp db_operation_finished?(migration_name) do
+    match?(%{meta: %{@db_operation_finished_meta_key => true}}, MigrationStatus.fetch(migration_name))
+  end
+
+  @doc """
   Validates `NOT NULL` constraints for the given table columns and sets the columns to `NOT NULL`.
 
   The operation runs inside a transaction. For each column it first validates the corresponding
@@ -363,6 +557,30 @@ defmodule Explorer.Migrator.HeavyDbIndexOperation.Helper do
   def drop_index_query_string(raw_index_name) do
     index_name = sanitize_index_name(raw_index_name)
     "DROP INDEX #{add_concurrently_flag?()} IF EXISTS \"#{index_name}\";"
+  end
+
+  @doc """
+  Generates a SQL query string to vacuum the given table.
+
+  ## Examples
+
+      iex> Explorer.Migrator.HeavyDbIndexOperation.Helper.vacuum_query_string(:token_transfers)
+      "VACUUM token_transfers;"
+  """
+  @spec vacuum_query_string(atom()) :: String.t()
+  def vacuum_query_string(table_name) do
+    "VACUUM #{table_name};"
+  end
+
+  @doc """
+  Generates a SQL query string to rebuild the index with the given name.
+
+  The query string includes the `CONCURRENTLY` flag if applicable.
+  """
+  @spec reindex_index_query_string(String.t()) :: String.t()
+  def reindex_index_query_string(raw_index_name) do
+    index_name = sanitize_index_name(raw_index_name)
+    "REINDEX INDEX #{add_concurrently_flag?()} \"#{index_name}\";"
   end
 
   @doc """
