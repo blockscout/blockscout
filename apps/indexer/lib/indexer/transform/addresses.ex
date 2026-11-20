@@ -184,6 +184,12 @@ defmodule Indexer.Transform.Addresses do
         %{from: :address_hash, to: :hash}
       ]
     ],
+    eip_8430_resolved_payers: [
+      [
+        %{from: :block_number, to: :fetched_coin_balance_block_number},
+        %{from: :address_hash, to: :hash}
+      ]
+    ],
     celo_election_rewards: [
       [
         %{from: :account_address_hash, to: :hash}
@@ -607,6 +613,12 @@ defmodule Indexer.Transform.Addresses do
             }
           ],
           optional(:withdrawals) => [
+            %{
+              required(:address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }
+          ],
+          optional(:eip_8430_resolved_payers) => [
             %{
               required(:address_hash) => String.t(),
               required(:block_number) => non_neg_integer()

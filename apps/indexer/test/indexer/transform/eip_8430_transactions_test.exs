@@ -13,6 +13,19 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
   @payer "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
   @zero_address "0x0000000000000000000000000000000000000000"
 
+  # Values of the receipt `payer` that are not an address string. `Hash.Address.cast/1` accepts
+  # the integer, and it takes the last value, a string of 20 characters, as the raw bytes of an
+  # address.
+  @incorrect_resolved_payers [
+    5,
+    "garbage",
+    "0x",
+    "0x00",
+    "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a",
+    "c4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+    "abcdefghijklmnopqrst"
+  ]
+
   # The response of `eth_getTransactionByHash` on an OP Stack test network (chain id 84538453),
   # with a reduced `calls` list.
   @raw_transaction %{
@@ -174,11 +187,30 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
       assert [%{committed_phases_count: 0}] = parse_with(%{}, %{"committedPhases" => "0x0", "status" => "0x0"})
     end
 
-    test "does not interpret the resolved payer and writes no warning" do
+    test "keeps the zero address as the resolved payer and writes no warning" do
       log =
         capture_log(fn ->
           assert [%{resolved_payer_address_hash: @zero_address}] = parse_with(%{}, %{"payer" => @zero_address})
-          assert [%{resolved_payer_address_hash: "garbage"}] = parse_with(%{}, %{"payer" => "garbage"})
+        end)
+
+      assert log == ""
+    end
+
+    test "leaves the resolved payer empty and writes a warning if the payer of the receipt is not an address string" do
+      for payer <- @incorrect_resolved_payers do
+        log =
+          capture_log(fn ->
+            assert [%{resolved_payer_address_hash: nil}] = parse_with(%{}, %{"payer" => payer})
+          end)
+
+        assert log =~ "Unexpected payer value #{inspect(payer)} in the receipt of EIP-8430 transaction"
+      end
+    end
+
+    test "writes no warning if the receipt has no payer value" do
+      log =
+        capture_log(fn ->
+          assert [%{resolved_payer_address_hash: nil}] = parse_with(%{}, %{"payer" => nil})
         end)
 
       assert log == ""
@@ -249,6 +281,77 @@ defmodule Indexer.Transform.EIP8430TransactionsTest do
       ]
 
       assert [%{account_changes: ^account_changes}] = parse_with(%{"accountChanges" => account_changes})
+    end
+  end
+
+  describe "resolved_payers/1" do
+    @block_number 0x4ABE4D
+
+    test "returns the payer of the receipt and the block number for a sponsored transaction" do
+      assert [@raw_transaction] |> to_params() |> EIP8430Transactions.resolved_payers() == [
+               %{address_hash: @payer, block_number: @block_number}
+             ]
+    end
+
+    test "returns the sender for a transaction where the sender pays" do
+      # The node returns `null` as the payer of such a transaction and the sender address as
+      # the payer of its receipt.
+      transactions =
+        to_params([Map.merge(@raw_transaction, %{"payer" => nil, "payerAuth" => "0x"})], %{"payer" => @sender})
+
+      assert EIP8430Transactions.resolved_payers(transactions) == [
+               %{address_hash: @sender, block_number: @block_number}
+             ]
+    end
+
+    test "returns the payer of the receipt for a transaction with an open payer" do
+      transactions = to_params([Map.put(@raw_transaction, "payer", "0x00")])
+
+      assert EIP8430Transactions.resolved_payers(transactions) == [
+               %{address_hash: @payer, block_number: @block_number}
+             ]
+    end
+
+    test "returns one entry for each transaction" do
+      other_hash = "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c"
+      transactions = to_params([@raw_transaction, Map.put(@raw_transaction, "hash", other_hash)])
+
+      assert EIP8430Transactions.resolved_payers(transactions) == [
+               %{address_hash: @payer, block_number: @block_number},
+               %{address_hash: @payer, block_number: @block_number}
+             ]
+    end
+
+    test "returns no entries for transactions of other types" do
+      transaction = Map.put(@raw_transaction, "type", "0x2")
+
+      assert [transaction] |> to_params() |> EIP8430Transactions.resolved_payers() == []
+      assert EIP8430Transactions.resolved_payers([]) == []
+    end
+
+    test "skips a transaction if its receipt has no payer value" do
+      assert [@raw_transaction] |> to_params(%{"payer" => nil}) |> EIP8430Transactions.resolved_payers() == []
+
+      transactions = Enum.map(to_params([@raw_transaction]), &Map.delete(&1, :eip_8430_receipt_fields))
+      assert EIP8430Transactions.resolved_payers(transactions) == []
+    end
+
+    test "skips a transaction if the payer of its receipt is not an address string" do
+      for payer <- @incorrect_resolved_payers do
+        assert [@raw_transaction] |> to_params(%{"payer" => payer}) |> EIP8430Transactions.resolved_payers() == []
+      end
+    end
+
+    test "returns the zero address if it is the payer of the receipt" do
+      assert [@raw_transaction] |> to_params(%{"payer" => @zero_address}) |> EIP8430Transactions.resolved_payers() == [
+               %{address_hash: @zero_address, block_number: @block_number}
+             ]
+    end
+
+    test "skips a transaction without a block number" do
+      transactions = Enum.map(to_params([@raw_transaction]), &Map.put(&1, :block_number, nil))
+
+      assert EIP8430Transactions.resolved_payers(transactions) == []
     end
   end
 

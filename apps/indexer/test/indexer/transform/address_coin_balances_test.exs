@@ -246,6 +246,47 @@ defmodule Indexer.Transform.AddressCoinBalancesTest do
       assert MapSet.member?(params_set, %{address_hash: from_address_hash, block_number: block_number})
       assert MapSet.member?(params_set, %{address_hash: to_address_hash, block_number: block_number})
     end
+
+    test "with resolved payer of an EIP-8430 transaction extracts the payer and the block number" do
+      block_number = 1
+      from_address_hash = to_string(Factory.address_hash())
+      payer_address_hash = to_string(Factory.address_hash())
+
+      transaction_params =
+        :transaction
+        |> Factory.params_for()
+        |> Map.put(:block_number, block_number)
+        |> Map.put(:from_address_hash, from_address_hash)
+
+      params_set =
+        AddressCoinBalances.params_set(%{
+          transactions_params: [transaction_params],
+          eip_8430_resolved_payers: [%{address_hash: payer_address_hash, block_number: block_number}]
+        })
+
+      assert MapSet.size(params_set) == 2
+      assert MapSet.member?(params_set, %{address_hash: from_address_hash, block_number: block_number})
+      assert MapSet.member?(params_set, %{address_hash: payer_address_hash, block_number: block_number})
+    end
+
+    test "with resolved payer that is equal to the sender extracts one element" do
+      block_number = 1
+      from_address_hash = to_string(Factory.address_hash())
+
+      transaction_params =
+        :transaction
+        |> Factory.params_for()
+        |> Map.put(:block_number, block_number)
+        |> Map.put(:from_address_hash, from_address_hash)
+
+      params_set =
+        AddressCoinBalances.params_set(%{
+          transactions_params: [transaction_params],
+          eip_8430_resolved_payers: [%{address_hash: from_address_hash, block_number: block_number}]
+        })
+
+      assert MapSet.equal?(params_set, MapSet.new([%{address_hash: from_address_hash, block_number: block_number}]))
+    end
   end
 
   if @chain_type == :eden do
