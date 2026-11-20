@@ -323,17 +323,19 @@ defmodule Indexer.Fetcher.Optimism.DisputeGame do
     req = Contract.eth_call_request("0x4d1975b4", dispute_game_factory, 0, nil, nil)
     error_message = &"Cannot fetch game count from the DisputeGameFactory contract. Error: #{inspect(&1)}"
 
-    case IndexerHelper.repeated_call(&json_rpc/2, [req, json_rpc_named_arguments], error_message, retries) do
-      {:ok, "0x"} ->
-        # there is no contract at the address, or the contract doesn't have the getter
-        Logger.error(error_message.("empty response"))
-        nil
+    case IndexerHelper.repeated_call(&call_game_count/2, [req, json_rpc_named_arguments], error_message, retries) do
+      {:ok, count} -> quantity_to_integer(count)
+      _ -> nil
+    end
+  end
 
-      {:ok, count} ->
-        quantity_to_integer(count)
-
-      _ ->
-        nil
+  # Calls the gameCount() public getter. An empty response means that the RPC node sees no contract
+  # at the address (or the contract doesn't have the getter). That can be transient (e.g. the node
+  # is not synced yet), so it is returned as an error to be retried like any other failed call.
+  defp call_game_count(req, json_rpc_named_arguments) do
+    case json_rpc(req, json_rpc_named_arguments) do
+      {:ok, "0x"} -> {:error, "empty response"}
+      result -> result
     end
   end
 
