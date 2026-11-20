@@ -3010,11 +3010,12 @@ defmodule Explorer.Chain.Transaction do
   `update_replaced_transactions/2` for the full rule.
 
   ## Parameters
-  - `transactions`: The pending transactions to examine.
+  - `transactions`: The pending transactions to examine. All keys are required.
   - `timeout`: The timeout of the database update.
 
   ## Returns
-  - The number of updated transactions and `nil`.
+  - `{count, nil}`, where `count` is the number of updated transactions.
+  - `{0, []}` if `transactions` is empty.
   """
   @spec find_and_update_replaced_transactions([
           %{
@@ -3073,8 +3074,16 @@ defmodule Explorer.Chain.Transaction do
         select: %{hash: pending.hash}
       )
 
+    # The subquery does not lock the pending transactions. If the update waits for a row lock,
+    # Postgres evaluates again only the conditions on `t`. Thus the condition on `block_hash`
+    # is also here: it skips a transaction that a different process put in a block at the same
+    # time.
     Repo.update_all(
-      from(t in __MODULE__, join: s in subquery(replaced_transactions_query), on: t.hash == s.hash),
+      from(t in __MODULE__,
+        join: s in subquery(replaced_transactions_query),
+        on: t.hash == s.hash,
+        where: is_nil(t.block_hash)
+      ),
       [set: [error: "dropped/replaced", status: :error]],
       timeout: timeout
     )
@@ -3107,12 +3116,13 @@ defmodule Explorer.Chain.Transaction do
   from the database by its hash.
 
   ## Parameters
-  - `transactions`: The mined transactions. The function ignores an entry without one of the
-    values.
+  - `transactions`: The mined transactions. All keys are required. The function ignores an
+    entry in which one of the values is `nil`.
   - `timeout`: The timeout of the database update.
 
   ## Returns
-  - The number of updated transactions and `nil`.
+  - `{count, nil}`, where `count` is the number of updated transactions.
+  - `{0, []}` if `transactions` is empty or the function ignores all entries.
   """
   @spec update_replaced_transactions([
           %{
