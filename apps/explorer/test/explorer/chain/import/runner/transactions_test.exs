@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Import.Runner.TransactionsTest do
   use Explorer.DataCase
 
   alias Ecto.Multi
-  alias Explorer.Chain.{Address, Block, Transaction}
+  alias Explorer.Chain.{Address, Block, Transaction, Wei}
   alias Explorer.Chain.Import.Runner.Transactions
 
   describe "run/1" do
@@ -78,6 +78,48 @@ defmodule Explorer.Chain.Import.Runner.TransactionsTest do
              } = Repo.get_by(Transaction, hash: reorg_transaction.hash)
 
       assert not is_nil(Repo.get_by(Transaction, hash: transaction.hash).block_hash)
+    end
+
+    test "recollated transactions keep their type and fee fields" do
+      max_priority_fee_per_gas = %Wei{value: Decimal.new(1_000_000_000)}
+      max_fee_per_gas = %Wei{value: Decimal.new(3_000_000_000)}
+
+      reorg = insert(:block)
+
+      reorg_transaction =
+        :transaction
+        |> insert(type: 2, max_priority_fee_per_gas: max_priority_fee_per_gas, max_fee_per_gas: max_fee_per_gas)
+        |> with_block(reorg)
+
+      transaction = :transaction |> insert() |> with_block(reorg)
+      reorg |> Block.changeset(%{consensus: false}) |> Repo.update()
+      block = insert(:block, consensus: true, number: reorg.number)
+
+      transaction_params = %{
+        block_hash: block.hash,
+        block_number: block.number,
+        gas_used: transaction.gas_used,
+        cumulative_gas_used: transaction.cumulative_gas_used,
+        index: transaction.index,
+        from_address_hash: transaction.from_address.hash,
+        gas: transaction.gas,
+        gas_price: transaction.gas_price,
+        hash: transaction.hash,
+        input: transaction.input,
+        nonce: transaction.nonce,
+        r: transaction.r,
+        s: transaction.s,
+        to_address_hash: transaction.to_address.hash,
+        v: transaction.v,
+        value: transaction.value
+      }
+
+      assert {:ok, _} = run_transactions([transaction_params])
+
+      # the transaction of the discarded block becomes pending, but the fields of the signed transaction stay
+      assert %{block_hash: nil, type: 2} = pending_transaction = Repo.get_by(Transaction, hash: reorg_transaction.hash)
+      assert Decimal.eq?(pending_transaction.max_priority_fee_per_gas.value, max_priority_fee_per_gas.value)
+      assert Decimal.eq?(pending_transaction.max_fee_per_gas.value, max_fee_per_gas.value)
     end
   end
 
