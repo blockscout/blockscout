@@ -108,29 +108,27 @@ defmodule Explorer.Chain.Import.Runner.Address.CoinBalancesDaily do
     end)
   end
 
+  @doc """
+  Builds the default `ON CONFLICT` query for `address_coin_balances_daily`.
+
+  The row keeps the greatest `value` seen for the `(address_hash, day)` pair.
+  The conflicting row is rewritten only when the incoming value actually
+  replaces the stored one (the stored value is `NULL` or lower). Otherwise
+  the row is left untouched, including its `updated_at`, so that re-fetching
+  an unchanged or lower balance produces no dead tuple.
+  """
+  @spec default_on_conflict() :: Ecto.Query.t()
   def default_on_conflict do
     from(
       balance in CoinBalanceDaily,
       update: [
         set: [
-          value:
-            fragment(
-              """
-              CASE WHEN EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value > ?) THEN
-                     EXCLUDED.value
-                   ELSE
-                     ?
-              END
-              """,
-              balance.value,
-              balance.value,
-              balance.value
-            ),
+          value: fragment("EXCLUDED.value"),
           inserted_at: fragment("LEAST(EXCLUDED.inserted_at, ?)", balance.inserted_at),
           updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", balance.updated_at)
         ]
       ],
-      where: fragment("EXCLUDED.value IS NOT NULL")
+      where: fragment("EXCLUDED.value IS NOT NULL AND (? IS NULL OR EXCLUDED.value > ?)", balance.value, balance.value)
     )
   end
 end

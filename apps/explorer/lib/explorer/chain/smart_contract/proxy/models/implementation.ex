@@ -360,13 +360,28 @@ defmodule Explorer.Chain.SmartContract.Proxy.Models.Implementation do
           Keyword.t()
         ) :: __MODULE__.t() | :error
   def save_implementation_data(proxy_implementations, options) do
+    # `contract_code_md5` is only an index key for locating bytecode twin candidates:
+    # MD5 collisions are cheap to produce, so the twin's bytecode itself must be equal.
+    verified_twins_query =
+      from(
+        smart_contract in SmartContract,
+        inner_join: twin_address in assoc(smart_contract, :address),
+        select: %{
+          name: smart_contract.name,
+          contract_code_md5: smart_contract.contract_code_md5,
+          contract_code: twin_address.contract_code
+        }
+      )
+
     query =
       from(
         address in Address,
         where: address.hash in ^proxy_implementations.address_hashes,
         left_join: s1 in assoc(address, :smart_contract),
-        left_join: s2 in SmartContract,
-        on: fragment("md5(?)", address.contract_code) == s2.contract_code_md5 and is_nil(s1),
+        left_join: s2 in subquery(verified_twins_query),
+        on:
+          fragment("md5(?)", address.contract_code) == s2.contract_code_md5 and
+            address.contract_code == s2.contract_code and is_nil(s1),
         select: {address.hash, fragment("COALESCE(?, ?)", s1.name, s2.name)}
       )
 

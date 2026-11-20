@@ -12,7 +12,7 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
   alias Ecto.Multi
   alias Explorer.Chain.Import.Runner.{Blocks, Transactions}
   alias Explorer.Chain.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
-  alias Explorer.Chain.{Address, Block, SmartContract, Token, TokenTransfer, Transaction}
+  alias Explorer.Chain.{Address, Block, SmartContract, Token, TokenTransfer, Transaction, Wei}
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.{Chain, Repo}
   alias Explorer.Utility.{CountersRefetchBlock, MissingBlockRange}
@@ -661,6 +661,27 @@ defmodule Explorer.Chain.Import.Runner.BlocksTest do
               }} = run_block_consensus_change(block, true, options)
 
       assert %{block_number: ^block_number} = Repo.one(InternalTransactionDeleteQueue)
+    end
+
+    test "forked transactions keep their type and fee fields",
+         %{consensus_block: %{number: block_number} = block, options: options} do
+      max_priority_fee_per_gas = %Wei{value: Decimal.new(1_000_000_000)}
+      max_fee_per_gas = %Wei{value: Decimal.new(3_000_000_000)}
+
+      old_block = insert(:block, number: block_number, consensus: true)
+
+      %Transaction{hash: transaction_hash} =
+        :transaction
+        |> insert(type: 2, max_priority_fee_per_gas: max_priority_fee_per_gas, max_fee_per_gas: max_fee_per_gas)
+        |> with_block(old_block)
+
+      assert {:ok, %{fork_transactions: [%{hash: ^transaction_hash}]}} =
+               run_block_consensus_change(block, true, options)
+
+      # the transaction of the block that lost consensus becomes pending, but the fields of the signed transaction stay
+      assert %{block_hash: nil, type: 2} = pending_transaction = Repo.get_by(Transaction, hash: transaction_hash)
+      assert Decimal.eq?(pending_transaction.max_priority_fee_per_gas.value, max_priority_fee_per_gas.value)
+      assert Decimal.eq?(pending_transaction.max_fee_per_gas.value, max_fee_per_gas.value)
     end
 
     # Regression test for https://github.com/poanetwork/blockscout/issues/1644

@@ -16,7 +16,7 @@ abstract contract Proxy {
     /**
      * @dev Delegates the current call to `implementation`.
      *
-     * This function does not return to its internal call site, it will return directly to the external caller.
+     * This function does not return to its invocation site, it will return directly to the external caller.
      */
     function _delegate(address implementation) internal virtual {
         // solhint-disable-next-line no-inline-assembly
@@ -41,7 +41,7 @@ abstract contract Proxy {
     }
 
     /**
-     * @dev This is a virtual function that should be overridden so it returns the address to which the fallback function
+     * @dev This is a virtual function that should be superseded so it returns the address to which the fallback function
      * and {_fallback} should delegate.
      */
     function _implementation() internal view virtual returns (address);
@@ -49,7 +49,7 @@ abstract contract Proxy {
     /**
      * @dev Delegates the current call to the address returned by `_implementation()`.
      *
-     * This function does not return to its internal call site, it will return directly to the external caller.
+     * This function does not return to its invocation site, it will return directly to the external caller.
      */
     function _fallback() internal virtual {
         _beforeFallback();
@@ -76,7 +76,7 @@ abstract contract Proxy {
      * @dev Hook that is called before falling back to the implementation. Can happen as part of a manual `_fallback`
      * call, or as part of the Solidity `fallback` or `receive` functions.
      *
-     * If overridden should call `super._beforeFallback()`.
+     * If superseded should call `super._beforeFallback()`.
      */
     function _beforeFallback() internal virtual {
     }
@@ -554,8 +554,8 @@ contract ERC1967Proxy is Proxy, ERC1967Upgrade {
     /**
      * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
      *
-     * If `_data` is nonempty, it's used as data in a delegate call to `_logic`. This will typically be an encoded
-     * function call, and allows initializing the storage of the proxy like a Solidity constructor.
+     * If `_data` is nonempty, it is passed to `_logic` in a delegate call. It typically contains an encoded function call,
+     * enabling the proxy's storage to be initialized in a manner similar to a Solidity constructor.
      */
     constructor(address _logic, bytes memory _data) payable {
         assert(_IMPLEMENTATION_SLOT == bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1));

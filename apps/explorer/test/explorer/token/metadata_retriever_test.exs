@@ -1782,6 +1782,38 @@ defmodule Explorer.Token.MetadataRetrieverTest do
     end
   end
 
+  describe "erc404_support/1" do
+    defp probe_erc404(responses_by_method) do
+      expect(EthereumJSONRPC.Mox, :json_rpc, 1, fn requests, _opts ->
+        {:ok,
+         Enum.map(requests, fn %{id: id, params: [%{data: data}, _block]} ->
+           responses_by_method
+           |> Map.fetch!(data)
+           |> Map.put(:id, id)
+         end)}
+      end)
+
+      MetadataRetriever.erc404_support(insert(:contract_address).hash)
+    end
+
+    @erc404_uint %{result: "0x0000000000000000000000000000000000000000000000000000000000001352"}
+    @erc404_revert %{error: %{code: -32015, data: "0x", message: "execution reverted"}, jsonrpc: "2.0"}
+
+    test "answers from both getters are a claim" do
+      assert probe_erc404(%{"0x89fb4c66" => @erc404_uint, "0xc5ab3ba6" => @erc404_uint}) == {:ok, true}
+    end
+
+    test "a revert of either getter is a denial" do
+      assert probe_erc404(%{"0x89fb4c66" => @erc404_uint, "0xc5ab3ba6" => @erc404_revert}) == {:ok, false}
+    end
+
+    test "an unanswered call without a revert is neither" do
+      timeout = %{error: %{code: -32603, message: "timeout"}, jsonrpc: "2.0"}
+
+      assert probe_erc404(%{"0x89fb4c66" => @erc404_uint, "0xc5ab3ba6" => timeout}) == :error
+    end
+  end
+
   defp with_max_metadata_size(size, fun) do
     initial = Application.get_env(:indexer, Indexer.Fetcher.TokenInstance.Helper) || []
 

@@ -14,6 +14,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, TokenTransfer}
   alias Explorer.Chain.Import.Runner.Helper
+  alias Explorer.Chain.Token.Erc404
   alias Explorer.Prometheus.Instrumenter
 
   @behaviour Import.Runner
@@ -51,7 +52,9 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
         fn ->
           # token transfers of a block that lost consensus after its import must not be inserted, see the helper docs
           consensus_changes_list =
-            Helper.reject_changes_of_non_consensus_blocks(repo, changes_list, insert_options, "token transfers")
+            repo
+            |> Helper.reject_changes_of_non_consensus_blocks(changes_list, insert_options, "token transfers")
+            |> then(&Erc404.normalize_imported_token_transfers(repo, &1))
 
           insert(repo, consensus_changes_list, insert_options)
         end,
@@ -114,6 +117,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
               # key and used for the conflict target
               transaction_hash: fragment("EXCLUDED.transaction_hash"),
               amount: fragment("EXCLUDED.amount"),
+              amounts: fragment("EXCLUDED.amounts"),
               from_address_hash: fragment("EXCLUDED.from_address_hash"),
               to_address_hash: fragment("EXCLUDED.to_address_hash"),
               token_contract_address_hash: fragment("EXCLUDED.token_contract_address_hash"),
@@ -126,8 +130,9 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           ],
           where:
             fragment(
-              "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids, EXCLUDED.token_type, EXCLUDED.block_consensus, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
+              "(EXCLUDED.amount, EXCLUDED.amounts, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids, EXCLUDED.token_type, EXCLUDED.block_consensus, EXCLUDED.transaction_hash) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?)",
               token_transfer.amount,
+              token_transfer.amounts,
               token_transfer.from_address_hash,
               token_transfer.to_address_hash,
               token_transfer.token_contract_address_hash,
@@ -146,6 +151,7 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
               # Don't update `transaction_hash` as it is part of the composite primary key and used for the conflict target
               # Don't update `log_index` as it is part of the composite primary key and used for the conflict target
               amount: fragment("EXCLUDED.amount"),
+              amounts: fragment("EXCLUDED.amounts"),
               from_address_hash: fragment("EXCLUDED.from_address_hash"),
               to_address_hash: fragment("EXCLUDED.to_address_hash"),
               token_contract_address_hash: fragment("EXCLUDED.token_contract_address_hash"),
@@ -158,8 +164,9 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfers do
           ],
           where:
             fragment(
-              "(EXCLUDED.amount, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids, EXCLUDED.token_type, EXCLUDED.block_consensus) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?)",
+              "(EXCLUDED.amount, EXCLUDED.amounts, EXCLUDED.from_address_hash, EXCLUDED.to_address_hash, EXCLUDED.token_contract_address_hash, EXCLUDED.token_ids, EXCLUDED.token_type, EXCLUDED.block_consensus) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?)",
               token_transfer.amount,
+              token_transfer.amounts,
               token_transfer.from_address_hash,
               token_transfer.to_address_hash,
               token_transfer.token_contract_address_hash,

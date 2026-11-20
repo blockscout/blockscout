@@ -556,7 +556,7 @@ defmodule EthereumJSONRPC.Filecoin do
 
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
-  alias EthereumJSONRPC.Geth
+  alias EthereumJSONRPC.{BatchCorrelation, Geth}
   alias EthereumJSONRPC.Geth.Call
 
   @behaviour EthereumJSONRPC.Variant
@@ -588,11 +588,13 @@ defmodule EthereumJSONRPC.Filecoin do
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, blocks_responses} <-
-           id_to_params
-           |> debug_trace_block_by_number_requests()
-           |> json_rpc(json_rpc_named_arguments),
-         :ok <- Geth.check_errors_exist(blocks_responses, id_to_params) do
+    with {:ok, {blocks_responses, uncorrelated, unmatched}, refetch_result} <-
+           BatchCorrelation.fetch(id_to_params, &debug_trace_block_by_number_requests/1, json_rpc_named_arguments),
+         # all errors go first, then the failure of a separately sent request,
+         # then the blocks left without a reply
+         :ok <- Geth.check_block_errors(blocks_responses, uncorrelated),
+         :ok <- refetch_result,
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
       transactions_params = to_transactions_params(blocks_responses, id_to_params)
 
       debug_trace_transaction_responses_to_internal_transactions_params(transactions_params)

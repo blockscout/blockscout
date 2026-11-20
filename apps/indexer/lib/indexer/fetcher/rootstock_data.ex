@@ -51,7 +51,7 @@ defmodule Indexer.Fetcher.RootstockData do
 
     if !json_rpc_named_arguments do
       raise ArgumentError,
-            ":json_rpc_named_arguments must be provided to `#{__MODULE__}.init to allow for json_rpc calls when running."
+            ":json_rpc_named_arguments must be provided to '#{__MODULE__}.init' to allow for json_rpc calls when running."
     end
 
     state = %__MODULE__{

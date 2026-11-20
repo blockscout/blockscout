@@ -12,6 +12,7 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
   alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Chain.{Hash, Import}
   alias Explorer.Chain.Import.Runner.{Address.TokenBalances, Tokens}
+  alias Explorer.Chain.Token.Erc404
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.QueryHelper
 
@@ -104,7 +105,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     end)
     |> Multi.run(:filter_params, fn repo, %{filter_ctb_placeholders: filtered_changes_list} ->
       Instrumenter.block_import_stage_runner(
-        fn -> filter_params(repo, filtered_changes_list) end,
+        fn ->
+          # the legacy-typed balances of a token retyped to ERC-404, see the function docs;
+          # runs before `filter_params/2`, which tells the fungible balances by the token id
+          repo
+          |> Erc404.normalize_imported_token_balances(filtered_changes_list)
+          |> then(&filter_params(repo, &1))
+        end,
         :block_following,
         :current_token_balances,
         :filter_params

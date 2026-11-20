@@ -255,6 +255,51 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
       assert exported_indexes.(include_zero_value: true) == exported_indexes.([])
     end
 
+    test "applies address direction filter" do
+      address = insert(:address)
+
+      transaction =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      outgoing =
+        insert(:internal_transaction,
+          index: 1,
+          transaction: transaction,
+          from_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      incoming =
+        insert(:internal_transaction,
+          index: 2,
+          transaction: transaction,
+          to_address: address,
+          block_number: transaction.block_number,
+          transaction_index: transaction.index
+        )
+
+      {:ok, now} = DateTime.now("Etc/UTC")
+
+      from_period = DateTime.add(now, -1, :minute) |> DateTime.to_iso8601()
+      to_period = now |> DateTime.to_iso8601()
+
+      exported_indexes = fn filter_type, filter_value ->
+        address.hash
+        |> AddressInternalTransactionsCsvExporter.export(from_period, to_period, [], filter_type, filter_value)
+        |> Enum.to_list()
+        |> Enum.drop(1)
+        |> Enum.map(fn [_, _, [[], index] | _] -> String.to_integer(index) end)
+        |> Enum.sort()
+      end
+
+      assert exported_indexes.("address", "from") == [outgoing.index]
+      assert exported_indexes.("address", "to") == [incoming.index]
+      assert exported_indexes.(nil, nil) == [outgoing.index, incoming.index]
+    end
+
     test "don't fall on is_nil(gas_used)" do
       address = insert(:address)
 

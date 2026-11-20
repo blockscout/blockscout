@@ -128,6 +128,9 @@ defmodule Explorer.Token.MetadataRetriever do
 
   # 313ce567 = keccak256(decimals())
   @decimals_signature "313ce567"
+
+  # milliseconds
+  @erc404_support_retry_interval 500
   # 06fdde03 = keccak256(name())
   @name_signature "06fdde03"
   # 95d89b41 = keccak256(symbol())
@@ -164,6 +167,33 @@ defmodule Explorer.Token.MetadataRetriever do
   @total_supply_function %{
     @total_supply_signature => []
   }
+
+  # 89fb4c66 = keccak256(erc20TotalSupply())
+  @erc20_total_supply_signature "89fb4c66"
+  # c5ab3ba6 = keccak256(erc721TotalSupply())
+  @erc721_total_supply_signature "c5ab3ba6"
+  @erc404_signatures [@erc20_total_supply_signature, @erc721_total_supply_signature]
+  @erc404_functions Map.new(@erc404_signatures, &{&1, []})
+  @erc404_abi [
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "erc20TotalSupply",
+      "outputs" => [%{"name" => "", "type" => "uint256"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    },
+    %{
+      "constant" => true,
+      "inputs" => [],
+      "name" => "erc721TotalSupply",
+      "outputs" => [%{"name" => "", "type" => "uint256"}],
+      "payable" => false,
+      "stateMutability" => "view",
+      "type" => "function"
+    }
+  ]
 
   @doc """
   Read functions below in the token's smart contract given the contract's address hash.
@@ -250,7 +280,10 @@ defmodule Explorer.Token.MetadataRetriever do
       raw_metadata
       |> format_contract_functions_result(contract_address_hash)
 
-    metadata = try_to_fetch_erc_1155_name(base_metadata, contract_address_hash, type)
+    metadata =
+      base_metadata
+      |> try_to_fetch_erc_1155_name(contract_address_hash, type)
+      |> maybe_put_erc404_type(contract_address_hash, type, raw_metadata[@decimals_signature])
 
     if Enum.empty?(metadata) && set_skip_metadata do
       Map.put(
@@ -466,6 +499,102 @@ defmodule Explorer.Token.MetadataRetriever do
       _other ->
         :error
     end
+  end
+
+  @doc """
+  Whether the contract is an [ERC-404](https://github.com/Pandora-Labs-Org/erc404)
+  token, judged by the `erc20TotalSupply()` and `erc721TotalSupply()` getters of
+  the reference implementation.
+
+  Some ERC-404 tokens emit the standard `Transfer` event for both of their legs:
+  with 3 topics for the fungible amount and with 4 topics for the NFT id. Their
+  logs alone don't set them apart from contracts that just happen to emit both
+  kinds of `Transfer`, so the contract is asked directly. Only an answer from
+  both getters counts as "yes".
+
+  Returns `{:ok, true}` or `{:ok, false}` when the contract answered — a revert
+  counts as an answer — and `:error` when the node did not, so that the caller
+  can tell a failed lookup apart from a denied claim. The getters are asked up
+  to `attempts` times while the node fails to answer.
+  """
+  @spec erc404_support(String.t() | Hash.Address.t(), pos_integer()) :: {:ok, boolean()} | :error
+  def erc404_support(contract_address_hash, attempts \\ 1) do
+    case ask_erc404_getters(contract_address_hash) do
+      :error when attempts > 1 ->
+        Process.sleep(@erc404_support_retry_interval)
+        erc404_support(contract_address_hash, attempts - 1)
+
+      result ->
+        result
+    end
+  end
+
+  defp ask_erc404_getters(contract_address_hash) do
+    results =
+      contract_address_hash
+      |> to_string()
+      |> Reader.query_contract(@erc404_abi, @erc404_functions, false)
+
+    answers = Enum.map(@erc404_signatures, &Map.get(results, &1))
+
+    cond do
+      Enum.all?(answers, &match?({:ok, [value]} when is_integer(value), &1)) -> {:ok, true}
+      Enum.any?(answers, &call_denied?/1) -> {:ok, false}
+      true -> :error
+    end
+  end
+
+  # whether the contract itself answered the call with a failure
+  defp call_denied?({:error, :invalid_data}), do: true
+  defp call_denied?({:error, _reason} = error), do: contract_failure?(error)
+  defp call_denied?(_answer), do: false
+
+  # A newly seen ERC-404 token that emits the standard `Transfer` event for both
+  # of its legs is resolved to ERC-721 from its logs. Such a token is only worth
+  # asking when it answered `decimals()`, which an ordinary ERC-721 contract
+  # doesn't implement, so that ordinary NFT collections cost no extra calls. It
+  # is asked as well when the node failed to answer `decimals()`.
+  #
+  # The token is cataloged even when the node keeps failing to answer the
+  # ERC-404 getters: an uncataloged token would be picked up by the token fetcher
+  # again right away, with no backoff. A token with decimals is then left to the
+  # `Explorer.Migrator.SanitizeErc404Tokens` migration. A token whose decimals
+  # are unknown too is handed back to the token fetcher by
+  # `Indexer.Fetcher.TokenUpdater` once it reads them.
+  defp maybe_put_erc404_type(metadata, contract_address_hash, "ERC-721", decimals_result) do
+    if erc404_candidate?(metadata, decimals_result) do
+      case erc404_support(contract_address_hash, erc404_support_attempts()) do
+        {:ok, true} ->
+          Map.put(metadata, :type, "ERC-404")
+
+        {:ok, false} ->
+          metadata
+
+        :error ->
+          Logger.warning(
+            "Failed to call erc20TotalSupply() and erc721TotalSupply() of #{contract_address_hash}, " <>
+              "the token is kept as an ERC-721 one"
+          )
+
+          metadata
+      end
+    else
+      metadata
+    end
+  end
+
+  defp maybe_put_erc404_type(metadata, _contract_address_hash, _type, _decimals_result), do: metadata
+
+  # A token without any metadata is not cataloged anyway, see `get_functions_of/2`.
+  defp erc404_candidate?(%{decimals: decimals}, _decimals_result) when not is_nil(decimals), do: true
+
+  defp erc404_candidate?(metadata, {:error, _reason} = decimals_result) when map_size(metadata) > 0,
+    do: not call_denied?(decimals_result)
+
+  defp erc404_candidate?(_metadata, _decimals_result), do: false
+
+  defp erc404_support_attempts do
+    max(Application.get_env(:explorer, :token_functions_reader_max_retries) || 1, 1)
   end
 
   @doc """

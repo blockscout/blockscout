@@ -912,6 +912,15 @@ config :explorer, Explorer.Migrator.SanitizeIncorrectWETHTokenTransfers,
   blocks_batch_size:
     ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_INCORRECT_WETH_BLOCKS_BATCH_SIZE", 10_000, min: 1)
 
+config :explorer, Explorer.Migrator.SanitizeErc404Tokens,
+  enabled: ConfigHelper.parse_bool_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_ENABLED", "false"),
+  batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_BATCH_SIZE", 1, min: 1),
+  concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_CONCURRENCY", 1, min: 1),
+  timeout: ConfigHelper.parse_time_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_TIMEOUT", "0s"),
+  rows_batch_size:
+    ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_ROWS_BATCH_SIZE", 1_000, min: 1),
+  from_block: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_ERC404_TOKENS_FROM_BLOCK", 0, min: 0)
+
 config :explorer, Explorer.Migrator.SanitizeEip7708TokenTransfers,
   batch_size: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_BATCH_SIZE", 500, min: 1),
   concurrency: ConfigHelper.parse_integer_env_var("MIGRATION_SANITIZE_EIP7708_TOKEN_TRANSFERS_CONCURRENCY", 1, min: 1),
@@ -1417,6 +1426,9 @@ config :indexer, Indexer.Fetcher.TokenUIMultiplierUpdater,
 config :indexer, Indexer.Fetcher.TokenCountersUpdater.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_CATALOGED_TOKEN_UPDATER_FETCHER")
 
+config :indexer, Indexer.Fetcher.CoinBalance.Compactor.Supervisor,
+  disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_COIN_BALANCES_COMPACTOR")
+
 config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer.Supervisor,
   disabled?: ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_EMPTY_BLOCKS_SANITIZER")
 
@@ -1487,6 +1499,14 @@ config :indexer, Indexer.Fetcher.EmptyBlocksSanitizer,
   batch_size: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_BATCH_SIZE", 10),
   interval: ConfigHelper.parse_time_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_INTERVAL", "10s"),
   head_offset: ConfigHelper.parse_integer_env_var("INDEXER_EMPTY_BLOCKS_SANITIZER_HEAD_OFFSET", 1000)
+
+config :indexer, Indexer.Fetcher.CoinBalance.Compactor,
+  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_BATCH_SIZE", 100, min: 1),
+  interval: ConfigHelper.parse_time_env_var("INDEXER_COIN_BALANCES_COMPACTOR_INTERVAL", "1s"),
+  # The offset cannot go below 1000 blocks: the blocks next to the chain head are still being imported, and a head
+  # block that failed to import gets into `missing_block_ranges` only with the next forward scan of the missing
+  # ranges collector, a minute later. 1000 blocks cover that minute down to a block time of about 60 ms.
+  head_offset: ConfigHelper.parse_integer_env_var("INDEXER_COIN_BALANCES_COMPACTOR_HEAD_OFFSET", 1000, min: 1000)
 
 config :indexer, Indexer.Block.Realtime.Fetcher,
   max_gap: ConfigHelper.parse_integer_env_var("INDEXER_REALTIME_FETCHER_MAX_GAP", 1_000),

@@ -3,7 +3,8 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfersTest do
   use Explorer.DataCase
 
   alias Explorer.Chain
-  alias Explorer.Chain.TokenTransfer
+  alias Explorer.Chain.{Token, TokenTransfer}
+  alias Explorer.Chain.Token.Erc404
 
   describe "run/3" do
     test "does not insert the token transfers of the blocks that are not consensus anymore" do
@@ -39,5 +40,124 @@ defmodule Explorer.Chain.Import.Runner.TokenTransfersTest do
       assert block_hash == consensus_block.hash
       assert Repo.aggregate(TokenTransfer, :count) == 1
     end
+  end
+
+  describe "run/3 with the transfers of a token retyped to ERC-404" do
+    setup do
+      block = insert(:block, consensus: true)
+      transaction = :transaction |> insert() |> with_block(block)
+
+      %{
+        block: block,
+        transaction: transaction,
+        from_address: insert(:address),
+        to_address: insert(:address)
+      }
+    end
+
+    test "gives the ERC-404 shape to legacy legs inserted after the conversion", context do
+      token = insert(:token, type: "ERC-404")
+
+      import_transfers([
+        erc20_leg(context, token, 0, 5),
+        erc721_leg(context, token, 1, 7)
+      ])
+
+      assert [
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [amount]},
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [token_id], amounts: []}
+             ] = Repo.all(from(tt in TokenTransfer, order_by: tt.log_index))
+
+      assert Decimal.equal?(amount, 5)
+      assert Decimal.equal?(token_id, 7)
+    end
+
+    test "keeps the ERC-404 shape of converted transfers re-imported with the legacy shape", context do
+      token = insert(:token, type: "ERC-721")
+
+      import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
+
+      Erc404.convert(token.contract_address_hash)
+
+      import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
+
+      assert [
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [amount]},
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [token_id], amounts: []}
+             ] = Repo.all(from(tt in TokenTransfer, order_by: tt.log_index))
+
+      assert Decimal.equal?(amount, 5)
+      assert Decimal.equal?(token_id, 7)
+    end
+
+    test "gives the ERC-404 shape to legacy rows re-imported between the retyping and the sweep", context do
+      token = insert(:token, type: "ERC-721")
+
+      import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
+
+      # the token is retyped, but the conversion sweep hasn't reached its transfers yet
+      Repo.update_all(from(t in Token, where: t.contract_address_hash == ^token.contract_address_hash),
+        set: [type: "ERC-404"]
+      )
+
+      import_transfers([erc20_leg(context, token, 0, 5), erc721_leg(context, token, 1, 7)])
+
+      assert [
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [amount]},
+               %TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [token_id], amounts: []}
+             ] = Repo.all(from(tt in TokenTransfer, order_by: tt.log_index))
+
+      assert Decimal.equal?(amount, 5)
+      assert Decimal.equal?(token_id, 7)
+    end
+
+    test "gives the ERC-404 shape to a legacy ERC-20 leg without an amount", context do
+      token = insert(:token, type: "ERC-404")
+
+      import_transfers([context |> erc20_leg(token, 0, 5) |> Map.delete(:amount)])
+
+      assert [%TokenTransfer{token_type: "ERC-404", amount: nil, token_ids: [], amounts: [nil]}] =
+               Repo.all(TokenTransfer)
+    end
+
+    test "leaves the transfers of tokens with a legacy type untouched", context do
+      token = insert(:token, type: "ERC-721")
+
+      import_transfers([erc20_leg(context, token, 0, 5)])
+
+      assert [%TokenTransfer{token_type: "ERC-20", amounts: nil, token_ids: nil, amount: amount}] =
+               Repo.all(TokenTransfer)
+
+      assert Decimal.equal?(amount, 5)
+    end
+  end
+
+  defp import_transfers(params) do
+    assert {:ok, _} = Chain.import(%{token_transfers: %{params: params}})
+  end
+
+  defp erc20_leg(context, token, log_index, amount) do
+    context
+    |> transfer_params(token, log_index)
+    |> Map.merge(%{token_type: "ERC-20", amount: Decimal.new(amount)})
+  end
+
+  defp erc721_leg(context, token, log_index, token_id) do
+    context
+    |> transfer_params(token, log_index)
+    |> Map.merge(%{token_type: "ERC-721", token_ids: [token_id]})
+  end
+
+  defp transfer_params(context, token, log_index) do
+    %{
+      block_consensus: true,
+      block_hash: context.block.hash,
+      block_number: context.block.number,
+      from_address_hash: context.from_address.hash,
+      log_index: log_index,
+      to_address_hash: context.to_address.hash,
+      token_contract_address_hash: token.contract_address_hash,
+      transaction_hash: context.transaction.hash
+    }
   end
 end

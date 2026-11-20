@@ -24,6 +24,7 @@ defmodule Indexer.Supervisor do
   alias Indexer.Block.Realtime, as: BlockRealtime
   alias Indexer.Fetcher.Blackfort.Validator, as: ValidatorBlackfort
   alias Indexer.Fetcher.CoinBalance.Catchup, as: CoinBalanceCatchup
+  alias Indexer.Fetcher.CoinBalance.Compactor, as: CoinBalanceCompactor
   alias Indexer.Fetcher.CoinBalance.Realtime, as: CoinBalanceRealtime
   alias Indexer.Fetcher.InternalTransaction.DeleteQueue, as: InternalTransactionDeleteQueue
   alias Indexer.Fetcher.MultichainSearchDb.BalancesExportQueue, as: MultichainSearchDbBalancesExportQueue
@@ -284,6 +285,7 @@ defmodule Indexer.Supervisor do
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         {PendingOpsCleaner, [[], []]},
         {PendingBlockOperationsSanitizer, [[]]},
+        {CoinBalanceCompactor.Supervisor, [[]]},
         {RootstockData.Supervisor, [[json_rpc_named_arguments: json_rpc_named_arguments]]},
         configure(RecoveryWETHTokenTransfers, [[memory_monitor: memory_monitor]]),
 
