@@ -312,7 +312,13 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
       |> Enum.concat(existing_ctb_with_token_id)
       |> Map.new(fn ctb ->
         {{ctb.address_hash, ctb.token_contract_address_hash, ctb.token_id},
-         %{block_number: ctb.block_number, value: ctb.value, value_fetched_at: ctb.value_fetched_at}}
+         %{
+           block_number: ctb.block_number,
+           value: ctb.value,
+           value_fetched_at: ctb.value_fetched_at,
+           retries_count: ctb.retries_count,
+           refetch_after: ctb.refetch_after
+         }}
       end)
 
     existing_keys =
@@ -369,7 +375,8 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     # which is needed to force `fetched_current_token_balances` full index usage
     existing_ctb_query =
       """
-      SELECT address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at
+      SELECT address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at,
+             retries_count, refetch_after
       FROM address_current_token_balances
       WHERE (address_hash, token_contract_address_hash, COALESCE(token_id, -1)) IN (#{placeholders})
       """
@@ -379,14 +386,25 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
     existing_ctb_query
     |> repo.query!(query_params)
     |> Map.get(:rows, [])
-    |> Enum.map(fn [address_hash, token_contract_address_hash, token_id, block_number, value, value_fetched_at] ->
+    |> Enum.map(fn [
+                     address_hash,
+                     token_contract_address_hash,
+                     token_id,
+                     block_number,
+                     value,
+                     value_fetched_at,
+                     retries_count,
+                     refetch_after
+                   ] ->
       %{
         address_hash: address_hash,
         token_contract_address_hash: token_contract_address_hash,
         token_id: token_id,
         block_number: block_number,
         value: value,
-        value_fetched_at: value_fetched_at
+        value_fetched_at: value_fetched_at,
+        retries_count: retries_count,
+        refetch_after: refetch_after
       }
     end)
   end
@@ -401,9 +419,48 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
 
   # new ctb is the same height or older
   defp should_update?(new_ctb, existing_ctb) do
-    existing_ctb.block_number == new_ctb.block_number and not is_nil(Map.get(new_ctb, :value)) and
+    existing_ctb.block_number == new_ctb.block_number and
+      (fetched_value_update?(new_ctb, existing_ctb) or retry_metadata_update?(new_ctb, existing_ctb))
+  end
+
+  defp fetched_value_update?(new_ctb, existing_ctb) do
+    not is_nil(Map.get(new_ctb, :value)) and
       (is_nil(existing_ctb.value_fetched_at) or Timex.before?(existing_ctb.value_fetched_at, new_ctb.value_fetched_at))
   end
+
+  # A failed fetch of a still unfetched balance records its retry metadata
+  # (`retries_count`, `refetch_after`), so it is not picked again without backoff.
+  # A stale failure never lowers `retries_count` nor moves `refetch_after`
+  # earlier; a failure with the same count is kept when its `refetch_after` is
+  # later. Mirrors the last branch of `default_on_conflict/0`.
+  defp retry_metadata_update?(new_ctb, existing_ctb) do
+    new_retries_count = Map.get(new_ctb, :retries_count)
+
+    is_nil(Map.get(new_ctb, :value)) and is_nil(new_ctb.value_fetched_at) and not is_nil(new_retries_count) and
+      is_nil(existing_ctb.value_fetched_at) and
+      retries_count_advances?(new_retries_count, compare_refetch_after(new_ctb, existing_ctb), existing_ctb) and
+      (is_nil(existing_ctb.refetch_after) or compare_refetch_after(new_ctb, existing_ctb) in [:gt, :eq])
+  end
+
+  defp retries_count_advances?(_new_retries_count, _refetch_after_order, %{retries_count: nil}), do: true
+
+  defp retries_count_advances?(new_retries_count, refetch_after_order, %{retries_count: existing_retries_count}),
+    do:
+      new_retries_count > existing_retries_count or
+        (new_retries_count == existing_retries_count and refetch_after_order == :gt)
+
+  # Order of the new `refetch_after` relative to the stored one, `nil` when
+  # either is missing
+  defp compare_refetch_after(new_ctb, existing_ctb) do
+    new_refetch_after = Map.get(new_ctb, :refetch_after)
+
+    if new_refetch_after && existing_ctb.refetch_after,
+      do: DateTime.compare(to_utc_datetime(new_refetch_after), to_utc_datetime(existing_ctb.refetch_after))
+  end
+
+  # The raw SQL lookup of balances with a token id returns naive timestamps
+  defp to_utc_datetime(%NaiveDateTime{} = datetime), do: DateTime.from_naive!(datetime, "Etc/UTC")
+  defp to_utc_datetime(%DateTime{} = datetime), do: datetime
 
   @spec insert(Repo.t(), [map()], %{
           optional(:on_conflict) => Import.Runner.on_conflict(),
@@ -483,13 +540,47 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalances do
           updated_at: fragment("GREATEST(EXCLUDED.updated_at, ?)", current_token_balance.updated_at)
         ]
       ],
+      # Keep in sync with `should_update?/2`. The branches are: a newer block; a
+      # fetched value of the same block, newer than the stored one; retry
+      # metadata of a failed fetch on a still unfetched row of the same block,
+      # which never lowers `retries_count` nor moves `refetch_after` earlier.
       where:
-        fragment("? < EXCLUDED.block_number", current_token_balance.block_number) or
-          (fragment("? = EXCLUDED.block_number", current_token_balance.block_number) and
-             fragment("EXCLUDED.value_fetched_at IS NOT NULL") and
-             fragment("EXCLUDED.value IS NOT NULL") and
-             (is_nil(current_token_balance.value_fetched_at) or
-                fragment("? < EXCLUDED.value_fetched_at", current_token_balance.value_fetched_at)))
+        fragment(
+          """
+          ? < EXCLUDED.block_number
+          OR (
+            ? = EXCLUDED.block_number
+            AND EXCLUDED.value_fetched_at IS NOT NULL
+            AND EXCLUDED.value IS NOT NULL
+            AND (? IS NULL OR ? < EXCLUDED.value_fetched_at)
+          )
+          OR (
+            ? = EXCLUDED.block_number
+            AND EXCLUDED.value_fetched_at IS NULL
+            AND EXCLUDED.value IS NULL
+            AND EXCLUDED.retries_count IS NOT NULL
+            AND ? IS NULL
+            AND (
+              ? IS NULL
+              OR EXCLUDED.retries_count > ?
+              OR (EXCLUDED.retries_count = ? AND EXCLUDED.refetch_after > ?)
+            )
+            AND (? IS NULL OR EXCLUDED.refetch_after >= ?)
+          )
+          """,
+          current_token_balance.block_number,
+          current_token_balance.block_number,
+          current_token_balance.value_fetched_at,
+          current_token_balance.value_fetched_at,
+          current_token_balance.block_number,
+          current_token_balance.value_fetched_at,
+          current_token_balance.retries_count,
+          current_token_balance.retries_count,
+          current_token_balance.retries_count,
+          current_token_balance.refetch_after,
+          current_token_balance.refetch_after,
+          current_token_balance.refetch_after
+        )
     )
   end
 end

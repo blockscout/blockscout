@@ -449,6 +449,20 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   @doc """
+  Reads `totalSupply()` of `contract_address_hash` at `block_number`, so the
+  result can be stored together with the block it describes.
+
+  Returns `%{total_supply: value}`, or an empty map when the call fails.
+  """
+  @spec get_total_supply_of(String.t(), non_neg_integer()) :: map()
+  def get_total_supply_of(contract_address_hash, block_number)
+      when is_binary(contract_address_hash) and is_integer(block_number) do
+    contract_address_hash
+    |> Reader.query_contract_by_block_number(@full_contract_abi, @total_supply_function, block_number)
+    |> format_contract_functions_result(contract_address_hash)
+  end
+
+  @doc """
   Whether the contract claims the
   [ERC-8056](https://eips.ethereum.org/EIPS/eip-8056) `IScaledUIAmount`
   interface through ERC-165.

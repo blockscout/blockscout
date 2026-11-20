@@ -480,6 +480,164 @@ defmodule Explorer.Chain.Import.Runner.Address.CurrentTokenBalancesTest do
       assert Timex.equal?(current_token_balance.value_fetched_at, time_after)
     end
 
+    test "records retry metadata of a failed fetch on an unfetched balance of the same block", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: nil,
+        value_fetched_at: nil,
+        refetch_after: nil,
+        retries_count: nil
+      )
+
+      refetch_after = ~U[2030-01-01 00:00:00.000000Z]
+
+      assert {:ok,
+              %{address_current_token_balances: [_], address_current_token_balances_update_token_holder_counts: []}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 1,
+                   value: nil,
+                   value_fetched_at: nil,
+                   refetch_after: refetch_after,
+                   retries_count: 1
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert is_nil(current_token_balance.value)
+      assert current_token_balance.retries_count == 1
+      assert Timex.equal?(current_token_balance.refetch_after, refetch_after)
+    end
+
+    test "a stale failure does not move retry metadata backward", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      refetch_after = ~U[2030-01-01 00:00:00.000000Z]
+
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: nil,
+        value_fetched_at: nil,
+        refetch_after: refetch_after,
+        retries_count: 3
+      )
+
+      for {retries_count, stale_refetch_after} <- [
+            {2, ~U[2029-01-01 00:00:00.000000Z]},
+            {4, ~U[2029-01-01 00:00:00.000000Z]},
+            {3, refetch_after}
+          ] do
+        assert {:ok, %{address_current_token_balances: []}} =
+                 run_changes(
+                   %{
+                     address_hash: address_hash,
+                     token_contract_address_hash: token_contract_address_hash,
+                     block_number: 1,
+                     value: nil,
+                     value_fetched_at: nil,
+                     refetch_after: stale_refetch_after,
+                     retries_count: retries_count
+                   },
+                   options
+                 )
+      end
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert current_token_balance.retries_count == 3
+      assert Timex.equal?(current_token_balance.refetch_after, refetch_after)
+    end
+
+    test "a failure with the same retry count and a later refetch_after is recorded", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: nil,
+        value_fetched_at: nil,
+        refetch_after: ~U[2030-01-01 00:00:00.000000Z],
+        retries_count: 3
+      )
+
+      later_refetch_after = ~U[2031-01-01 00:00:00.000000Z]
+
+      assert {:ok, %{address_current_token_balances: [_]}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 1,
+                   value: nil,
+                   value_fetched_at: nil,
+                   refetch_after: later_refetch_after,
+                   retries_count: 3
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert current_token_balance.retries_count == 3
+      assert Timex.equal?(current_token_balance.refetch_after, later_refetch_after)
+    end
+
+    test "does not record retry metadata over a fetched balance of the same block", %{
+      address: %Address{hash: address_hash} = address,
+      token: %Token{contract_address_hash: token_contract_address_hash},
+      options: options
+    } do
+      insert(
+        :address_current_token_balance,
+        address: address,
+        block_number: 1,
+        token_contract_address_hash: token_contract_address_hash,
+        value: 200,
+        value_fetched_at: Timex.shift(Timex.now(), minutes: -1),
+        refetch_after: nil,
+        retries_count: nil
+      )
+
+      assert {:ok, %{address_current_token_balances: []}} =
+               run_changes(
+                 %{
+                   address_hash: address_hash,
+                   token_contract_address_hash: token_contract_address_hash,
+                   block_number: 1,
+                   value: nil,
+                   value_fetched_at: nil,
+                   refetch_after: ~U[2030-01-01 00:00:00.000000Z],
+                   retries_count: 1
+                 },
+                 options
+               )
+
+      current_token_balance = Repo.get_by(CurrentTokenBalance, address_hash: address_hash)
+
+      assert Decimal.eq?(current_token_balance.value, 200)
+      assert is_nil(current_token_balance.retries_count)
+    end
+
     test "a non-holder updating to a holder increases the holder_count", %{
       address: %Address{hash: address_hash} = address,
       token: %Token{contract_address_hash: token_contract_address_hash},

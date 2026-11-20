@@ -243,7 +243,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupplyTest do
   defp expect_total_supply(hash_string, reply) do
     test_pid = self()
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_call", params: [params, "latest"]}], _opts ->
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_call", params: [params, block_tag]}], _opts ->
+      assert block_tag == EthereumJSONRPC.integer_to_quantity(BlockNumber.get_max())
       assert params.data == @total_supply_selector
       assert params.to == hash_string
       send(test_pid, {:rpc, hash_string})
@@ -254,7 +255,8 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupplyTest do
   defp expect_blocking_total_supply(hash_string) do
     test_pid = self()
 
-    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_call", params: [params, "latest"]}], _opts ->
+    expect(EthereumJSONRPC.Mox, :json_rpc, fn [%{id: id, method: "eth_call", params: [params, block_tag]}], _opts ->
+      assert block_tag == EthereumJSONRPC.integer_to_quantity(BlockNumber.get_max())
       assert params.to == hash_string
       send(test_pid, {:rpc, hash_string})
       send(test_pid, {:blocked, self()})

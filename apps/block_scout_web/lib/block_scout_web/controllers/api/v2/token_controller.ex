@@ -12,9 +12,11 @@ defmodule BlockScoutWeb.API.V2.TokenController do
   alias BlockScoutWeb.API.V2.{AddressView, TransactionView}
   alias BlockScoutWeb.Schemas.API.V2.ErrorResponses.NotFoundResponse
   alias Explorer.Chain
-  alias Explorer.Chain.{Address, BridgedToken, Token, Token.Instance, Token.UIMultiplierChange}
+  alias Explorer.Chain.{Address, BridgedToken, SmartContract, Token, Token.Instance, Token.UIMultiplierChange}
+  alias Explorer.Chain.Address.CurrentTokenBalance
   alias Explorer.Migrator.BackfillMetadataURL
   alias Indexer.Fetcher.OnDemand.NFTCollectionMetadataRefetch, as: NFTCollectionMetadataRefetchOnDemand
+  alias Indexer.Fetcher.OnDemand.TokenBalance, as: TokenBalanceOnDemand
   alias Indexer.Fetcher.OnDemand.TokenInstanceMetadataRefetch, as: TokenInstanceMetadataRefetchOnDemand
   alias Indexer.Fetcher.OnDemand.TokenTotalSupply, as: TokenTotalSupplyOnDemand
   alias Indexer.Fetcher.TokenInstance.Helper, as: TokenInstanceHelper
@@ -93,7 +95,7 @@ defmodule BlockScoutWeb.API.V2.TokenController do
     description: "Retrieves detailed information for a specific token identified by its contract address.",
     parameters: [address_hash_param() | base_params()],
     responses: [
-      ok: {"Detailed information about the specified token.", "application/json", Schemas.Token.Response},
+      ok: {"Detailed information about the specified token.", "application/json", Schemas.Token.DetailResponse},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()
     ]
@@ -109,32 +111,63 @@ defmodule BlockScoutWeb.API.V2.TokenController do
          {:ok, false} <- AccessHelper.restricted_access?(address_hash_string, params),
          {:not_found, {:ok, token}} <- {:not_found, Chain.token_from_address_hash(address_hash, @token_options)} do
       TokenTotalSupplyOnDemand.trigger_fetch(ip, token)
+      burn_address_balances = burn_address_balances(ip, token)
 
       conn
-      |> token_response(token, address_hash)
+      |> token_response(token, address_hash, burn_address_balances)
     end
   end
 
+  # Current balance rows of the burn addresses for a fungible token. Tokens
+  # indexed before these balances were tracked have no row for some burn
+  # address, so a fetch of the missing or unfetched ones is scheduled, unless a
+  # previous failure set a `refetch_after` still in the future; the response
+  # carries what is indexed so far.
+  defp burn_address_balances(ip, %Token{} = token) do
+    if token.type in CurrentTokenBalance.fungible_token_types() do
+      balances = CurrentTokenBalance.burn_address_balances(token.contract_address_hash, @api_true)
+
+      to_fetch =
+        Enum.flat_map(SmartContract.burn_address_hashes(), fn address_hash ->
+          case Map.fetch(balances, address_hash) do
+            :error -> [{address_hash, 0}]
+            # credo:disable-for-next-line Credo.Check.Refactor.Nesting
+            {:ok, %{value: nil} = row} -> if(refetch_due?(row), do: [{address_hash, row.retries_count || 0}], else: [])
+            {:ok, _fetched} -> []
+          end
+        end)
+
+      TokenBalanceOnDemand.trigger_current_fetch(ip, to_fetch, token)
+
+      balances
+    else
+      %{}
+    end
+  end
+
+  defp refetch_due?(%{refetch_after: nil}), do: true
+  defp refetch_due?(%{refetch_after: refetch_after}), do: DateTime.compare(refetch_after, DateTime.utc_now()) == :lt
+
   if @bridged_tokens_enabled do
-    defp token_response(conn, token, address_hash) do
+    defp token_response(conn, token, address_hash, burn_address_balances) do
       if token.bridged do
         bridged_token =
           Chain.select_repo(@api_true).get_by(BridgedToken, home_token_contract_address_hash: address_hash)
 
         conn
         |> put_status(200)
-        |> render(:bridged_token, %{token: {token, bridged_token}})
+        |> render(:bridged_token, %{token: {token, bridged_token}, burn_address_balances: burn_address_balances})
       else
         conn
         |> put_status(200)
-        |> render(:token, %{token: token})
+        |> render(:token, %{token: token, burn_address_balances: burn_address_balances})
       end
     end
   else
-    defp token_response(conn, token, _address_hash) do
+    defp token_response(conn, token, _address_hash, burn_address_balances) do
       conn
       |> put_status(200)
-      |> render(:token, %{token: token})
+      |> render(:token, %{token: token, burn_address_balances: burn_address_balances})
     end
   end
 

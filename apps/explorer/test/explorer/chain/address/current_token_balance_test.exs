@@ -293,4 +293,104 @@ defmodule Explorer.Chain.Address.CurrentTokenBalanceTest do
       assert CurrentTokenBalance.count_token_holders_from_token_hash(contract_address_hash) == 2
     end
   end
+
+  describe "record_backfill_failures/1" do
+    setup do
+      %{
+        token: insert(:token, type: "ERC-20"),
+        zero_address: insert(:address, hash: "0x0000000000000000000000000000000000000000")
+      }
+    end
+
+    defp failure(token, address, retries_count, refetch_after) do
+      %{
+        address_hash: to_string(address.hash),
+        token_contract_address_hash: to_string(token.contract_address_hash),
+        token_type: "ERC-20",
+        block_number: 20,
+        retries_count: retries_count,
+        refetch_after: refetch_after
+      }
+    end
+
+    defp zero_address_ctb(token) do
+      Repo.get_by!(CurrentTokenBalance,
+        address_hash: "0x0000000000000000000000000000000000000000",
+        token_contract_address_hash: token.contract_address_hash
+      )
+    end
+
+    test "inserts a missing balance as unfetched with its retry state", %{token: token, zero_address: zero_address} do
+      refetch_after = ~U[2030-01-01 00:00:00.000000Z]
+
+      assert CurrentTokenBalance.record_backfill_failures([failure(token, zero_address, 1, refetch_after)]) == 1
+
+      ctb = zero_address_ctb(token)
+      assert is_nil(ctb.value)
+      assert is_nil(ctb.value_fetched_at)
+      assert ctb.block_number == 20
+      assert ctb.retries_count == 1
+      assert Timex.equal?(ctb.refetch_after, refetch_after)
+    end
+
+    test "leaves a fetched balance unchanged", %{token: token, zero_address: zero_address} do
+      fetched_at = ~U[2026-01-01 00:00:00.000000Z]
+
+      insert(:address_current_token_balance,
+        address: zero_address,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-20",
+        block_number: 10,
+        value: 5,
+        value_fetched_at: fetched_at,
+        retries_count: nil,
+        refetch_after: nil
+      )
+
+      assert CurrentTokenBalance.record_backfill_failures([
+               failure(token, zero_address, 1, ~U[2030-01-01 00:00:00.000000Z])
+             ]) == 0
+
+      ctb = zero_address_ctb(token)
+      assert Decimal.eq?(ctb.value, 5)
+      assert Timex.equal?(ctb.value_fetched_at, fetched_at)
+      assert ctb.block_number == 10
+      assert is_nil(ctb.retries_count)
+    end
+
+    test "advances the retry state of a never fetched balance and never moves it back", %{
+      token: token,
+      zero_address: zero_address
+    } do
+      insert(:address_current_token_balance,
+        address: zero_address,
+        token_contract_address_hash: token.contract_address_hash,
+        token_type: "ERC-20",
+        block_number: 10,
+        value: nil,
+        value_fetched_at: nil,
+        retries_count: 2,
+        refetch_after: ~U[2030-01-01 00:00:00.000000Z]
+      )
+
+      # lower count, then same count with an earlier deadline: ignored
+      assert CurrentTokenBalance.record_backfill_failures([
+               failure(token, zero_address, 1, ~U[2031-01-01 00:00:00.000000Z])
+             ]) == 0
+
+      assert CurrentTokenBalance.record_backfill_failures([
+               failure(token, zero_address, 2, ~U[2029-01-01 00:00:00.000000Z])
+             ]) == 0
+
+      # higher count: recorded, block kept
+      assert CurrentTokenBalance.record_backfill_failures([
+               failure(token, zero_address, 3, ~U[2031-01-01 00:00:00.000000Z])
+             ]) == 1
+
+      ctb = zero_address_ctb(token)
+      assert ctb.retries_count == 3
+      assert Timex.equal?(ctb.refetch_after, ~U[2031-01-01 00:00:00.000000Z])
+      assert ctb.block_number == 10
+    end
+  end
 end
