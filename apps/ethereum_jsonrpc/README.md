@@ -41,7 +41,7 @@ json_rpc_named_arguments = [
     urls: ["http://localhost:8545"],
     trace_urls: ["http://localhost:8545"],
     eth_call_urls: ["http://localhost:8545"],
-    fallback_urls: [],
+    fallback_urls: nil,
     method_to_url: [
       eth_call: :eth_call,
       debug_traceTransaction: :trace,
@@ -58,7 +58,8 @@ json_rpc_named_arguments = [
 
 `method_to_url` routes methods to the `trace` or `eth_call` URL pools. Any method that is not listed goes to `urls`.
 When several URLs are configured for a pool, each request picks one at random. Endpoints that fail repeatedly are
-replaced by the matching `fallback_*` URLs until they recover.
+replaced by the matching `fallback_*` URLs until they recover. Leave `fallback_*` options unset (`nil`) when
+there is no fallback: an empty list counts as a configured fallback with nothing to switch to.
 
 Inside Blockscout, these arguments are not written by hand. The per-variant config files build them from environment
 variables:

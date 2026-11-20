@@ -194,7 +194,8 @@ export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Nethermind.HTTPWebSocket
 mix test --exclude no_nethermind
 ```
 
-The node URLs are defined in `apps/ethereum_jsonrpc/test/support/ethereum_jsonrpc/case/nethermind/http_websocket.ex`.
+The node URLs are defined in `apps/ethereum_jsonrpc/test/support/ethereum_jsonrpc/case/nethermind/http_websocket.ex` (HTTP)
+and `apps/ethereum_jsonrpc/test/support/ethereum_jsonrpc/web_socket/case/nethermind.ex` (WebSocket).
 
 ### Geth
 
@@ -212,4 +213,5 @@ export ETHEREUM_JSONRPC_CASE=EthereumJSONRPC.Case.Geth.HTTPWebSocket
 mix test --exclude no_geth
 ```
 
-The node URLs are defined in `apps/ethereum_jsonrpc/test/support/ethereum_jsonrpc/case/geth/http_websocket.ex`.
+The node URLs are defined in `apps/ethereum_jsonrpc/test/support/ethereum_jsonrpc/case/geth/http_websocket.ex` (HTTP)
+and `apps/ethereum_jsonrpc/test/support/ethereum_jsonrpc/web_socket/case/geth.ex` (WebSocket).
