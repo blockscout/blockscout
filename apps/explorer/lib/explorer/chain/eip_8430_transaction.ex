@@ -10,14 +10,15 @@ defmodule Explorer.Chain.EIP8430Transaction do
   alias Explorer.Chain.{Data, Hash, JSONValue, Transaction}
 
   @optional_attrs ~w(metadata payer sender_auth payer_auth account_changes)a
-  @required_attrs ~w(transaction_hash has_named_sender nonce_key valid_after valid_before payer_type)a
+  @required_attrs ~w(transaction_hash has_named_sender nonce_key valid_after valid_before payer_type
+                     resolved_payer_address_hash committed_phases_count)a
 
   @payer_types [:self, :open, :named, :unknown]
 
   @typedoc """
   The meaning of the `payer` value of the transaction:
     * `:self` - the transaction has no payer value, the sender pays.
-    * `:open` - the payer is not named in the transaction. Only the receipt contains its address.
+    * `:open` - the payer is not named in the transaction. Only `resolved_payer_address_hash` contains its address.
     * `:named` - the transaction contains a payer address. It can be equal to the sender.
     * `:unknown` - the payer value has an unexpected form or is the zero address.
   """
@@ -32,10 +33,12 @@ defmodule Explorer.Chain.EIP8430Transaction do
     * `valid_before` - the upper time bound as the node returns it, in seconds or in milliseconds. `0` means no bound.
     * `metadata` - opaque bytes.
     * `payer_type` - the meaning of the `payer` value.
-    * `payer` - the `payer` value of the node without change. It is not the resolved payer from the receipt.
+    * `payer` - the `payer` value of the node without change. It is not the resolved payer, see `resolved_payer_address_hash`.
     * `sender_auth` - the authorization bytes of the sender.
     * `payer_auth` - the authorization bytes of the payer.
     * `account_changes` - the account changes in the form that the node returns.
+    * `resolved_payer_address_hash` - the address of the resolved payer from the receipt: the account that pays the fee.
+    * `committed_phases_count` - the number of call phases that committed, from the receipt.
   """
   @type to_import :: %{
           transaction_hash: binary(),
@@ -48,7 +51,9 @@ defmodule Explorer.Chain.EIP8430Transaction do
           payer: binary() | nil,
           sender_auth: binary() | nil,
           payer_auth: binary() | nil,
-          account_changes: JSONValue.t()
+          account_changes: JSONValue.t(),
+          resolved_payer_address_hash: binary() | nil,
+          committed_phases_count: non_neg_integer() | nil
         }
 
   @typedoc """
@@ -59,10 +64,12 @@ defmodule Explorer.Chain.EIP8430Transaction do
     * `valid_before` - the upper time bound as the node returns it, in seconds or in milliseconds. `0` means no bound.
     * `metadata` - opaque bytes.
     * `payer_type` - the meaning of the `payer` value.
-    * `payer` - the `payer` value of the node without change. It is not the resolved payer from the receipt.
+    * `payer` - the `payer` value of the node without change. It is not the resolved payer, see `resolved_payer_address_hash`.
     * `sender_auth` - the authorization bytes of the sender.
     * `payer_auth` - the authorization bytes of the payer.
     * `account_changes` - the account changes in the form that the node returns.
+    * `resolved_payer_address_hash` - the address of the resolved payer from the receipt: the account that pays the fee.
+    * `committed_phases_count` - the number of call phases that committed, from the receipt.
     * `inserted_at` - timestamp indicating when the row was created.
     * `updated_at` - timestamp indicating when the row was last updated.
     * `transaction` - an instance of `Explorer.Chain.Transaction` referenced by `transaction_hash`.
@@ -79,6 +86,8 @@ defmodule Explorer.Chain.EIP8430Transaction do
     field(:sender_auth, Data)
     field(:payer_auth, Data)
     field(:account_changes, JSONValue)
+    field(:resolved_payer_address_hash, Hash.Address, null: false)
+    field(:committed_phases_count, :integer, null: false)
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
