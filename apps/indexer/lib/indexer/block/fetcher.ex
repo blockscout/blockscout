@@ -58,6 +58,7 @@ defmodule Indexer.Block.Fetcher do
     AddressCoinBalances,
     Addresses,
     AddressTokenBalances,
+    EIP8430Transactions,
     FheOperations,
     MintTransfers,
     SignedAuthorizations,
@@ -253,6 +254,7 @@ defmodule Indexer.Block.Fetcher do
            transactions: %{params: transactions_with_receipts},
            withdrawals: %{params: withdrawals_params},
            signed_authorizations: %{params: SignedAuthorizations.parse(transactions_with_receipts)},
+           eip_8430_transactions: %{params: EIP8430Transactions.parse(transactions_with_receipts)},
            fhe_operations: %{params: fhe_operations}
          },
          chain_type_import_options =

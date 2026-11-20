@@ -157,6 +157,15 @@ defmodule EthereumJSONRPC.Transaction do
    * `"maxFeePerGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of gas used. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"type"` - `t:EthereumJSONRPC.quantity/0` denotes transaction type. Introduced in [EIP-1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)
    * `"authorizationList"` - `t:list/0` of `t:EthereumJSONRPC.SignedAuthorization.t/0` authorization tuples. Introduced in [EIP-7702](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-7702.md)
+   * `"sender"` - the sender of an EIP-8430 transaction in wire form: absent, `nil`, or `t:EthereumJSONRPC.address/0` of the named sender.
+   * `"nonceKey"` - `t:EthereumJSONRPC.quantity/0` of the nonce channel of an EIP-8430 transaction.
+   * `"validAfter"` - `t:EthereumJSONRPC.quantity/0` of the lower time bound of an EIP-8430 transaction, in seconds or in milliseconds. `0` means no bound.
+   * `"validBefore"` - `t:EthereumJSONRPC.quantity/0` of the upper time bound of an EIP-8430 transaction, in seconds or in milliseconds. `0` means no bound.
+   * `"metadata"` - `t:EthereumJSONRPC.data/0` with opaque bytes of an EIP-8430 transaction.
+   * `"payer"` - the payer of an EIP-8430 transaction in wire form: absent or `nil` for self-pay, `0x00` for an open payer, or `t:EthereumJSONRPC.address/0` of the named payer.
+   * `"senderAuth"` - `t:EthereumJSONRPC.data/0` with the sender authorization of an EIP-8430 transaction.
+   * `"payerAuth"` - `t:EthereumJSONRPC.data/0` with the payer authorization of an EIP-8430 transaction.
+   * `"accountChanges"` - `t:list/0` of the account change entries of an EIP-8430 transaction.
    #{case @chain_type do
     :ethereum -> """
        * `"maxFeePerBlobGas"` - `t:EthereumJSONRPC.quantity/0` of wei to denote max fee per unit of blob gas used. Introduced in [EIP-4844](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-4844.md)
@@ -200,6 +209,7 @@ defmodule EthereumJSONRPC.Transaction do
         }
 
   @type params :: %{
+          optional(:eip_8430_fields) => eip_8430_fields(),
           unquote_splicing(@chain_type_fields),
           unquote_splicing(@chain_identity_fields),
           block_hash: EthereumJSONRPC.hash(),
@@ -221,6 +231,22 @@ defmodule EthereumJSONRPC.Transaction do
           max_fee_per_gas: non_neg_integer(),
           type: non_neg_integer(),
           authorization_list: [SignedAuthorization.params()]
+        }
+
+  @typedoc """
+  The fields that only EIP-8430 transactions (EIP-2718 type `0x79`) have, in the form that the
+  node returns. An absent field is `nil`.
+  """
+  @type eip_8430_fields :: %{
+          sender: String.t() | nil,
+          nonce_key: non_neg_integer() | nil,
+          valid_after: non_neg_integer() | nil,
+          valid_before: non_neg_integer() | nil,
+          metadata: String.t() | nil,
+          payer: String.t() | nil,
+          sender_auth: String.t() | nil,
+          payer_auth: String.t() | nil,
+          account_changes: any()
         }
 
   @doc """
@@ -355,6 +381,7 @@ defmodule EthereumJSONRPC.Transaction do
     |> do_elixir_to_params()
     |> chain_type_fields(normalized_elixir)
     |> chain_identity_fields(normalized_elixir)
+    |> transaction_type_fields(normalized_elixir)
   end
 
   # Converts a map of the transaction parameters to the map with the corresponding atom parameters.
@@ -661,6 +688,30 @@ defmodule EthereumJSONRPC.Transaction do
     end)
   end
 
+  # Adds the fields that only transactions of a specific EIP-2718 type have. Unlike
+  # `chain_type_fields/2`, this step applies to all chain types.
+  #
+  # For EIP-8430 transactions the fields go under the nested `:eip_8430_fields` key in the form
+  # that the node returns. An absent field becomes `nil`. The step does not interpret `sender`
+  # and `payer`: this function also handles pending transactions on every poll, so the
+  # classification and its log warnings belong to the block import.
+  @spec transaction_type_fields(%{atom() => any()}, %{String.t() => any()}) :: %{atom() => any()}
+  defp transaction_type_fields(params, %{"type" => @eip_8430_transaction_type} = elixir) do
+    Map.put(params, :eip_8430_fields, %{
+      sender: Map.get(elixir, "sender"),
+      nonce_key: Map.get(elixir, "nonceKey"),
+      valid_after: Map.get(elixir, "validAfter"),
+      valid_before: Map.get(elixir, "validBefore"),
+      metadata: Map.get(elixir, "metadata"),
+      payer: Map.get(elixir, "payer"),
+      sender_auth: Map.get(elixir, "senderAuth"),
+      payer_auth: Map.get(elixir, "payerAuth"),
+      account_changes: Map.get(elixir, "accountChanges")
+    })
+  end
+
+  defp transaction_type_fields(params, _elixir), do: params
+
   defp chain_type_fields(params, elixir) do
     case chain_type() do
       :ethereum ->
@@ -887,6 +938,17 @@ defmodule EthereumJSONRPC.Transaction do
 
   defp entry_to_elixir({"authorizationList" = key, value}),
     do: {key, value |> Enum.map(&SignedAuthorization.to_params/1)}
+
+  # EIP-8430 fields that pass through without conversion. `sender` and `payer` can be `nil`.
+  defp entry_to_elixir({key, value})
+       when key in ~w(sender metadata payer senderAuth payerAuth accountChanges),
+       do: {key, value}
+
+  # EIP-8430 quantities. As for the standard quantities, a malformed hex value raises
+  # `ArgumentError`.
+  defp entry_to_elixir({key, quantity}) when key in ~w(nonceKey validAfter validBefore) do
+    {key, quantity_to_integer(quantity)}
+  end
 
   # Celo-specific fields
   if @chain_identity == {:optimism, :celo} do
