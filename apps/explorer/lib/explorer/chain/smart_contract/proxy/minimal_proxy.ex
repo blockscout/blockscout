@@ -12,6 +12,10 @@ defmodule Explorer.Chain.SmartContract.Proxy.MinimalProxy do
   Only bytecode up to #{@max_bytecode_byte_size} bytes is considered. Standard minimal proxies are
   well below that size; longer bytecode is treated as a different contract shape and skipped to
   avoid false positives from incidental pattern matches in large contracts.
+
+  This is a heuristic: the bytecode around the matched sequence is not checked, so it can contain
+  arbitrary logic, and the sequence itself can be unreachable data. The detected implementation is
+  therefore informational only and must not be used to treat the proxy as verified.
   """
 
   alias Explorer.Chain.Hash

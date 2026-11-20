@@ -13,7 +13,6 @@ defmodule Explorer.Etherscan.Contracts do
     ]
 
   alias Explorer.Chain.{Address, Hash, SmartContract}
-  alias Explorer.Chain.SmartContract.Proxy
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Repo
 
@@ -85,20 +84,34 @@ defmodule Explorer.Etherscan.Contracts do
     end
   end
 
-  def append_proxy_info(%Address{smart_contract: smart_contract} = address) when not is_nil(smart_contract) do
-    updated_smart_contract =
-      if Proxy.proxy_contract?(smart_contract) do
-        implementation = Implementation.get_implementation(smart_contract)
-
+  def append_proxy_info(%Address{hash: address_hash, smart_contract: smart_contract} = address)
+      when not is_nil(smart_contract) do
+    # For an unverified address, `smart_contract` is the verified contract of its implementation or of its
+    # bytecode twin, i.e. a contract of another address. Proxy info must describe the requested address,
+    # otherwise a proxy answered with its implementation's sources would be reported as a non-proxy.
+    proxy_smart_contract =
+      if smart_contract.address_hash == address_hash do
         smart_contract
-        |> Map.put(:is_proxy, true)
-        |> Map.put(
-          :implementation_address_hash_strings,
-          implementation.address_hashes
-        )
       else
+        %{smart_contract | address_hash: address_hash, metadata_from_verified_bytecode_twin: true}
+      end
+
+    # `get_implementation/1` returns `nil` when no implementation is found, so proxy status is derived
+    # from the same result as the implementation addresses to keep both consistent.
+    implementation_address_hashes =
+      case Implementation.get_implementation(proxy_smart_contract) do
+        %Implementation{address_hashes: address_hashes} -> address_hashes
+        _ -> []
+      end
+
+    updated_smart_contract =
+      if Enum.empty?(implementation_address_hashes) do
         smart_contract
         |> Map.put(:is_proxy, false)
+      else
+        smart_contract
+        |> Map.put(:is_proxy, true)
+        |> Map.put(:implementation_address_hash_strings, implementation_address_hashes)
       end
 
     address

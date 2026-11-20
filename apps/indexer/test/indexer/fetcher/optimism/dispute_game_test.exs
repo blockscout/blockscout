@@ -4,6 +4,7 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
     use EthereumJSONRPC.Case, async: false
     use Explorer.DataCase
 
+    import ExUnit.CaptureLog
     import Mox
 
     alias Explorer.Application.Constants
@@ -274,6 +275,43 @@ if Application.get_env(:explorer, :chain_type) == :optimism do
 
         assert "1753329835" ==
                  Constants.get_constant_value(Withdrawal.respected_game_type_updated_at_constant())
+      end
+
+      test "retries reading the game count if the getter returns an empty response", %{
+        json_rpc_named_arguments: json_rpc_named_arguments
+      } do
+        game_count_calls = :counters.new(1, [])
+
+        expect(
+          EthereumJSONRPC.Mox,
+          :json_rpc,
+          4,
+          fn
+            %{params: [%{data: "0x4d1975b4"}, _]}, _options ->
+              :counters.add(game_count_calls, 1, 1)
+
+              # the first response is empty (e.g. the RPC node doesn't see the contract yet)
+              if :counters.get(game_count_calls, 1) == 1, do: {:ok, "0x"}, else: {:ok, "0x5"}
+
+            request, _options ->
+              {:ok, mox_handle_continue_calls(request).result}
+          end
+        )
+
+        log =
+          capture_log(fn ->
+            assert {:noreply, %{start_index: 4, end_index: 4}} =
+                     DisputeGame.handle_info(:continue, %{
+                       dispute_game_factory: "0x3078000000000000000000000000000000000001",
+                       optimism_portal: "0x3078000000000000000000000000000000000002",
+                       start_index: 4,
+                       end_index: 3,
+                       json_rpc_named_arguments: json_rpc_named_arguments
+                     })
+          end)
+
+        assert log =~ "Cannot fetch game count from the DisputeGameFactory contract. Error: \"empty response\""
+        assert :counters.get(game_count_calls, 1) == 2
       end
     end
   end

@@ -6,33 +6,24 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   require Logger
   import EthereumJSONRPC, only: [id_to_params: 1, integer_to_quantity: 1, json_rpc: 2, request: 1]
 
+  alias EthereumJSONRPC.BatchCorrelation
+
   def fetch_first_trace(transactions_params, json_rpc_named_arguments, traces_module)
       when is_list(transactions_params) do
     id_to_params = id_to_params(transactions_params)
 
-    trace_replay_transaction_response =
-      id_to_params
-      |> trace_replay_transaction_requests()
-      |> json_rpc(json_rpc_named_arguments)
-
-    case trace_replay_transaction_response do
-      {:ok, responses} ->
-        case trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module) do
-          {:ok, [first_trace]} ->
-            %{block_hash: block_hash, block_number: block_number} =
-              transactions_params
-              |> Enum.at(0)
-
-            {:ok,
-             [
-               %{
-                 first_trace: first_trace,
-                 block_hash: block_hash,
-                 block_number: block_number,
-                 json_rpc_named_arguments: json_rpc_named_arguments
-               }
-             ]}
-
+    case BatchCorrelation.fetch(id_to_params, &trace_replay_transaction_requests/1, json_rpc_named_arguments) do
+      {:ok, {responses, uncorrelated, unmatched}, refetch_result} ->
+        # errors of the replies go first (the ones that cannot be attributed
+        # to a transaction are returned as they are), then the failure of a
+        # separately sent request, then the transactions left without a reply
+        with {:ok, traces} <-
+               trace_replay_transaction_responses_to_first_trace_params(responses, id_to_params, traces_module),
+             :ok <- BatchCorrelation.check_errors([], uncorrelated, & &1),
+             :ok <- refetch_result,
+             :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
+          first_trace_result(traces, transactions_params, json_rpc_named_arguments)
+        else
           {:error, error} ->
             Logger.error(inspect(error))
             {:error, error}
@@ -44,19 +35,65 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
       {:error, [error]} ->
         Logger.error(inspect(error))
         {:error, error}
+
+      {:error, error} ->
+        Logger.error(inspect(error))
+        {:error, error}
     end
   end
+
+  # The replies aren't ordered as the requests, so the block of the trace is
+  # the block of the transaction the trace belongs to, not of the first
+  # requested one.
+  defp first_trace_result(
+         [%{transaction_hash: transaction_hash} = first_trace | _],
+         transactions_params,
+         named_arguments
+       ) do
+    %{block_hash: block_hash, block_number: block_number} =
+      Enum.find(transactions_params, &(&1.hash_data == transaction_hash))
+
+    {:ok,
+     [
+       %{
+         first_trace: first_trace,
+         block_hash: block_hash,
+         block_number: block_number,
+         json_rpc_named_arguments: named_arguments
+       }
+     ]}
+  end
+
+  # the transaction has no traces
+  defp first_trace_result([], _transactions_params, _named_arguments), do: {:error, :not_found}
 
   def fetch_block_internal_transactions(block_numbers, json_rpc_named_arguments, traces_module)
       when is_list(block_numbers) do
     id_to_params = id_to_params(block_numbers)
 
-    with {:ok, responses} <-
-           id_to_params
-           |> trace_replay_block_transactions_requests()
-           |> json_rpc(json_rpc_named_arguments) do
+    with {:ok, {responses, uncorrelated, unmatched}, refetch_result} <-
+           BatchCorrelation.fetch(
+             id_to_params,
+             &trace_replay_block_transactions_requests/1,
+             json_rpc_named_arguments
+           ),
+         # all errors go first, then the failure of a separately sent request,
+         # then the blocks left without a reply
+         :ok <- check_block_errors(responses, uncorrelated, id_to_params),
+         :ok <- refetch_result,
+         :ok <- BatchCorrelation.check_no_missing_responses(unmatched, id_to_params) do
       trace_replay_block_transactions_responses_to_internal_transactions_params(responses, id_to_params, traces_module)
     end
+  end
+
+  # Error replies matched to a block are annotated with its number. Errors of
+  # replies that cannot be attributed are returned as they are, so they never
+  # mark another block.
+  defp check_block_errors(responses, uncorrelated, id_to_params) do
+    BatchCorrelation.check_errors(responses, uncorrelated, fn response ->
+      {:error, annotated_error} = trace_replay_block_transactions_response_to_traces(response, id_to_params)
+      annotated_error
+    end)
   end
 
   @doc """
@@ -92,7 +129,6 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   defp trace_replay_block_transactions_responses_to_traces(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&trace_replay_block_transactions_response_to_traces(&1, id_to_params))
     |> Enum.reduce(
       {:ok, []},
@@ -185,7 +221,6 @@ defmodule EthereumJSONRPC.TraceReplayBlockTransactions do
   defp trace_replay_transaction_responses_to_first_trace(responses, id_to_params)
        when is_list(responses) and is_map(id_to_params) do
     responses
-    |> EthereumJSONRPC.sanitize_responses(id_to_params)
     |> Enum.map(&trace_replay_transaction_response_to_first_trace(&1, id_to_params))
     |> Enum.reduce(
       {:ok, []},

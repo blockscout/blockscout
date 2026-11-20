@@ -78,6 +78,25 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
 
+  @doc """
+  Returns the highest block number below which every block is accounted for:
+  it is either imported or recorded in `missing_block_ranges`.
+
+  That is the upper boundary of the forward scanning, and it is returned only
+  when the whole chain below it has been scanned at least once since the process
+  started, which is the case in the bidirectional scanning once the backward
+  scanning has reached the first block. `nil` is returned before that, when
+  specific block ranges are configured, and when the process is not running or
+  does not answer in time: a block above the boundary that failed to import is
+  not recorded anywhere yet.
+  """
+  @spec settled_block_number() :: non_neg_integer() | nil
+  def settled_block_number do
+    GenServer.call(__MODULE__, :settled_block_number)
+  catch
+    :exit, _ -> nil
+  end
+
   @impl true
   def init(_) do
     {:ok, %{min_fetched_block_number: nil, max_fetched_block_number: nil}, {:continue, :ok}}
@@ -289,6 +308,20 @@ defmodule Indexer.Block.Catchup.MissingRangesCollector do
       %{min: min, max: max} ->
         {min, max}
     end
+  end
+
+  @impl true
+  def handle_call(
+        :settled_block_number,
+        _from,
+        %{first_check_completed?: true, min_fetched_block_number: _, max_fetched_block_number: max_number} = state
+      )
+      when is_integer(max_number) do
+    {:reply, max_number, state}
+  end
+
+  def handle_call(:settled_block_number, _from, state) do
+    {:reply, nil, state}
   end
 
   # Processes the next batch of future missing blocks when triggered by the scheduled check.

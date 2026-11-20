@@ -634,6 +634,24 @@ defmodule Indexer.Fetcher.InternalTransactionTest do
              )
     end
 
+    test "retries a block left without a reply instead of importing it as traced", %{
+      json_rpc_named_arguments: json_rpc_named_arguments
+    } do
+      if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
+        # the batch is answered, but the reply of the block is missing
+        expect(EthereumJSONRPC.Mox, :json_rpc, fn [_], _options -> {:ok, []} end)
+      end
+
+      block = insert(:block)
+      insert(:transaction) |> with_block(block)
+      block_hash = block.hash
+      insert(:pending_block_operation, block_hash: block_hash, block_number: block.number)
+
+      assert {:retry, [block.number]} == InternalTransaction.run([block.number], json_rpc_named_arguments)
+
+      assert %{block_hash: ^block_hash} = Repo.get(PendingBlockOperation, block_hash)
+    end
+
     test "handles failure by retrying only unique numbers", %{
       json_rpc_named_arguments: json_rpc_named_arguments
     } do

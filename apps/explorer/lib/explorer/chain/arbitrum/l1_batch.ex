@@ -25,7 +25,7 @@ defmodule Explorer.Chain.Arbitrum.L1Batch do
   @allowed_attrs @optional_attrs ++ @required_attrs
 
   @typedoc """
-  Descriptor of the L1 batch for Arbitrum rollups:
+  L1 batch descriptor for Arbitrum rollups:
     * `number` - The number of the Arbitrum batch.
     * `transactions_count` - The number of transactions in the batch.
     * `start_block` - The number of the first block in the batch.

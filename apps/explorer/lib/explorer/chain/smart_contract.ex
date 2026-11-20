@@ -803,8 +803,10 @@ defmodule Explorer.Chain.SmartContract do
     given address.
 
     This function searches the database for previously verified contracts that
-    have the same bytecode (identified by contract_code_md5) as the target
-    address. These "bytecode twins" allow users to view verified source code for
+    have the same bytecode as the target address. Candidates are located by
+    `contract_code_md5`, which serves only as an index key: since MD5 collisions
+    are cheap to produce, a candidate is accepted only if its bytecode is
+    byte-for-byte equal to the target's. These "bytecode twins" allow users to view verified source code for
     contracts that haven't been explicitly verified themselves.
 
     ## Parameters
@@ -834,8 +836,10 @@ defmodule Explorer.Chain.SmartContract do
     verified_bytecode_twin_contract_query =
       from(
         smart_contract in __MODULE__,
+        inner_join: twin_address in assoc(smart_contract, :address),
         where: smart_contract.contract_code_md5 == ^contract_code_md5,
         where: smart_contract.address_hash != ^target_address_hash,
+        where: twin_address.contract_code == ^target_address.contract_code,
         select: smart_contract,
         limit: 1
       )
