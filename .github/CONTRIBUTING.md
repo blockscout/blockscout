@@ -15,6 +15,10 @@ We welcome contributions that enhance the project and improve the overall qualit
 5. Push to the branch (`git push origin my-new-feature`)
 6. Create a new Pull Request targeting the `dev` branch. The title of Pull Request should follow [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and should start with `feat:`, `fix:`, `chore:`, `doc:`, `perf:`, `refactor:` prefix.
 
+## Contributor Licence Agreement
+
+Contributions are made under the [Blockscout Contributor Licence Agreement](../CLA.md). You may be asked to accept it before your pull request is merged.
+
 ## General
 
 * Keep `.dialyzer-ignore` as small as possible. Only add entries to suppress false positives that cannot be resolved by fixing the underlying type issue. Every new suppression should include a comment explaining why it is necessary and cannot be fixed properly.
