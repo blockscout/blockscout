@@ -17,6 +17,7 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
   alias Explorer.Account.CustomABI
   alias Explorer.Account.{Identity, TagAddress, TagTransaction, WatchlistAddress}
   alias Explorer.{Chain, Market, PagingOptions, Repo}
+  alias Explorer.ThirdPartyIntegrations.Keycloak
   alias Plug.CSRFProtection
 
   action_fallback(BlockScoutWeb.Account.API.V2.FallbackController)
@@ -75,6 +76,32 @@ defmodule BlockScoutWeb.Account.API.V2.UserController do
       })
     end
   end
+
+  def get_settings(conn, _params) do
+    with {:enabled, true} <- {:enabled, settings_enabled?()},
+         {:auth, %{uid: uid}} <- {:auth, current_user(conn)},
+         {:ok, settings} <- Keycloak.get_user_settings(uid) do
+      conn |> put_status(200) |> json(settings)
+    end
+  end
+
+  # body_params is used instead of params so that query string parameters are not treated as settings
+  def update_settings(conn, _params) do
+    with {:enabled, true} <- {:enabled, settings_enabled?()},
+         {:auth, %{uid: uid}} <- {:auth, current_user(conn)},
+         {:ok, diff} <- settings_diff(conn.body_params),
+         {:ok, settings} <- Keycloak.update_user_settings(uid, diff) do
+      conn |> put_status(200) |> json(settings)
+    end
+  end
+
+  # the settings pipeline nests the whole JSON body under "_json"; body params of
+  # other content types or of an empty body are not a JSON object
+  defp settings_diff(%{"_json" => %{} = diff}), do: {:ok, diff}
+  defp settings_diff(_body_params), do: {:invalid_settings, "Request body must be a JSON object"}
+
+  # settings are stored in Keycloak user attributes, so session uid must be a Keycloak user ID
+  defp settings_enabled?, do: Keycloak.enabled?() and not Auth0.enabled?()
 
   defp watchlist_token_stats(address_hash) do
     balances =
