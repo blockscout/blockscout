@@ -4,6 +4,7 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
   use Explorer.DataCase, async: false
 
   alias Explorer.Chain.Hash
+  alias Explorer.Repo.Replica1
   alias Explorer.Utility.AddressIdToAddressHash
   alias Explorer.Utility.AddressIdToAddressHash.Cache
 
@@ -22,7 +23,8 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
     end
 
     test "find_or_create_multiple/2 creates the missing mappings" do
-      existing = insert(:address_id_to_address_hash)
+      # not the factory: its explicit ids can take the ones the sequence gives next
+      existing = AddressIdToAddressHash.find_or_create(address_hash())
       new_hash = address_hash()
 
       mappings = AddressIdToAddressHash.find_or_create_multiple([existing.address_hash, new_hash, nil])
@@ -234,7 +236,83 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
     end
   end
 
+  describe "clearing on connect" do
+    test "clear/1 empties both tables, and is harmless while the cache isn't running" do
+      assert Cache.clear(:connection) == :ok
+
+      start_cache(100)
+
+      [{address_id, address_hash} = mapping] = random_mappings(1)
+      Cache.put([mapping], Repo)
+
+      assert Cache.get_ids([address_hash]) == {%{address_hash => address_id}, []}
+      assert Cache.clear(:connection) == :ok
+
+      assert Cache.get_ids([address_hash]) == {%{}, [address_hash]}
+      assert Cache.get_hashes([address_id]) == {%{}, [address_id]}
+    end
+
+    test "add_clear_on_connect/1 clears before the after_connect callback the options have" do
+      clear = {Cache, :clear, []}
+
+      assert Cache.add_clear_on_connect(pool_size: 1) == [pool_size: 1]
+
+      start_cache(100)
+
+      assert Cache.add_clear_on_connect(pool_size: 1)[:after_connect] == clear
+      assert Cache.add_clear_on_connect(after_connect: nil)[:after_connect] == clear
+
+      [{_address_id, address_hash} = mapping] = random_mappings(1)
+      Cache.put([mapping], Repo)
+
+      # the test process stands in for the connection, and the callback it had
+      # finds the cache cleared already
+      existing = fn connection -> send(connection, {:existing, Cache.get_ids([address_hash])}) end
+      Cache.add_clear_on_connect(after_connect: existing)[:after_connect].(self())
+
+      assert_received {:existing, {%{}, [^address_hash]}}
+
+      Cache.add_clear_on_connect(after_connect: {:erlang, :send, [:existing_mfa]})[:after_connect].(self())
+
+      assert_received :existing_mfa
+    end
+
+    test "Explorer.Repo and Explorer.Repo.Replica1 clear the cache when a connection connects" do
+      put_cache_config(100)
+
+      assert Repo.config()[:after_connect] == {Cache, :clear, []}
+      assert Replica1.config()[:after_connect] == {Cache, :clear, []}
+    end
+
+    test "a connection clears the cache before serving a query, and connects without the cache" do
+      put_cache_config(100)
+
+      # connections of their own, outside of the sandbox
+      options = Repo.config() |> Keyword.drop([:pool, :pool_size]) |> Keyword.put(:pool_size, 1)
+
+      without_cache = start_supervised!(Supervisor.child_spec({Postgrex, options}, id: :without_cache))
+      assert %{rows: [[1]]} = Postgrex.query!(without_cache, "SELECT 1", [])
+
+      start_supervised!(Cache)
+      [{_address_id, address_hash} = mapping] = random_mappings(1)
+      Cache.put([mapping], Repo)
+
+      with_cache = start_supervised!(Supervisor.child_spec({Postgrex, options}, id: :with_cache))
+      assert %{rows: [[1]]} = Postgrex.query!(with_cache, "SELECT 1", [])
+
+      # nothing to wait for: the connection serves queries only once it has cleared the cache
+      assert Cache.get_ids([address_hash]) == {%{}, [address_hash]}
+    end
+  end
+
   defp start_cache(max_size) do
+    put_cache_config(max_size)
+    start_supervised!(Cache)
+
+    :ok
+  end
+
+  defp put_cache_config(max_size) do
     initial_config = Application.get_env(:explorer, AddressIdToAddressHash)
 
     Application.put_env(
@@ -248,10 +326,6 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
         do: Application.put_env(:explorer, AddressIdToAddressHash, initial_config),
         else: Application.delete_env(:explorer, AddressIdToAddressHash)
     end)
-
-    start_supervised!(Cache)
-
-    :ok
   end
 
   defp random_mappings(count) do

@@ -7,13 +7,16 @@ defmodule Explorer.Repo do
   require Logger
 
   alias Explorer.Repo.ConfigHelper
+  alias Explorer.Utility.AddressIdToAddressHash.Cache, as: AddressIdToAddressHashCache
 
   @doc """
   Dynamically loads the repository url from the
   DATABASE_URL environment variable.
   """
   def init(_, opts) do
-    ConfigHelper.init_repo_module(__MODULE__, opts)
+    {:ok, opts} = ConfigHelper.init_repo_module(__MODULE__, opts)
+
+    {:ok, AddressIdToAddressHashCache.add_clear_on_connect(opts)}
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do
@@ -126,7 +129,9 @@ defmodule Explorer.Repo do
       read_only: true
 
     def init(_, opts) do
-      ConfigHelper.init_repo_module(__MODULE__, opts)
+      {:ok, opts} = ConfigHelper.init_repo_module(__MODULE__, opts)
+
+      {:ok, AddressIdToAddressHashCache.add_clear_on_connect(opts)}
     end
   end
 

@@ -5,16 +5,34 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
   `Explorer.Utility.AddressIdToAddressHash` in ETS, so that resolving them does
   not query the database every time.
 
-  A mapping is never changed or deleted once it is created, so a cached one needs
-  no invalidation. That holds for committed mappings only: a mapping created
-  inside a transaction is gone if the transaction rolls back, and the address
-  hash gets another id once it is created again. A rolled back mapping would stay
-  in the cache, so only the mappings read or created outside of a transaction are
-  cached, see `put/2`.
+  The application never changes or deletes a mapping once it is created, so a
+  cached one needs no invalidation as long as the database keeps it too. A cached
+  mapping the database has lost is dangerous: the `address_id` sequence gives its
+  id to another hash, and rows written with the cached id are attributed to the
+  wrong address, since nothing references the mappings with a foreign key. The
+  database loses mappings in two ways:
+
+    * A mapping created inside a transaction is gone if the transaction rolls
+      back, so only the mappings read or created outside of a transaction are
+      cached, see `put/2`.
+    * A failover to a lagging asynchronous replica, or a restore, loses the
+      latest committed mappings. The application reaches the new database only
+      through new connections, so the cache is cleared whenever a connection of
+      `Explorer.Repo` or `Explorer.Repo.Replica1` connects, before the connection
+      serves any query, see `add_clear_on_connect/1`. A reconnect after a
+      client-side timeout clears the cache as well, which costs only cache hits.
+      A read that is under way meanwhile can still cache what it got from the old
+      database, but only if its process stalls between the end of the read and
+      `put/2` until a connection has reconnected to the new one.
+
+  A connection pooler (PgBouncer and the like) can keep the connections of the
+  application open through a failover or a restore. The cache can't notice it
+  then, so the instances have to be restarted after a failover to an
+  asynchronous replica, or a restore, unless the cache is disabled.
 
   Each direction is kept in its own table. A table holds at most `:cache_max_size`
   entries of the `Explorer.Utility.AddressIdToAddressHash` config
-  (`ADDRESS_ID_CACHE_MAX_SIZE`); a pair cached in both tables takes about 225
+  (`CACHE_ADDRESS_ID_MAX_SIZE`); a pair cached in both tables takes about 225
   bytes. Every entry keeps the time of its last access, and once a table outgrows
   the limit, its least recently used entries are evicted until it is 10% below
   the limit.
@@ -57,6 +75,40 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
     evict(@hashes_table, max_size)
 
     {:noreply, state}
+  end
+
+  @doc """
+  Makes the given repo options clear the cache whenever a connection of the repo
+  pool connects, before the connection serves any query: DBConnection gives a
+  connection to its clients only once its `:after_connect` callback returns. A
+  callback the options already have runs after the clearing.
+
+  The options are returned as they are while the cache is disabled.
+  """
+  @spec add_clear_on_connect(Keyword.t()) :: Keyword.t()
+  def add_clear_on_connect(repo_options) do
+    if enabled?() do
+      Keyword.update(repo_options, :after_connect, with_clear(nil), &with_clear/1)
+    else
+      repo_options
+    end
+  end
+
+  @doc """
+  Empties the cache.
+
+  It is the `:after_connect` callback of the repo pools, so it never raises: a
+  callback that raises makes the connection reconnect over and over.
+  """
+  @spec clear(term()) :: :ok
+  def clear(_connection \\ nil) do
+    :ets.delete_all_objects(@ids_table)
+    :ets.delete_all_objects(@hashes_table)
+
+    :ok
+  rescue
+    # Nothing is cached while the cache isn't running.
+    ArgumentError -> :ok
   end
 
   @doc """
@@ -216,6 +268,20 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
         0
     end
   end
+
+  # The `:after_connect` callback that clears the cache and then runs the given
+  # one, if any.
+  defp with_clear(nil), do: {__MODULE__, :clear, []}
+
+  defp with_clear(after_connect) do
+    fn connection ->
+      clear(connection)
+      run_after_connect(after_connect, connection)
+    end
+  end
+
+  defp run_after_connect({module, function, args}, connection), do: apply(module, function, [connection | args])
+  defp run_after_connect(fun, connection), do: fun.(connection)
 
   defp running?, do: :ets.whereis(@ids_table) != :undefined
 
