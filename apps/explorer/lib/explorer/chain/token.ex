@@ -420,6 +420,10 @@ defmodule Explorer.Chain.Token do
 
   @doc """
   Lists the top `t:__MODULE__.t/0`'s'.
+
+  `filter` narrows the list down: a `0x`-prefixed address hash matches the token
+  with that contract address only, any other string is full-text searched in the
+  tokens' names and symbols.
   """
   @spec list_top(String.t() | nil, [
           Chain.paging_options()
@@ -438,29 +442,35 @@ defmodule Explorer.Chain.Token do
         :contract_address => :optional
       })
 
-    sorted_paginated_query =
-      Token
-      |> Chain.join_associations(necessity_by_association)
-      |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:contract_address_hash, options)
-      |> apply_filter(token_type)
-      |> SortingHelper.apply_sorting(sorting, @default_sorting)
-      |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
-
-    filtered_query =
-      case filter && Chain.string_to_address_hash(filter) do
-        {:ok, address_hash} ->
-          from(t in sorted_paginated_query, where: t.contract_address_hash == ^address_hash)
-
-        _ ->
-          case filter && filter !== "" && Search.prepare_search_term(filter) do
-            {:some, filter_term} -> apply_fts_filter(sorted_paginated_query, filter_term)
-            _ -> sorted_paginated_query
-          end
-      end
-
-    filtered_query
+    Token
+    |> Chain.join_associations(necessity_by_association)
+    |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:contract_address_hash, options)
+    |> apply_filter(token_type)
+    |> apply_search_filter(filter)
+    |> SortingHelper.apply_sorting(sorting, @default_sorting)
+    |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
     |> Chain.select_repo(options).all()
   end
+
+  defp apply_search_filter(query, filter) when is_binary(filter) do
+    filter = String.trim(filter)
+
+    # `Chain.string_to_address_hash/1` also accepts any 20-byte binary as raw
+    # hash bytes, so only 42-byte `0x`-prefixed input is treated as an address,
+    # otherwise a 20-character name would never be full-text searched
+    with "0x" <> _ when byte_size(filter) == 42 <- filter,
+         {:ok, address_hash} <- Chain.string_to_address_hash(filter) do
+      where(query, [token], token.contract_address_hash == ^address_hash)
+    else
+      _ ->
+        case Search.prepare_search_term(filter) do
+          {:some, filter_term} -> apply_fts_filter(query, filter_term)
+          :none -> query
+        end
+    end
+  end
+
+  defp apply_search_filter(query, _filter), do: query
 
   @doc """
   Applies full-text search filtering to a token query.

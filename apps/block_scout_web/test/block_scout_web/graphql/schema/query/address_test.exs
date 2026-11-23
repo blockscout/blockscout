@@ -2,6 +2,8 @@
 defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
   use BlockScoutWeb.ConnCase
 
+  alias Explorer.Chain.SmartContract
+
   describe "address field" do
     test "with valid argument 'hash', returns all expected fields", %{conn: conn} do
       address = insert(:address, fetched_coin_balance: 100)
@@ -98,39 +100,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
              }
     end
 
-    test "smart_contract language field returns all supported languages", %{conn: conn} do
-      for language <- [:solidity, :vyper, :yul, :geas] do
-        address = insert(:address, fetched_coin_balance: 100)
-        insert(:smart_contract, address_hash: address.hash, contract_code_md5: "123", language: language)
-
-        query = """
-        query ($hash: AddressHash!) {
-          address(hash: $hash) {
-            smart_contract {
-              language
-            }
-          }
-        }
-        """
-
-        variables = %{"hash" => to_string(address.hash)}
-
-        conn = get(conn, "/api/v1/graphql", query: query, variables: variables)
-
-        expected = language |> to_string() |> String.upcase()
-
-        assert %{
-                 "data" => %{
-                   "address" => %{
-                     "smart_contract" => %{
-                       "language" => ^expected
-                     }
-                   }
-                 }
-               } = json_response(conn, 200)
-      end
-    end
-
     test "errors for non-existent address hash", %{conn: conn} do
       address = build(:address)
 
@@ -182,6 +151,26 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.AddressTest do
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Argument "hash" has invalid value)
+    end
+  end
+
+  describe "smart_contract language enum" do
+    test "lists exactly the languages of SmartContract schema" do
+      enum_values = Absinthe.Schema.lookup_type(BlockScoutWeb.GraphQL.Schema, :language).values
+
+      assert enum_values |> Map.keys() |> Enum.sort() == SmartContract |> Ecto.Enum.values(:language) |> Enum.sort()
+    end
+
+    test "serializes a language beyond solidity/vyper/yul", %{conn: conn} do
+      contract = insert(:smart_contract, contract_code_md5: "123", language: :geas)
+      query = "query ($hash: AddressHash!) { address(hash: $hash) { smart_contract { language } } }"
+
+      response =
+        conn
+        |> get("/api/v1/graphql", query: query, variables: %{"hash" => to_string(contract.address_hash)})
+        |> json_response(200)
+
+      assert get_in(response, ["data", "address", "smart_contract", "language"]) == "GEAS"
     end
   end
 

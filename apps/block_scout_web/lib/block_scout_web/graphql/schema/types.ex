@@ -111,8 +111,6 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
 
   require BlockScoutWeb.GraphQL.Schema.{Transaction, SmartContracts}
 
-  alias Ecto.Enum
-
   use Absinthe.Schema.Notation
   use Absinthe.Relay.Schema.Notation, :modern
 
@@ -126,9 +124,10 @@ defmodule BlockScoutWeb.GraphQL.Schema.Types do
 
   alias BlockScoutWeb.GraphQL.Schema.SmartContracts, as: SmartContractsSchema
   alias BlockScoutWeb.GraphQL.Schema.Transaction, as: TransactionSchema
-  alias Explorer.Chain.SmartContract
 
-  enum(:language, values: Enum.values(SmartContract, :language))
+  # Single source of truth: the DB schema already includes the chain-type-specific
+  # languages (stylus_rust on arbitrum, scilla on zilliqa).
+  enum(:language, values: Ecto.Enum.values(Explorer.Chain.SmartContract, :language))
 
   import_types(Absinthe.Type.Custom)
   import_types(BlockScoutWeb.GraphQL.Schema.Scalars)
