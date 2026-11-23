@@ -1232,20 +1232,14 @@ defmodule Explorer.Token.MetadataRetrieverTest do
                 }}
     end
 
-    test "decodes base64 encoded json file (with unicode string) in tokenURI" do
-      data =
-        {:ok,
-         [
-           "data:application/json;base64,eyJkZXNjcmlwdGlvbiI6ICJQdW5rIERvbWFpbnMgZGlnaXRhbCBpZGVudGl0eSDDry4gVmlzaXQgaHR0cHM6Ly9wdW5rLmRvbWFpbnMvIn0="
-         ]}
+    test "decodes base64 encoded json with multibyte UTF-8 characters in tokenURI" do
+      name = "Ünïcödé Token"
+      description = "Multibyte check: café, 日本語, ✓, 🚀"
+      json = ~s({"name": "#{name}", "description": "#{description}"})
+      token_uri = "data:application/json;base64," <> Base.encode64(json)
 
-      assert MetadataRetriever.fetch_json(data) ==
-               {:ok,
-                %{
-                  metadata: %{
-                    "description" => "Punk Domains digital identity ï. Visit https://punk.domains/"
-                  }
-                }}
+      assert MetadataRetriever.fetch_json({:ok, [token_uri]}) ==
+               {:ok, %{metadata: %{"name" => name, "description" => description}}}
     end
 
     test "fetches image from ipfs link directly" do

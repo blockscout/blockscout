@@ -4,7 +4,7 @@ defmodule Explorer.Chain.TokenTest do
 
   import Explorer.Factory
 
-  alias Explorer.Chain.{Address, Token}
+  alias Explorer.Chain.{Address, Hash, Token}
   alias Explorer.Repo
 
   describe "cataloged_tokens/0" do
@@ -187,51 +187,6 @@ defmodule Explorer.Chain.TokenTest do
 
       assert Enum.all?(market_data, fn token -> is_nil(token.fiat_value) end)
     end
-
-    test "finds token by contract address hash" do
-      token = insert(:token, name: "Token that we search for", symbol: "ATK")
-      insert(:token)
-      insert(:token)
-      insert(:token)
-
-      address_hash_string = to_string(token.contract_address_hash)
-
-      results = Token.list_top(address_hash_string)
-
-      assert [%{name: "Token that we search for"}] = results
-    end
-
-    test "finds token by contract address hash when given mixed-case address" do
-      contract_address = insert(:contract_address, hash: "0xdAC17F958D2ee523a2206206994597C13D831ec7")
-      insert(:token, contract_address: contract_address, name: "Token that we search for", symbol: "ATK")
-      insert(:token)
-      insert(:token)
-      insert(:token)
-
-      results = Token.list_top("0xDAC17F958D2EE523A2206206994597C13D831EC7")
-
-      assert [%{name: "Token that we search for"}] = results
-    end
-
-    test "returns empty when searching with a valid address hash format that has no token" do
-      insert(:token, name: "Some Token", symbol: "STK")
-      non_existent_hash = "0xf000000000000000000000000000000000000000"
-
-      results = Token.list_top(non_existent_hash)
-
-      assert Enum.empty?(results)
-    end
-
-    test "falls back to full-text search for invalid address hash format" do
-      insert(:token, name: "0xINVALID_HEX Token", symbol: "IHT")
-      insert(:token)
-      insert(:token)
-      insert(:token)
-
-      results = Token.list_top("0xINVALID_HEX")
-
-      assert [%{name: "0xINVALID_HEX Token"}] = results
-    end
   end
 
   describe "effective_ui_multiplier/2" do
@@ -274,6 +229,54 @@ defmodule Explorer.Chain.TokenTest do
         )
 
       assert Token.effective_ui_multiplier(token) == @two
+    end
+  end
+
+  describe "list_top/2 with a search filter" do
+    setup do
+      contract_address = insert(:contract_address, hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+      target = insert(:token, contract_address: contract_address, name: "Searched Coin", symbol: "SRCH")
+      other = insert(:token, name: "Unrelated Coin", symbol: "UNRL")
+
+      %{target: target, other: other}
+    end
+
+    test "matches the contract address hash regardless of its letter case", %{target: target} do
+      for filter <- [
+            "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed",
+            "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed",
+            "0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED",
+            "  0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed \n"
+          ] do
+        assert [%Token{contract_address_hash: hash}] = Token.list_top(filter)
+        assert hash == target.contract_address_hash, "no match for #{inspect(filter)}"
+      end
+    end
+
+    test "matches nothing for an address hash no token is deployed at" do
+      assert Token.list_top("0x" <> String.duplicate("ab", 20)) == []
+    end
+
+    test "full-text searches 0x-prefixed input that is not an address hash" do
+      %Token{contract_address_hash: hash} = insert(:token, name: "0xBridged Coin", symbol: "XBC")
+
+      assert [%Token{contract_address_hash: ^hash}] = Token.list_top("0xBridged")
+    end
+
+    test "full-text searches 20-byte input instead of reading it as raw address bytes" do
+      name = "Twenty Char Token AB"
+      assert byte_size(name) == Hash.Address.byte_count()
+      %Token{contract_address_hash: hash} = insert(:token, name: name, symbol: "TCT")
+
+      assert [%Token{contract_address_hash: ^hash}] = Token.list_top(name)
+    end
+
+    test "does not filter for blank input", %{target: target, other: other} do
+      expected = Enum.sort([target.contract_address_hash, other.contract_address_hash])
+
+      for filter <- ["", "   ", nil] do
+        assert filter |> Token.list_top() |> Enum.map(& &1.contract_address_hash) |> Enum.sort() == expected
+      end
     end
   end
 end
