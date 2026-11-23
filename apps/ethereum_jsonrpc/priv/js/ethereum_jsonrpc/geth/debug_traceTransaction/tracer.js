@@ -244,7 +244,7 @@
                 call.valueBigInt = bigInt.zero;
                 break;
             default:
-                throw 'Unknown custom call op ' + op;
+                throw 'Unsupported call opcode: ' + op;
         }
 
         this.callStack.push(call);
@@ -358,11 +358,8 @@
             result.error = error
         } else {
             result.createdContractAddressHash = toHex(ctx.to);
-            if (toHex(ctx.input) != '0x') {
-              result.createdContractCode = toHex(db.getCode(ctx.to));
-            } else {
-              result.createdContractCode = '0x';
-            }
+            // Empty init code deploys nothing, so there is no code to read from state.
+            result.createdContractCode = (ctx.input.length > 0 ? toHex(db.getCode(ctx.to)) : '0x');
         }
     },
 
