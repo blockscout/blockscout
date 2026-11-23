@@ -43,6 +43,8 @@ We would like to thank the EthPrize foundation for their funding support.
 
 See [CONTRIBUTING.md](.github/CONTRIBUTING.md) for contribution and pull request protocol. We expect contributors to follow our [code of conduct](.github/CODE_OF_CONDUCT.md) when submitting code or comments.
 
+Contributions are made under the [Blockscout Contributor Licence Agreement](CLA.md). You may be asked to accept it before your pull request is merged.
+
 ## License
 
 [![License: Blockscout Software Licence](https://img.shields.io/badge/License-Blockscout%20Software%20Licence-blue.svg)](LICENSE)

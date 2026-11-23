@@ -12,7 +12,9 @@
 
 ### 🐛 Bug Fixes
 
-- fix: Skip SQL queries in Hot smart-contracts API when the functionality is disabled ([#15088](https://github.com/blockscout/blockscout/pull/15088))
+- Handle empty gameCount() response in OP DisputeGame fetcher ([#15109](https://github.com/blockscout/blockscout/pull/15109))
+- Vacuum and reindex token_transfers after EIP-7708 sanitizing ([#15101](https://github.com/blockscout/blockscout/pull/15101))
+- Skip SQL queries in Hot smart-contracts API when the functionality is disabled ([#15088](https://github.com/blockscout/blockscout/pull/15088))
 - Prevent verified source and proxy status from being attributed to contracts with different code ([#15086](https://github.com/blockscout/blockscout/pull/15086))
 - Delete zero-value internal transactions of the border block ([#15051](https://github.com/blockscout/blockscout/issues/15051))
 - Ignore void proofs in OP withdrawal status ([#15049](https://github.com/blockscout/blockscout/issues/15049))
@@ -46,6 +48,7 @@
 
 ### ⚙️ Miscellaneous Tasks
 
+- Update LICENCE to v1.1 ([#15108](https://github.com/blockscout/blockscout/pull/15108))
 - Eliminate compiler warnings in explorer and block_scout_web tests ([#15050](https://github.com/blockscout/blockscout/issues/15050))
 - Stabilize explorer tests ([#15048](https://github.com/blockscout/blockscout/issues/15048))
 - Flaky exchange rate channel test (race with market history cache restart) ([#15057](https://github.com/blockscout/blockscout/issues/15057))
