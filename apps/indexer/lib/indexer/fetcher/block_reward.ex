@@ -34,11 +34,7 @@ defmodule Indexer.Fetcher.BlockReward do
   """
   @spec async_fetch([Block.block_number()], boolean()) :: :ok
   def async_fetch(block_numbers, realtime?) when is_list(block_numbers) do
-    if BlockRewardSupervisor.disabled?() do
-      :ok
-    else
-      BufferedTask.buffer(__MODULE__, block_numbers, realtime?)
-    end
+    if BlockRewardSupervisor.disabled?(), do: :ok, else: BufferedTask.buffer(__MODULE__, block_numbers, realtime?)
   end
 
   @doc false

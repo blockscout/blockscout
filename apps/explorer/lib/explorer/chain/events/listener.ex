@@ -33,14 +33,12 @@ defmodule Explorer.Chain.Events.Listener do
     [payload]
     |> drain_notifications(Application.get_env(:explorer, __MODULE__)[:max_batch_size] - 1)
     |> expand_payloads()
-    |> Enum.each(fn expanded_payload ->
-      expanded_payload
-      |> decode_payload!()
-      |> broadcast()
-    end)
+    |> Enum.each(&decode_and_broadcast/1)
 
     {:noreply, state}
   end
+
+  defp decode_and_broadcast(encoded_event), do: encoded_event |> decode_payload!() |> broadcast()
 
   defp drain_notifications(payloads, 0), do: Enum.reverse(payloads)
 
