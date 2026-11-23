@@ -455,25 +455,20 @@
     },
 
     putGas(call) {
-
-        if (call.gasBigInt === undefined) {
-            call.gas = '0x0';
-        } else {
-            call.gas = '0x' + call.gasBigInt.toString(16);
-        }
-
-        delete call.gasBigInt;
-
+        this.replaceWithHexQuantity(call, 'gasBigInt', 'gas');
     },
 
     putGasUsed(call) {
+        this.replaceWithHexQuantity(call, 'gasUsedBigInt', 'gasUsed');
+    },
 
-        if (call.gasUsedBigInt === undefined) {
-            call.gasUsed = '0x0';
-        } else {
-            call.gasUsed = '0x' + call.gasUsedBigInt.toString(16);
-        }
-
-        delete call.gasUsedBigInt;
+    // replaceWithHexQuantity swaps the numeric field `sourceKey` for its 0x-prefixed hex
+    // encoding under `targetKey`; a missing value encodes as zero. Avoid ES6 block-scoped
+    // declarations (`let`) here: some Geth forks still evaluate tracers with duktape,
+    // which rejects them.
+    replaceWithHexQuantity(call, sourceKey, targetKey) {
+        const value = call[sourceKey];
+        call[targetKey] = (value === undefined ? '0x0' : '0x' + value.toString(16));
+        delete call[sourceKey];
     }
 }
