@@ -1233,7 +1233,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
     end
 
     test "decodes base64 encoded json with multibyte UTF-8 characters in tokenURI" do
-      name = "Ünïcödé Token"
+      name = "Café Ü Token"
       description = "Multibyte check: café, 日本語, ✓, 🚀"
       json = ~s({"name": "#{name}", "description": "#{description}"})
       token_uri = "data:application/json;base64," <> Base.encode64(json)

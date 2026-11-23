@@ -235,8 +235,8 @@ defmodule Explorer.Chain.TokenTest do
   describe "list_top/2 with a search filter" do
     setup do
       contract_address = insert(:contract_address, hash: "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
-      target = insert(:token, contract_address: contract_address, name: "Searched Coin", symbol: "SRCH")
-      other = insert(:token, name: "Unrelated Coin", symbol: "UNRL")
+      target = insert(:token, contract_address: contract_address, name: "Searched Coin", symbol: "SEARCHED")
+      other = insert(:token, name: "Unrelated Coin", symbol: "UNRELATED")
 
       %{target: target, other: other}
     end
