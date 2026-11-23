@@ -456,9 +456,9 @@ defmodule Explorer.Chain.Token do
     filter = String.trim(filter)
 
     # `Chain.string_to_address_hash/1` also accepts any 20-byte binary as raw
-    # hash bytes, so only `0x`-prefixed input is treated as an address, otherwise
-    # a 20-character name would never be full-text searched
-    with "0x" <> _ <- filter,
+    # hash bytes, so only 42-byte `0x`-prefixed input is treated as an address,
+    # otherwise a 20-character name would never be full-text searched
+    with "0x" <> _ when byte_size(filter) == 42 <- filter,
          {:ok, address_hash} <- Chain.string_to_address_hash(filter) do
       where(query, [token], token.contract_address_hash == ^address_hash)
     else

@@ -271,6 +271,14 @@ defmodule Explorer.Chain.TokenTest do
       assert [%Token{contract_address_hash: ^hash}] = Token.list_top(name)
     end
 
+    test "full-text searches 0x-prefixed 20-byte input with surrounding whitespace" do
+      name = "0xEighteen Chars ABC"
+      assert byte_size(name) == Hash.Address.byte_count()
+      %Token{contract_address_hash: hash} = insert(:token, name: name, symbol: "ETC")
+
+      assert [%Token{contract_address_hash: ^hash}] = Token.list_top("  #{name} \n")
+    end
+
     test "does not filter for blank input", %{target: target, other: other} do
       expected = Enum.sort([target.contract_address_hash, other.contract_address_hash])
 
