@@ -5,6 +5,7 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
   import Explorer.Factory
 
   alias Explorer.Chain.Metrics.Queries.IndexerMetrics
+  alias Explorer.Chain.SmartContract
 
   describe "missing_blocks_count/0" do
     test "counts only within configured ranges and latest tail" do
@@ -254,6 +255,35 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetricsTest do
       insert(:token_balance, value_fetched_at: DateTime.utc_now())
 
       assert IndexerMetrics.missing_archival_token_balances_count() == 0
+    end
+
+    test "counts only the token balances the archival fetcher fetches" do
+      previous_config =
+        Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor)
+
+      on_exit(fn ->
+        Application.put_env(:indexer, Indexer.Fetcher.TokenBalance.Historical.Supervisor, previous_config)
+      end)
+
+      Application.put_env(
+        :indexer,
+        Indexer.Fetcher.TokenBalance.Historical.Supervisor,
+        Keyword.merge(previous_config || [], disabled?: false)
+      )
+
+      insert(:token_balance, token_type: "ERC-20", value_fetched_at: nil)
+      insert(:token_balance, token_type: "ERC-20", value: nil)
+      insert(:token_balance, token_type: "ERC-721", value_fetched_at: nil)
+      insert(:token_balance, token_type: "ERC-1155", value_fetched_at: nil)
+
+      assert IndexerMetrics.missing_archival_token_balances_count() == 4
+
+      # the fetcher skips ERC-721 balances of the burn address and ERC-7984 balances
+      burn_address = insert(:address, hash: SmartContract.burn_address_hash_string())
+      insert(:token_balance, token_type: "ERC-721", address: burn_address, value_fetched_at: nil)
+      insert(:token_balance, token_type: "ERC-7984", value_fetched_at: nil)
+
+      assert IndexerMetrics.missing_archival_token_balances_count() == 4
     end
   end
 

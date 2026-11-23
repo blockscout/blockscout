@@ -304,7 +304,12 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
   end
 
   @doc """
-  Query to get the count of archival token balances with missing values
+  Query to get the count of archival token balances with missing values.
+
+  Counts the token balances that `Explorer.Chain.Address.TokenBalance.unfetched_token_balances/0`
+  selects for the archival fetcher, regardless of `refetch_after`. The condition repeats the
+  predicate of the partial index `unfetched_address_token_balances_v3_index` literally,
+  so the count reads that index instead of the whole `address_token_balances` table.
   """
   @spec missing_archival_token_balances_count() :: integer()
   def missing_archival_token_balances_count do
@@ -314,8 +319,11 @@ defmodule Explorer.Chain.Metrics.Queries.IndexerMetrics do
       query =
         from(
           token_balance in TokenBalance,
-          where: is_nil(token_balance.value_fetched_at),
-          where: token_balance.token_type != "ERC-7984"
+          where:
+            (fragment("? != '\\x0000000000000000000000000000000000000000'", token_balance.address_hash) and
+               token_balance.token_type == "ERC-721") or
+              token_balance.token_type in ["ERC-20", "ERC-8056", "ZRC-2", "ERC-1155", "ERC-404"],
+          where: is_nil(token_balance.value_fetched_at) or is_nil(token_balance.value)
         )
 
       query

@@ -22,6 +22,14 @@ defmodule Explorer.Chain.Cache.Counters.NewContractsCountTest do
     |> insert(created_contract_code_indexed_at: Timex.shift(Timex.now(), hours: -30))
     |> with_block(status: :ok)
 
+    :transaction
+    |> insert(created_contract_code_indexed_at: Timex.shift(Timex.now(), hours: -2))
+    |> with_block(status: :error)
+
+    :transaction
+    |> insert(created_contract_code_indexed_at: nil)
+    |> with_block(status: :ok)
+
     start_supervised!(NewContractsCount)
     NewContractsCount.consolidate()
 
