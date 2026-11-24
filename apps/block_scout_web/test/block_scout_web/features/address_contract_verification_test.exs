@@ -74,7 +74,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       evm_version: "byzantium"
     })
     |> ContractVerifyPage.verify_and_publish()
-    |> ContractVerifyPage.has_message?("There was an error validating your contract, please try again.")
+    |> assert(contain_text(ContractVerifyPage.validation_error(), "Empty contract source code."))
   end
 
   defp solc_bin_versions do
