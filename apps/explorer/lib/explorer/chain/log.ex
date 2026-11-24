@@ -716,6 +716,17 @@ defmodule Explorer.Chain.Log do
     )
   end
 
+  @typedoc """
+  How the logs matched by a query store their fields: `:optimized` once written
+  by the current importer or processed by the `fill_logs_optimized_fields`
+  migration (`address_id`, `first_topic_id`, `transaction_index`, trimmed
+  topics), `:legacy` before that (`address_hash`, `first_topic`, full 32-byte
+  topics, `transaction_index` may be missing), or `nil` when it is not known,
+  so that conditions match every format possible in the current migration
+  state.
+  """
+  @type storage :: :optimized | :legacy | nil
+
   # Above this number of values for a single topic, fall back to
   # `= ANY(...)` to keep query size and planning time bounded.
   @max_topic_union_branches 16
@@ -738,24 +749,28 @@ defmodule Explorer.Chain.Log do
 
   When `topic_names` and `topic_values_list` are lists, builds an `OR` condition
   where each topic field is matched against the corresponding list of values.
+
+  The `:storage` option restricts the conditions to one `t:storage/0` format.
   """
   @spec filter_by_topic_query(Ecto.Queryable.t(), atom() | [atom()], any() | [[any()]]) :: Ecto.Query.t()
   def filter_by_topic_query(query, topic_name, topic_values, opts \\ [])
 
   def filter_by_topic_query(query, topic_name, topic_values, opts) when is_atom(topic_name) do
+    storage = Keyword.get(opts, :storage)
+
     if Keyword.get(opts, :union_multiple_values, false) and is_list(topic_values) and
          length(topic_values) <= @max_topic_union_branches do
       topic_values
-      |> Enum.map(fn value -> where(query, [l], ^topic_filter_dynamic(topic_name, [value])) end)
+      |> Enum.map(fn value -> where(query, [l], ^topic_filter_dynamic(topic_name, [value], storage)) end)
       |> Enum.reduce(fn branch, acc -> union_all(acc, ^branch) end)
     else
-      where(query, ^topic_filter_dynamic(topic_name, List.wrap(topic_values)))
+      where(query, ^topic_filter_dynamic(topic_name, List.wrap(topic_values), storage))
     end
   end
 
-  def filter_by_topic_query(query, topic_names, topic_values_list, _opts)
+  def filter_by_topic_query(query, topic_names, topic_values_list, opts)
       when is_list(topic_names) and is_list(topic_values_list) do
-    where(query, [l], ^filter_by_topic_dynamic(topic_names, topic_values_list))
+    where(query, [l], ^filter_by_topic_dynamic(topic_names, topic_values_list, Keyword.get(opts, :storage)))
   end
 
   @doc """
@@ -763,16 +778,16 @@ defmodule Explorer.Chain.Log do
 
   Each topic name is paired with the corresponding list of topic values from
   `topic_values_list`. The resulting dynamic expression matches logs where any
-  of the given topic fields matches its values.
+  of the given topic fields matches its values, in the `t:storage/0` format.
   """
-  @spec filter_by_topic_dynamic([atom()], [[any()]]) :: Ecto.Query.dynamic_expr()
-  def filter_by_topic_dynamic(topic_names, topic_values_list) do
+  @spec filter_by_topic_dynamic([atom()], [[any()]], storage()) :: Ecto.Query.dynamic_expr()
+  def filter_by_topic_dynamic(topic_names, topic_values_list, storage \\ nil) do
     topic_names
     |> Enum.zip(topic_values_list)
     |> Enum.reduce(dynamic(false), fn {topic_name, topic_values}, dynamic ->
       dynamic(
         [l],
-        ^dynamic or ^topic_filter_dynamic(topic_name, topic_values)
+        ^dynamic or ^topic_filter_dynamic(topic_name, topic_values, storage)
       )
     end)
   end
@@ -787,14 +802,45 @@ defmodule Explorer.Chain.Log do
   For other topic fields, the condition matches trimmed topic values after the
   optimized fields migration has finished. Before the migration is finished, it
   also matches full 32-byte topic values to support both stored formats.
+
+  A given `storage` restricts the condition to the fields and the format of that
+  `t:storage/0`, whatever the migration state is.
   """
-  @spec topic_filter_dynamic(atom(), [any()]) :: Ecto.Query.dynamic_expr()
-  def topic_filter_dynamic(:first_topic, [topic_value]) do
+  @spec topic_filter_dynamic(atom(), [any()], storage()) :: Ecto.Query.dynamic_expr()
+  def topic_filter_dynamic(topic_name, topic_values, storage \\ nil)
+
+  def topic_filter_dynamic(:first_topic, [topic_value], :optimized) do
+    first_topic_id = LogFirstTopic.value_to_id(topic_value)
+
+    (first_topic_id && dynamic([l], l.first_topic_id == ^first_topic_id)) || dynamic(false)
+  end
+
+  def topic_filter_dynamic(:first_topic, topic_values, :optimized) do
+    first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
+
+    dynamic([l], l.first_topic_id in ^first_topic_ids)
+  end
+
+  def topic_filter_dynamic(:first_topic, [topic_value], :legacy), do: dynamic([l], l.first_topic == ^topic_value)
+
+  def topic_filter_dynamic(:first_topic, topic_values, :legacy), do: dynamic([l], l.first_topic in ^topic_values)
+
+  def topic_filter_dynamic(topic_name, [topic_value], :optimized),
+    do: dynamic([l], field(l, ^topic_name) == ^topic_value)
+
+  def topic_filter_dynamic(topic_name, topic_values, :optimized),
+    do: dynamic([l], field(l, ^topic_name) in ^topic_values)
+
+  def topic_filter_dynamic(topic_name, [topic_value], :legacy),
+    do: dynamic([l], field(l, ^topic_name) == type(^topic_value, Hash.Full))
+
+  def topic_filter_dynamic(topic_name, topic_values, :legacy),
+    do: dynamic([l], field(l, ^topic_name) in type(^topic_values, {:array, Hash.Full}))
+
+  def topic_filter_dynamic(:first_topic, [topic_value], nil) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
-        first_topic_id = LogFirstTopic.value_to_id(topic_value)
-
-        (first_topic_id && dynamic([l], l.first_topic_id == ^first_topic_id)) || dynamic(false)
+        topic_filter_dynamic(:first_topic, [topic_value], :optimized)
 
       LogHelper.fill_optimized_fields_migration_started?() ->
         first_topic_id = LogFirstTopic.value_to_id(topic_value)
@@ -803,16 +849,14 @@ defmodule Explorer.Chain.Log do
           dynamic([l], l.first_topic == ^topic_value)
 
       true ->
-        dynamic([l], l.first_topic == ^topic_value)
+        topic_filter_dynamic(:first_topic, [topic_value], :legacy)
     end
   end
 
-  def topic_filter_dynamic(:first_topic, topic_values) do
+  def topic_filter_dynamic(:first_topic, topic_values, nil) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
-        first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
-
-        dynamic([l], l.first_topic_id in ^first_topic_ids)
+        topic_filter_dynamic(:first_topic, topic_values, :optimized)
 
       LogHelper.fill_optimized_fields_migration_started?() ->
         first_topic_ids = LogFirstTopic.values_to_ids(topic_values)
@@ -820,15 +864,15 @@ defmodule Explorer.Chain.Log do
         dynamic([l], l.first_topic_id in ^first_topic_ids or l.first_topic in ^topic_values)
 
       true ->
-        dynamic([l], l.first_topic in ^topic_values)
+        topic_filter_dynamic(:first_topic, topic_values, :legacy)
     end
   end
 
-  def topic_filter_dynamic(topic_name, [topic_value]) do
+  def topic_filter_dynamic(topic_name, [topic_value], nil) do
     if LogHelper.fill_optimized_fields_migration_finished?() do
-      dynamic([l], field(l, ^topic_name) == ^topic_value)
+      topic_filter_dynamic(topic_name, [topic_value], :optimized)
     else
-      case Hash.Full.dump(topic_value) do
+      case dump_full_topic(topic_value) do
         {:ok, extended} ->
           dynamic(
             [l],
@@ -841,15 +885,15 @@ defmodule Explorer.Chain.Log do
     end
   end
 
-  def topic_filter_dynamic(topic_name, topic_values) do
+  def topic_filter_dynamic(topic_name, topic_values, nil) do
     if LogHelper.fill_optimized_fields_migration_finished?() do
-      dynamic([l], field(l, ^topic_name) in ^topic_values)
+      topic_filter_dynamic(topic_name, topic_values, :optimized)
     else
       extended_values =
         topic_values
         |> Enum.flat_map(fn topic ->
           # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-          case Hash.Full.dump(topic) do
+          case dump_full_topic(topic) do
             {:ok, extended} -> [extended]
             :error -> []
           end
@@ -860,6 +904,12 @@ defmodule Explorer.Chain.Log do
         field(l, ^topic_name) in ^topic_values or field(l, ^topic_name) in type(^extended_values, {:array, :binary})
       )
     end
+  end
+
+  # Topics also come as hex strings (the `getLogs` and `eth_getLogs` filters),
+  # so they are cast before their full 32-byte value is dumped.
+  defp dump_full_topic(topic_value) do
+    with {:ok, topic} <- Hash.Full.cast(topic_value), do: Hash.Full.dump(topic)
   end
 
   defp by_transaction_query(query, transaction_hash, block_number, transaction_index) do
@@ -882,15 +932,36 @@ defmodule Explorer.Chain.Log do
 
   @doc """
   Joins transactions to the given logs query.
+
+  Logs stored in the optimized format (see `t:storage/0`) are joined by
+  `(block_number, transaction_index)`. Logs not processed by the optimized
+  fields migration yet may have no `transaction_index`, so they are joined by
+  the transaction hash, and the block number has to match as well: a log left
+  from a block that lost consensus is not attached to its transaction included
+  again in another block. Without `storage` the join depends on the migration
+  state.
   """
-  @spec join_transaction_query(Ecto.Queryable.t()) :: Ecto.Query.t()
-  def join_transaction_query(query \\ __MODULE__) do
+  @spec join_transaction_query(Ecto.Queryable.t(), storage()) :: Ecto.Query.t()
+  def join_transaction_query(query \\ __MODULE__, storage \\ nil)
+
+  def join_transaction_query(query, :optimized) do
+    join(query, :inner, [l], t in Transaction,
+      on: l.block_number == t.block_number and l.transaction_index == t.index,
+      as: :transaction
+    )
+  end
+
+  def join_transaction_query(query, :legacy) do
+    join(query, :inner, [l], t in Transaction,
+      on: l.transaction_hash == t.hash and l.block_number == t.block_number,
+      as: :transaction
+    )
+  end
+
+  def join_transaction_query(query, nil) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
-        join(query, :inner, [l], t in Transaction,
-          on: l.block_number == t.block_number and l.transaction_index == t.index,
-          as: :transaction
-        )
+        join_transaction_query(query, :optimized)
 
       LogHelper.fill_optimized_fields_migration_started?() ->
         join(query, :inner, [l], t in Transaction,
@@ -1006,26 +1077,34 @@ defmodule Explorer.Chain.Log do
   """
   @spec address_match_dynamics(Hash.Address.t() | binary()) :: [Ecto.Query.dynamic_expr()]
   def address_match_dynamics(address_hash) do
+    Enum.map(address_match_branches(address_hash), &elem(&1, 0))
+  end
+
+  # The `address_match_dynamics/1` conditions, each one with the `t:storage/0`
+  # of the logs it matches. Without `address_id` while the migration is in
+  # progress, the address has only legacy logs: the importer and the migration
+  # create the mapping before they fill `address_id`.
+  defp address_match_branches(address_hash) do
     cond do
       LogHelper.fill_optimized_fields_migration_finished?() ->
         address_id = AddressIdToAddressHash.hash_to_id(address_hash)
 
-        [address_id_match_dynamic(address_id)]
+        [{address_id_match_dynamic(address_id), :optimized}]
 
       LogHelper.fill_optimized_fields_migration_started?() ->
         address_id = AddressIdToAddressHash.hash_to_id(address_hash)
 
         if address_id do
           [
-            dynamic([l], l.address_id == ^address_id),
-            dynamic([l], is_nil(l.address_id) and l.address_hash == ^address_hash)
+            {dynamic([l], l.address_id == ^address_id), :optimized},
+            {dynamic([l], is_nil(l.address_id) and l.address_hash == ^address_hash), :legacy}
           ]
         else
-          [dynamic([l], l.address_hash == ^address_hash)]
+          [{dynamic([l], l.address_hash == ^address_hash), :legacy}]
         end
 
       true ->
-        [dynamic([l], l.address_hash == ^address_hash)]
+        [{dynamic([l], l.address_hash == ^address_hash), nil}]
     end
   end
 
@@ -1049,10 +1128,11 @@ defmodule Explorer.Chain.Log do
   Builds a logs query for the given address hash, combining one query branch per
   `address_match_dynamics/1` condition with `UNION ALL`.
 
-  `branch_fun` receives an address match condition and must return the complete
-  branch: every filter, join and select has to be applied inside it, since
-  `where/3`, `join/5` and `select/3` applied to a combination query would only
-  affect its first branch.
+  `branch_fun` receives an address match condition, followed by the
+  `t:storage/0` of the logs it matches when the function takes two arguments.
+  It must return the complete branch: every filter, join and select has to be
+  applied inside it, since `where/3`, `join/5` and `select/3` applied to a
+  combination query would only affect its first branch.
 
   `paging_fun` applies the ordering and the limit. It is applied to every branch
   and then to the whole combination, so that each branch stays an ordered index
@@ -1065,14 +1145,21 @@ defmodule Explorer.Chain.Log do
   """
   @spec address_match_union_query(
           Hash.Address.t() | binary(),
-          (Ecto.Query.dynamic_expr() -> Ecto.Queryable.t()),
+          (Ecto.Query.dynamic_expr() -> Ecto.Queryable.t())
+          | (Ecto.Query.dynamic_expr(), storage() -> Ecto.Queryable.t()),
           (Ecto.Queryable.t() -> Ecto.Queryable.t())
         ) :: Ecto.Query.t()
   def address_match_union_query(address_hash, branch_fun, paging_fun \\ fn query -> query end) do
     branches =
       address_hash
-      |> address_match_dynamics()
-      |> Enum.map(fn address_match_dynamic -> address_match_dynamic |> branch_fun.() |> paging_fun.() end)
+      |> address_match_branches()
+      |> Enum.map(fn
+        {address_match_dynamic, storage} when is_function(branch_fun, 2) ->
+          paging_fun.(branch_fun.(address_match_dynamic, storage))
+
+        {address_match_dynamic, _storage} ->
+          paging_fun.(branch_fun.(address_match_dynamic))
+      end)
 
     case branches do
       [branch] ->

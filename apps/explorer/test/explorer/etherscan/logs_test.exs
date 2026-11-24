@@ -1241,5 +1241,212 @@ defmodule Explorer.Etherscan.LogsTest do
       assert found_log.block_number == consensus_log.block_number
       assert found_log.index == consensus_log.index
     end
+
+    test "with address and topic{x}s while the optimized fields migration is in progress matches logs in both storage formats" do
+      set_fill_logs_optimized_fields_migration_started()
+      set_transactions_denormalization_finished()
+
+      contract_address = insert(:contract_address)
+
+      transaction =
+        %Transaction{block: block} =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      first_topic = topic(@first_topic_hex_string_1)
+      third_topic = topic(@third_topic_hex_string_1)
+      other_third_topic = topic(@third_topic_hex_string_2)
+
+      insert_log = fn attrs ->
+        insert(
+          :log,
+          Keyword.merge(
+            [
+              address: contract_address,
+              transaction: transaction,
+              block: block,
+              block_number: block.number,
+              first_topic: first_topic,
+              third_topic: third_topic
+            ],
+            attrs
+          )
+        )
+      end
+
+      # migrated logs: `address_id`, `first_topic_id` and trimmed topics
+      insert_log.(address_hash: nil, index: 1)
+      insert_log.(address_hash: nil, third_topic: other_third_topic, index: 4)
+      # logs not migrated yet: `address_hash`, `first_topic` and full 32-byte topics
+      insert_log.(address_mapping: nil, index: 2)
+      insert_log.(address_mapping: nil, third_topic: other_third_topic, index: 5)
+      # log re-imported before it is migrated: both address fields and both first topic fields
+      insert_log.(index: 3)
+
+      Repo.query!("UPDATE logs SET first_topic = NULL WHERE block_number = $1 AND index IN (1, 4)", [block.number])
+
+      Repo.query!(
+        "UPDATE logs SET first_topic_id = NULL, third_topic = CASE WHEN index = 2 THEN $1::bytea ELSE $2::bytea END " <>
+          "WHERE block_number = $3 AND index IN (2, 5)",
+        [third_topic.bytes, other_third_topic.bytes, block.number]
+      )
+
+      filter = %{
+        from_block: block.number,
+        to_block: block.number,
+        address_hash: contract_address.hash,
+        first_topic: @first_topic_hex_string_1,
+        third_topic: @third_topic_hex_string_1,
+        topic0_2_opr: "and"
+      }
+
+      # topics come as strings from the `getLogs` and `eth_getLogs` filters
+      assert filter |> Logs.list_logs() |> Enum.map(& &1.index) == [1, 2, 3]
+
+      assert %{filter | first_topic: first_topic, third_topic: third_topic}
+             |> Logs.list_logs()
+             |> Enum.map(& &1.index) == [1, 2, 3]
+
+      assert %{filter | third_topic: [@third_topic_hex_string_1, @third_topic_hex_string_3]}
+             |> Logs.list_logs()
+             |> Enum.map(& &1.index) == [1, 2, 3]
+
+      found_logs = Logs.list_logs(filter)
+
+      assert Enum.all?(found_logs, &(&1.address_hash == contract_address.hash))
+      assert Enum.all?(found_logs, &(&1.first_topic == first_topic))
+      assert Enum.all?(found_logs, &(&1.third_topic == third_topic))
+      assert Enum.all?(found_logs, &(&1.transaction_hash == transaction.hash))
+      assert Enum.all?(found_logs, &(&1.block_number == block.number))
+    end
+
+    test "with address and topic{x}s after the optimized fields migration has finished" do
+      set_fill_logs_optimized_fields_migration_finished()
+
+      contract_address = insert(:contract_address)
+
+      transaction =
+        %Transaction{block: block} =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block()
+
+      first_topic = topic(@first_topic_hex_string_1)
+
+      for {third_topic_hex_string, index} <- [{@third_topic_hex_string_1, 1}, {@third_topic_hex_string_2, 2}] do
+        insert(:log,
+          address: contract_address,
+          address_hash: nil,
+          transaction: transaction,
+          block: block,
+          block_number: block.number,
+          first_topic: first_topic,
+          third_topic: topic(third_topic_hex_string),
+          index: index
+        )
+      end
+
+      filter = %{
+        from_block: block.number,
+        to_block: block.number,
+        address_hash: contract_address.hash,
+        first_topic: @first_topic_hex_string_1,
+        third_topic: @third_topic_hex_string_1,
+        topic0_2_opr: "and"
+      }
+
+      assert [%{index: 1, address_hash: address_hash}] = Logs.list_logs(filter)
+      assert address_hash == contract_address.hash
+    end
+
+    test "with address skips a log not migrated yet whose transaction is now in another block" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      contract_address = insert(:contract_address)
+
+      block = insert(:block)
+      lost_block = insert(:block, number: block.number - 1, consensus: false)
+
+      transaction =
+        :transaction
+        |> insert(to_address: contract_address)
+        |> with_block(block)
+
+      for {log_block, index} <- [{lost_block, 1}, {block, 2}] do
+        insert(:log,
+          address: contract_address,
+          address_mapping: nil,
+          transaction: transaction,
+          block: log_block,
+          block_number: log_block.number,
+          index: index
+        )
+      end
+
+      filter = %{from_block: lost_block.number, to_block: block.number, address_hash: contract_address.hash}
+
+      assert [%{index: 2, block_number: block_number}] = Logs.list_logs(filter)
+      assert block_number == block.number
+    end
+
+    test "topic-only logs with a string topic{x} match full 32-byte topics while the optimized fields migration is in progress" do
+      set_fill_logs_optimized_fields_migration_started()
+
+      transaction =
+        %Transaction{block: block} =
+        :transaction
+        |> insert()
+        |> with_block()
+
+      third_topic = topic(@third_topic_hex_string_1)
+
+      for {attrs, index} <- [{[address_mapping: nil], 1}, {[address_hash: nil], 2}] do
+        insert(
+          :log,
+          attrs ++
+            [
+              transaction: transaction,
+              block: block,
+              block_number: block.number,
+              third_topic: third_topic,
+              index: index
+            ]
+        )
+      end
+
+      # the log not migrated yet keeps its full 32-byte topic
+      Repo.query!("UPDATE logs SET third_topic = $1 WHERE block_number = $2 AND index = 1", [
+        third_topic.bytes,
+        block.number
+      ])
+
+      filter = %{from_block: block.number, to_block: block.number, third_topic: @third_topic_hex_string_1}
+
+      assert filter |> Logs.list_logs() |> Enum.map(& &1.index) == [1, 2]
+    end
+  end
+
+  defp set_fill_logs_optimized_fields_migration_finished do
+    initial_started? = BackgroundMigrations.get_create_logs_first_topic_id_index_finished()
+    initial_finished? = BackgroundMigrations.get_fill_logs_optimized_fields_finished()
+
+    BackgroundMigrations.set_create_logs_first_topic_id_index_finished(true)
+    BackgroundMigrations.set_fill_logs_optimized_fields_finished(true)
+
+    on_exit(fn ->
+      BackgroundMigrations.set_create_logs_first_topic_id_index_finished(initial_started?)
+      BackgroundMigrations.set_fill_logs_optimized_fields_finished(initial_finished?)
+    end)
+  end
+
+  defp set_transactions_denormalization_finished do
+    initial_finished? = BackgroundMigrations.get_transactions_denormalization_finished()
+
+    BackgroundMigrations.set_transactions_denormalization_finished(true)
+
+    on_exit(fn ->
+      BackgroundMigrations.set_transactions_denormalization_finished(initial_finished?)
+    end)
   end
 end
