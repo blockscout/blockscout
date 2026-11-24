@@ -25,6 +25,7 @@ config :playwright, :test,
   viewport: %{width: 1200, height: 800},
   action_timeout: 15_000,
   navigation_timeout: 15_000,
+  test_id_attribute: "data-test",
   trace: :retain_on_failure,
   screenshot: :only_on_failure
 

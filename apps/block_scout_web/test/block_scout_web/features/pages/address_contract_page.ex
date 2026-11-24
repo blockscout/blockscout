@@ -12,7 +12,7 @@ defmodule BlockScoutWeb.AddressContractPage do
   end
 
   def click_verify_and_publish(session) do
-    click(session, by_css("[data-test='verify_and_publish']"))
+    click(session, by_test_id("verify_and_publish"))
   end
 
   def visit_page(session, address) do

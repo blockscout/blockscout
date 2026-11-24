@@ -13,7 +13,7 @@ defmodule BlockScoutWeb.TransactionLogsPage do
   alias BlockScoutWeb.Endpoint
 
   def logs(count: count) do
-    count(filter(by_css("[data-test='transaction_log']"), visible: true), count)
+    count(filter(by_test_id("transaction_log"), visible: true), count)
   end
 
   def visit_page(session, %Transaction{} = transaction) do
@@ -21,6 +21,6 @@ defmodule BlockScoutWeb.TransactionLogsPage do
   end
 
   def click_address(session, address) do
-    click(session, by_css("[data-test='log_address_link'][data-address-hash='#{address}']"))
+    click(session, and_(by_test_id("log_address_link"), by_css("[data-address-hash='#{address}']")))
   end
 end

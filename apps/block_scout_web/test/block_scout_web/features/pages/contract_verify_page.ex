@@ -19,7 +19,7 @@ defmodule BlockScoutWeb.ContractVerifyPage do
         evm_version: evm_version
       }) do
     session
-    |> fill(by_css("[data-test='contract_name']"), contract_name)
+    |> fill(by_test_id("contract_name"), contract_name)
     |> fill(by_label("Enter the Solidity Contract Code"), source_code)
 
     case version do
@@ -52,7 +52,7 @@ defmodule BlockScoutWeb.ContractVerifyPage do
   end
 
   def validation_error do
-    by_css("[data-test='contract-source-code-error']")
+    by_test_id("contract-source-code-error")
   end
 
   def verify_and_publish(session) do

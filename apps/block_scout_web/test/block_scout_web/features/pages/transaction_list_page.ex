@@ -10,11 +10,11 @@ defmodule BlockScoutWeb.TransactionListPage do
   alias Explorer.Chain.Transaction
 
   def click_transaction(session, %Transaction{hash: transaction_hash}) do
-    click(session, by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='transaction_hash_link']"))
+    click(session, by_test_id(by_css("[data-identifier-hash='#{transaction_hash}']"), "transaction_hash_link"))
   end
 
   def contract_creation(%Transaction{hash: hash}) do
-    filter(by_css("[data-identifier-hash='#{hash}'] [data-test='transaction_type']"), has_text: "Contract Creation")
+    filter(by_test_id(by_css("[data-identifier-hash='#{hash}']"), "transaction_type"), has_text: "Contract Creation")
   end
 
   def transaction(%Transaction{hash: transaction_hash}) do
@@ -22,7 +22,7 @@ defmodule BlockScoutWeb.TransactionListPage do
   end
 
   def transaction_status(%Transaction{hash: transaction_hash}) do
-    by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='transaction_status']")
+    by_test_id(by_css("[data-identifier-hash='#{transaction_hash}']"), "transaction_status")
   end
 
   def visit_page(session) do

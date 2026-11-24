@@ -10,11 +10,11 @@ defmodule BlockScoutWeb.TransactionPage do
   alias Explorer.Chain.{Transaction, Hash}
 
   def click_logs(session) do
-    click(session, by_css("[data-test='transaction_logs_link']"))
+    click(session, by_test_id("transaction_logs_link"))
   end
 
   def detail_hash(%Transaction{hash: transaction_hash}) do
-    filter(by_css("[data-test='transaction_detail_hash']"), has_text: Hash.to_string(transaction_hash))
+    filter(by_test_id("transaction_detail_hash"), has_text: Hash.to_string(transaction_hash))
   end
 
   def is_pending() do

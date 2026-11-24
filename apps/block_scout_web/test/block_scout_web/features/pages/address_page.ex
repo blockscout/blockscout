@@ -10,12 +10,12 @@ defmodule BlockScoutWeb.AddressPage do
 
   def apply_filter(session, direction) do
     session
-    |> click(filter(by_css("[data-test='filter_dropdown']"), has_text: "Filter: All"))
-    |> click(filter(by_css("[data-test='filter_option']"), has_text: direction))
+    |> click(filter(by_test_id("filter_dropdown"), has_text: "Filter: All"))
+    |> click(filter(by_test_id("filter_option"), has_text: direction))
   end
 
   def balance do
-    by_css("[data-test='address_balance']")
+    by_test_id("address_balance")
   end
 
   def token_balance(count: count) do
@@ -39,19 +39,19 @@ defmodule BlockScoutWeb.AddressPage do
   end
 
   def contract_creator do
-    by_css("[data-test='address_contract_creator']")
+    by_test_id("address_contract_creator")
   end
 
   def click_internal_transactions(session) do
-    click(session, by_css("[data-test='internal_transactions_tab_link']"))
+    click(session, by_test_id("internal_transactions_tab_link"))
   end
 
   def click_tokens(session) do
-    click(session, by_css("[data-test='tokens_tab_link']"))
+    click(session, by_test_id("tokens_tab_link"))
   end
 
   def click_coin_balance_history(session) do
-    click(session, by_css("[data-test='coin_balance_tab_link']"))
+    click(session, by_test_id("coin_balance_tab_link"))
   end
 
   def click_balance_dropdown_toggle(session) do
@@ -63,11 +63,11 @@ defmodule BlockScoutWeb.AddressPage do
   end
 
   def click_outside_of_the_dropdown(session) do
-    click(session, by_css("[data-test='outside_of_dropdown']"))
+    click(session, by_test_id("outside_of_dropdown"))
   end
 
   def click_token_transfers(session, %Token{contract_address_hash: contract_address_hash}) do
-    click(session, by_css("[data-test='token_transfers_#{contract_address_hash}']"))
+    click(session, by_test_id("token_transfers_#{contract_address_hash}"))
   end
 
   def click_show_pending_transactions(session) do
@@ -75,7 +75,7 @@ defmodule BlockScoutWeb.AddressPage do
   end
 
   def coin_balances(count: count) do
-    count(filter(by_css("[data-test='coin_balance']"), visible: true), count)
+    count(filter(by_test_id("coin_balance"), visible: true), count)
   end
 
   def contract_creation(%InternalTransaction{created_contract_address_hash: hash}) do
@@ -83,19 +83,15 @@ defmodule BlockScoutWeb.AddressPage do
   end
 
   def detail_hash(address) do
-    filter(by_css("[data-test='address_detail_hash']"), has_text: to_string(address))
+    filter(by_test_id("address_detail_hash"), has_text: to_string(address))
   end
 
   def internal_transaction(%InternalTransaction{index: index} = internal_transaction) do
-    by_css(
-      "[data-test='internal_transaction']" <>
-        "[data-internal-transaction-transaction-hash='#{internal_transaction.transaction.hash}']" <>
-        "[data-internal-transaction-index='#{index}']"
-    )
+    and_(by_test_id("internal_transaction"), internal_transaction_row(internal_transaction, index))
   end
 
   def internal_transactions(count: count) do
-    count(filter(by_css("[data-test='internal_transaction']"), visible: true), count)
+    count(filter(by_test_id("internal_transaction"), visible: true), count)
   end
 
   def internal_transaction_address_link(
@@ -104,19 +100,22 @@ defmodule BlockScoutWeb.AddressPage do
       ) do
     checksum = Address.checksum(address_hash)
 
-    by_css(
-      "[data-internal-transaction-transaction-hash='#{internal_transaction.transaction.hash}'][data-internal-transaction-index='#{index}']" <>
-        " [data-test='address_hash_link']" <> " [data-address-hash='#{checksum}']"
-    )
+    link = by_test_id(internal_transaction_row(internal_transaction, index), "address_hash_link")
+    by_css(link, "[data-address-hash='#{checksum}']")
   end
 
   def internal_transaction_address_link(
         %InternalTransaction{index: index, to_address_hash: address_hash} = internal_transaction,
         :to
       ) do
+    link = by_test_id(internal_transaction_row(internal_transaction, index), "address_hash_link")
+    by_css(link, "[data-address-hash='#{address_hash}']")
+  end
+
+  defp internal_transaction_row(internal_transaction, index) do
     by_css(
-      "[data-internal-transaction-transaction-hash='#{internal_transaction.transaction.hash}'][data-internal-transaction-index='#{index}']" <>
-        " [data-test='address_hash_link']" <> " [data-address-hash='#{address_hash}']"
+      "[data-internal-transaction-transaction-hash='#{internal_transaction.transaction.hash}']" <>
+        "[data-internal-transaction-index='#{index}']"
     )
   end
 
@@ -141,40 +140,35 @@ defmodule BlockScoutWeb.AddressPage do
   def transaction_address_link(%Transaction{hash: hash, from_address_hash: address_hash}, :from) do
     checksum = Address.checksum(address_hash)
 
-    by_css("[data-identifier-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{checksum}']")
+    link = by_test_id(by_css("[data-identifier-hash='#{hash}']"), "address_hash_link")
+    by_css(link, "[data-address-hash='#{checksum}']")
   end
 
   def transaction_address_link(%Transaction{hash: hash, to_address_hash: address_hash}, :to) do
     checksum = Address.checksum(address_hash)
 
-    by_css("[data-identifier-hash='#{hash}'] [data-test='address_hash_link'] [data-address-hash='#{checksum}']")
+    link = by_test_id(by_css("[data-identifier-hash='#{hash}']"), "address_hash_link")
+    by_css(link, "[data-address-hash='#{checksum}']")
   end
 
   def transaction_status(%Transaction{hash: transaction_hash}) do
-    by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='transaction_status']")
+    by_test_id(by_css("[data-identifier-hash='#{transaction_hash}']"), "transaction_status")
   end
 
   def token_transfer(%Transaction{hash: transaction_hash}, %Address{} = address, count: count) do
-    count(
-      filter(
-        by_css(
-          "[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer'] [data-address-hash='#{address}']"
-        ),
-        visible: true
-      ),
-      count
-    )
+    token_transfer = by_test_id(by_css("[data-identifier-hash='#{transaction_hash}']"), "token_transfer")
+    count(filter(by_css(token_transfer, "[data-address-hash='#{address}']"), visible: true), count)
   end
 
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
     count(
-      filter(by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer']"), visible: true),
+      filter(by_test_id(by_css("[data-identifier-hash='#{transaction_hash}']"), "token_transfer"), visible: true),
       count
     )
   end
 
   def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
-    by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+    by_test_id(by_css("[data-identifier-hash='#{transaction_hash}']"), "token_transfers_expansion")
   end
 
   def visit_page(session, %Address{hash: address_hash}), do: visit_page(session, address_hash)

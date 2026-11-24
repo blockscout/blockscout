@@ -17,14 +17,14 @@ defmodule BlockScoutWeb.TokenPage do
   end
 
   def token_holders_tab(count: count) do
-    count(filter(by_css("[data-test='token_holders_tab']"), visible: true), count)
+    count(filter(by_test_id("token_holders_tab"), visible: true), count)
   end
 
   def click_tokens_holders(session) do
-    click(session, by_css("[data-test='token_holders_tab']"))
+    click(session, by_test_id("token_holders_tab"))
   end
 
   def token_holders(count: count) do
-    count(filter(by_css("[data-test='token_holders']"), visible: true), count)
+    count(filter(by_test_id("token_holders"), visible: true), count)
   end
 end
