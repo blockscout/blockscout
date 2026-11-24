@@ -101,13 +101,8 @@ defmodule Explorer.Chain.Cache.Counters.NewContractsCount do
   defp count_new_contracts do
     query =
       from(transaction in Transaction,
-        select: transaction,
-        where:
-          transaction.status == ^:ok and
-            fragment(
-              "NOW() - ? at time zone 'UTC' <= interval '24 hours'",
-              transaction.created_contract_code_indexed_at
-            )
+        where: transaction.status == ^:ok,
+        where: transaction.created_contract_code_indexed_at >= ago(24, "hour")
       )
 
     query
