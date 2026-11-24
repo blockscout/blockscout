@@ -136,7 +136,7 @@ defmodule BlockScoutWeb.Endpoint do
 
     all_routes =
       [
-        {:_, Phoenix.Endpoint.Cowboy2Handler, {BlockScoutWeb.Endpoint, []}} | universal_proxy_routes
+        {:_, Plug.Cowboy.Handler, {BlockScoutWeb.Endpoint, []}} | universal_proxy_routes
       ]
       |> Enum.reverse()
 

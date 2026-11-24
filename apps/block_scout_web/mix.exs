@@ -122,13 +122,15 @@ defmodule BlockScoutWeb.Mixfile do
       {:meck, "~> 1.2", override: true, only: [:test], runtime: false},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.6.17"},
+      {:phoenix, "~> 1.7.24"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "== 4.4.0"},
       {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.6", only: [:dev]},
       {:phoenix_live_view, "~> 1.1"},
       {:phoenix_pubsub, "~> 2.0"},
+      # Phoenix 1.7 no longer bundles Phoenix.View
+      {:phoenix_view, "~> 2.0"},
       {:prometheus_ex, "~> 5.1.0", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
