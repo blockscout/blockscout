@@ -22,6 +22,9 @@ config :fluffy, endpoint: BlockScoutWeb.Endpoint, ecto_repos: [Explorer.Repo]
 
 config :playwright, :test,
   browser_name: :chromium,
+  viewport: %{width: 1200, height: 800},
+  action_timeout: 15_000,
+  navigation_timeout: 15_000,
   trace: :retain_on_failure,
   screenshot: :only_on_failure
 

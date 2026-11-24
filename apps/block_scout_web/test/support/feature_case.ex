@@ -19,12 +19,7 @@ defmodule BlockScoutWeb.FeatureCase do
       alias Explorer.Repo
 
       setup do
-        session =
-          :playwright
-          |> start_session()
-          |> Fluffy.Playwright.set_viewport_size(%{width: 1200, height: 800})
-
-        {:ok, session: session}
+        {:ok, session: start_session(:playwright)}
       end
     end
   end

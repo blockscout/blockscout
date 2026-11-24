@@ -823,3 +823,11 @@ jobs:
           WETH_TOKEN_TRANSFERS_FILTERING_ENABLED: "true"
           BRIDGED_TOKENS_ENABLED: ${{ matrix.bridged-tokens }}
           DISABLE_WEBAPP: "false"
+
+      - name: Upload Playwright traces and screenshots
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.chain-type }}-${{ matrix.bridged-tokens }}
+          path: apps/block_scout_web/test-results
+          if-no-files-found: ignore
