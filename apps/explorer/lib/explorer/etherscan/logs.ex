@@ -90,6 +90,12 @@ defmodule Explorer.Etherscan.Logs do
   # for the reasons given for the topic-only clause below, and the page fields
   # are selected from the same transaction join, so each log of the page is
   # looked up in `transactions` once.
+  #
+  # Every branch requires the transaction in the log's own block: the selected
+  # block number comes from the log, the other block fields come from the
+  # transaction. Before the migration has started, the only branch matches by
+  # `address_hash` with no known storage, so it is joined as a legacy one: by
+  # the transaction hash and the block number.
   def list_logs(%{address_hash: address_hash} = filter, paging_options) when not is_nil(address_hash) do
     paging_options = if is_nil(paging_options), do: @default_paging_options, else: paging_options
     prepared_filter = Map.merge(@base_filter, filter)
@@ -106,7 +112,7 @@ defmodule Explorer.Etherscan.Logs do
         |> where(^address_match_dynamic)
         |> where([log], log.block_number >= ^prepared_filter.from_block)
         |> where([log], log.block_number <= ^prepared_filter.to_block)
-        |> join_consensus_transaction(storage)
+        |> join_consensus_transaction(storage || :legacy)
         |> page_logs(paging_options)
         |> select_page_fields(%{
           # every log of the branch belongs to the filtered address

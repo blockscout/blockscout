@@ -944,11 +944,26 @@ defmodule Explorer.Chain.Log do
   @spec join_transaction_query(Ecto.Queryable.t(), storage()) :: Ecto.Query.t()
   def join_transaction_query(query \\ __MODULE__, storage \\ nil)
 
-  def join_transaction_query(query, :optimized) do
-    join(query, :inner, [l], t in Transaction,
-      on: l.block_number == t.block_number and l.transaction_index == t.index,
-      as: :transaction
-    )
+  if @chain_identity == {:optimism, :celo} do
+    # On Celo, the import upsert for the old primary key, which stays until the
+    # migration has finished, fills `address_id` but not `transaction_index`. A
+    # log inserted before the `transaction_index` column existed and re-imported
+    # since has no `transaction_index` until the migration reaches it, so it is
+    # joined by the transaction hash within its block meanwhile.
+    def join_transaction_query(query, :optimized) do
+      if LogHelper.fill_optimized_fields_migration_finished?() do
+        join_transaction_by_index_query(query)
+      else
+        join(query, :inner, [l], t in Transaction,
+          on:
+            l.block_number == t.block_number and
+              (l.transaction_index == t.index or (is_nil(l.transaction_index) and l.transaction_hash == t.hash)),
+          as: :transaction
+        )
+      end
+    end
+  else
+    def join_transaction_query(query, :optimized), do: join_transaction_by_index_query(query)
   end
 
   def join_transaction_query(query, :legacy) do
@@ -972,6 +987,13 @@ defmodule Explorer.Chain.Log do
       true ->
         join(query, :inner, [l], t in Transaction, on: l.transaction_hash == t.hash, as: :transaction)
     end
+  end
+
+  defp join_transaction_by_index_query(query) do
+    join(query, :inner, [l], t in Transaction,
+      on: l.block_number == t.block_number and l.transaction_index == t.index,
+      as: :transaction
+    )
   end
 
   @doc """

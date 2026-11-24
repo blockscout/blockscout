@@ -1363,31 +1363,44 @@ defmodule Explorer.Etherscan.LogsTest do
     test "with address skips a log not migrated yet whose transaction is now in another block" do
       set_fill_logs_optimized_fields_migration_started()
 
-      contract_address = insert(:contract_address)
+      assert_skips_log_of_lost_block()
+    end
 
-      block = insert(:block)
-      lost_block = insert(:block, number: block.number - 1, consensus: false)
+    test "with address skips a log whose transaction is now in another block before the optimized fields migration has started" do
+      set_fill_logs_optimized_fields_migration_not_started()
 
-      transaction =
-        :transaction
-        |> insert(to_address: contract_address)
-        |> with_block(block)
+      assert_skips_log_of_lost_block()
+    end
 
-      for {log_block, index} <- [{lost_block, 1}, {block, 2}] do
+    if Application.compile_env(:explorer, :chain_identity) == {:optimism, :celo} do
+      test "with address returns a re-imported log with address_id but no transaction_index while the optimized fields migration is in progress" do
+        set_fill_logs_optimized_fields_migration_started()
+
+        contract_address = insert(:contract_address)
+
+        transaction =
+          %Transaction{block: block} =
+          :transaction
+          |> insert(to_address: contract_address)
+          |> with_block()
+
         insert(:log,
           address: contract_address,
-          address_mapping: nil,
           transaction: transaction,
-          block: log_block,
-          block_number: log_block.number,
-          index: index
+          block: block,
+          block_number: block.number,
+          index: 1
         )
+
+        # the upsert for the old primary key fills `address_id` of a log inserted
+        # before the `transaction_index` column existed, but not `transaction_index`
+        Repo.query!("UPDATE logs SET transaction_index = NULL WHERE block_number = $1 AND index = 1", [block.number])
+
+        filter = %{from_block: block.number, to_block: block.number, address_hash: contract_address.hash}
+
+        assert [%{index: 1, transaction_hash: transaction_hash}] = Logs.list_logs(filter)
+        assert transaction_hash == transaction.hash
       end
-
-      filter = %{from_block: lost_block.number, to_block: block.number, address_hash: contract_address.hash}
-
-      assert [%{index: 2, block_number: block_number}] = Logs.list_logs(filter)
-      assert block_number == block.number
     end
 
     test "topic-only logs with a string topic{x} match full 32-byte topics while the optimized fields migration is in progress" do
@@ -1427,12 +1440,51 @@ defmodule Explorer.Etherscan.LogsTest do
     end
   end
 
+  # A log left from a block that lost consensus, whose transaction is included
+  # again in the next block, and the log of that block.
+  defp assert_skips_log_of_lost_block do
+    contract_address = insert(:contract_address)
+
+    block = insert(:block)
+    lost_block = insert(:block, number: block.number - 1, consensus: false)
+
+    transaction =
+      :transaction
+      |> insert(to_address: contract_address)
+      |> with_block(block)
+
+    for {log_block, index} <- [{lost_block, 1}, {block, 2}] do
+      insert(:log,
+        address: contract_address,
+        address_mapping: nil,
+        transaction: transaction,
+        block: log_block,
+        block_number: log_block.number,
+        index: index
+      )
+    end
+
+    filter = %{from_block: lost_block.number, to_block: block.number, address_hash: contract_address.hash}
+
+    assert [%{index: 2, block_number: block_number, block_hash: block_hash}] = Logs.list_logs(filter)
+    assert block_number == block.number
+    assert block_hash == block.hash
+  end
+
   defp set_fill_logs_optimized_fields_migration_finished do
+    set_fill_logs_optimized_fields_migration_status(true, true)
+  end
+
+  defp set_fill_logs_optimized_fields_migration_not_started do
+    set_fill_logs_optimized_fields_migration_status(false, false)
+  end
+
+  defp set_fill_logs_optimized_fields_migration_status(started?, finished?) do
     initial_started? = BackgroundMigrations.get_create_logs_first_topic_id_index_finished()
     initial_finished? = BackgroundMigrations.get_fill_logs_optimized_fields_finished()
 
-    BackgroundMigrations.set_create_logs_first_topic_id_index_finished(true)
-    BackgroundMigrations.set_fill_logs_optimized_fields_finished(true)
+    BackgroundMigrations.set_create_logs_first_topic_id_index_finished(started?)
+    BackgroundMigrations.set_fill_logs_optimized_fields_finished(finished?)
 
     on_exit(fn ->
       BackgroundMigrations.set_create_logs_first_topic_id_index_finished(initial_started?)
