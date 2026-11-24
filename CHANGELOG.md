@@ -44,10 +44,13 @@
 
 ### ⚡ Performance
 
+- Fix new_contracts and missing_archival_token_balances counters query plans ([#15112](https://github.com/blockscout/blockscout/pull/15112))
+- Optimize logs filter by topics ([#15124](https://github.com/blockscout/blockscout/pull/15124))
 - Remove redundant transactions preload in getLogs ([#15029](https://github.com/blockscout/blockscout/issues/15029))
 
 ### ⚙️ Miscellaneous Tasks
 
+- Add Contributor Licence Agreement ([#15110](https://github.com/blockscout/blockscout/pull/15110))
 - Update LICENCE to v1.1 ([#15108](https://github.com/blockscout/blockscout/pull/15108))
 - Eliminate compiler warnings in explorer and block_scout_web tests ([#15050](https://github.com/blockscout/blockscout/issues/15050))
 - Stabilize explorer tests ([#15048](https://github.com/blockscout/blockscout/issues/15048))
