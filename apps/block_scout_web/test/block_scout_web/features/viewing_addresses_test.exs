@@ -420,13 +420,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
-      next =
-        session
-        |> AddressPage.visit_page(lincoln)
-
-      Process.sleep(2_000)
-
-      next
+      session
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> assert(AddressPage.token_balance(count: 1))
@@ -435,13 +430,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
-      next =
-        session
-        |> AddressPage.visit_page(lincoln)
-
-      Process.sleep(2_000)
-
-      next
+      session
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("T2")
       |> assert(AddressPage.token_balance(count: 1))
@@ -450,13 +440,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
-      next =
-        session
-        |> AddressPage.visit_page(lincoln)
-
-      Process.sleep(2_000)
-
-      next
+      session
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> AddressPage.click_outside_of_the_dropdown()
