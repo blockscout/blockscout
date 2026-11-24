@@ -2476,13 +2476,16 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
       assert response["meta"]["status"] == 1
       assert is_nil(response["meta"]["message"])
 
-      # a pending block inside the page is reported even right at the chain head
-      insert(:pending_block_operation, block_hash: block.hash, block_number: block.number)
+      # a pending block inside the page is reported even right at the chain head. The pending
+      # block lies between two returned internal transactions rather than holding one, since
+      # with block-level pending operations the internal transactions of a pending block are
+      # not returned at all
+      insert_address_internal_transaction(address, insert(:block, number: pending_block.number + 1))
 
       request = get(conn, "/api/v2/addresses/#{address.hash}/internal-transactions")
 
       assert response = json_response(request, 200)
-      assert Enum.count(response["items"]) == 1
+      assert Enum.count(response["items"]) == 2
       assert response["meta"]["status"] == 2
 
       assert response["meta"]["message"] ==
