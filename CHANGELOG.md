@@ -12,6 +12,7 @@
 
 ### 🐛 Bug Fixes
 
+- Address internal transactions pending test with block-level pending operations ([#15125](https://github.com/blockscout/blockscout/pull/15125))
 - Handle empty gameCount() response in OP DisputeGame fetcher ([#15109](https://github.com/blockscout/blockscout/pull/15109))
 - Vacuum and reindex token_transfers after EIP-7708 sanitizing ([#15101](https://github.com/blockscout/blockscout/pull/15101))
 - Skip SQL queries in Hot smart-contracts API when the functionality is disabled ([#15088](https://github.com/blockscout/blockscout/pull/15088))
