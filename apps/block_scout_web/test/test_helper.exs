@@ -17,7 +17,10 @@ Bureaucrat.start(
 
 # Bureaucrat.start()
 
-ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter])
+# Annotates failed tests on GitHub Actions.
+github = if System.get_env("GITHUB_ACTIONS"), do: [Playwright.Test.GitHubFormatter], else: []
+
+ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter | github])
 ExUnit.start()
 
 Mox.defmock(Explorer.Market.Source.TestSource, for: Explorer.Market.Source)
