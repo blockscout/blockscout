@@ -178,8 +178,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.apply_filter("To")
-      |> refute_has(AddressPage.transaction(transactions.from_lincoln))
       |> assert_has(AddressPage.transaction(transactions.from_taft))
+      |> refute_has(AddressPage.transaction(transactions.from_lincoln))
     end
 
     test "only addresses not matching the page are links", %{
