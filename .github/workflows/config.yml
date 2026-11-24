@@ -794,7 +794,9 @@ jobs:
         run: node node_modules/webpack/bin/webpack.js --mode development
         working-directory: "apps/block_scout_web/assets"
 
-      - run: ./bin/install_chrome_headless.sh
+      - name: Install Chromium
+        run: mix playwright.install chromium --with-deps
+        working-directory: apps/block_scout_web
 
       - name: mix test --exclude no_nethermind
         run: |

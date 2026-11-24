@@ -153,7 +153,6 @@ defmodule BlockScoutWeb.Mixfile do
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 1.0"},
       {:timex, "~> 4.0.0"},
-      {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:ex_json_schema, "~> 0.11.0"},
       {:ueberauth, "~> 0.7"},
@@ -161,7 +160,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:open_api_spex, "~> 3.21"},
-      {:ymlr, "~> 5.1"}
+      {:ymlr, "~> 5.1"},
+      {:fluffy, "~> 0.9.0-rc.5", only: :test}
     ]
   end
 

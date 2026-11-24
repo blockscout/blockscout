@@ -2,9 +2,10 @@
 defmodule BlockScoutWeb.BlockListPage do
   @moduledoc false
 
-  use Wallaby.DSL
+  use Fluffy.Assert
 
-  import Wallaby.Query, only: [css: 1, css: 2]
+  import Fluffy
+  import Fluffy.Locator
 
   alias Explorer.Chain.Block
 
@@ -21,14 +22,14 @@ defmodule BlockScoutWeb.BlockListPage do
   end
 
   def block(%Block{number: block_number}) do
-    css("[data-block-number='#{block_number}']")
+    by_css("[data-block-number='#{block_number}']")
   end
 
   def place_holder_blocks(count) do
-    css("[data-selector='place-holder']", count: count)
+    count(filter(by_css("[data-selector='place-holder']"), visible: true), count)
   end
 
   def blocks(count) do
-    css("[data-selector='block-tile']", count: count)
+    count(filter(by_css("[data-selector='block-tile']"), visible: true), count)
   end
 end

@@ -2,19 +2,20 @@
 defmodule BlockScoutWeb.AppPage do
   @moduledoc false
 
-  use Wallaby.DSL
+  use Fluffy.Assert
 
-  import Wallaby.Query, only: [css: 1, css: 2]
+  import Fluffy
+  import Fluffy.Locator
 
   def visit_page(session) do
     visit(session, "/")
   end
 
   def indexed_status(text) do
-    css("[data-selector='indexed-status'] [data-indexed-ratio]", text: text)
+    filter(by_css("[data-selector='indexed-status'] [data-indexed-ratio]"), has_text: text)
   end
 
   def still_indexing?() do
-    css("[data-selector='indexed-status']")
+    by_css("[data-selector='indexed-status']")
   end
 end

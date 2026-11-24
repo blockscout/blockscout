@@ -2,45 +2,49 @@
 defmodule BlockScoutWeb.ChainPage do
   @moduledoc false
 
-  use Wallaby.DSL
+  use Fluffy.Assert
 
-  import Wallaby.Query, only: [css: 1, css: 2]
+  import Fluffy
+  import Fluffy.Locator
 
   alias Explorer.Chain.{Address, Block, Transaction}
 
   def block(%Block{number: block_number}) do
-    css("[data-block-number='#{block_number}']")
+    by_css("[data-block-number='#{block_number}']")
   end
 
   def blocks(count: count) do
-    css("[data-selector='chain-block']", count: count)
+    count(filter(by_css("[data-selector='chain-block']"), visible: true), count)
   end
 
   def contract_creation(%Transaction{created_contract_address_hash: hash}) do
     checksum = Address.checksum(hash)
-    css("[data-test='contract-creation'] [data-address-hash='#{checksum}']")
+    by_css("[data-test='contract-creation'] [data-address-hash='#{checksum}']")
   end
 
   def place_holder_blocks(count) do
-    css("[data-selector='place-holder']", count: count)
+    count(filter(by_css("[data-selector='place-holder']"), visible: true), count)
   end
 
   def search(session, text) do
     session
-    |> fill_in(css("[data-test='search_input']"), with: text)
-    |> send_keys([:enter])
+    |> fill(filter(by_css("[data-test='search_input']"), visible: true), text)
+    |> press(filter(by_css("[data-test='search_input']"), visible: true), "Enter")
   end
 
   def token_transfers(%Transaction{hash: transaction_hash}, count: count) do
-    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer']", count: count)
+    count(
+      filter(by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfer']"), visible: true),
+      count
+    )
   end
 
   def token_transfers_expansion(%Transaction{hash: transaction_hash}) do
-    css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
+    by_css("[data-identifier-hash='#{transaction_hash}'] [data-test='token_transfers_expansion']")
   end
 
   def transactions(count: count) do
-    css("[data-test='chain_transaction']", count: count)
+    count(filter(by_css("[data-test='chain_transaction']"), visible: true), count)
   end
 
   def visit_page(session) do

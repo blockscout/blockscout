@@ -35,8 +35,8 @@ npm-debug.log
 # variables.
 /apps/*/config/*.secret.exs
 
-# Wallaby screenshots
-screenshots/
+# Playwright traces and screenshots of failed browser tests
+test-results/
 
 # Sobelow
 .sobelow

@@ -62,7 +62,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
       session
       |> ChainPage.visit_page()
-      |> assert_has(ChainPage.blocks(count: 4))
+      |> assert(ChainPage.blocks(count: 4))
     end
 
     test "inserts place holder blocks on render for out of order blocks", %{session: session} do
@@ -73,7 +73,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
       session
       |> ChainPage.visit_page()
       |> assert_has(ChainPage.block(%Block{number: 408}))
-      |> assert_has(ChainPage.place_holder_blocks(3))
+      |> assert(ChainPage.place_holder_blocks(3))
     end
   end
 
@@ -98,7 +98,7 @@ defmodule BlockScoutWeb.ViewingChainTest do
 
       session
       |> ChainPage.visit_page()
-      |> assert_has(ChainPage.transactions(count: 5))
+      |> assert(ChainPage.transactions(count: 5))
     end
 
     test "contract creation is shown for to_address", %{session: session, block: block} do
@@ -145,9 +145,9 @@ defmodule BlockScoutWeb.ViewingChainTest do
       :timer.sleep(1000)
 
       session
-      |> assert_has(ChainPage.token_transfers(transaction, count: 1))
+      |> assert(ChainPage.token_transfers(transaction, count: 1))
       |> click(ChainPage.token_transfers_expansion(transaction))
-      |> assert_has(ChainPage.token_transfers(transaction, count: 3))
+      |> assert(ChainPage.token_transfers(transaction, count: 3))
     end
   end
 end

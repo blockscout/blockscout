@@ -96,9 +96,9 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
 
       session
       |> BlockPage.visit_page(block)
-      |> assert_has(BlockPage.token_transfers(transaction, count: 1))
+      |> assert(BlockPage.token_transfers(transaction, count: 1))
       |> click(BlockPage.token_transfers_expansion(transaction))
-      |> assert_has(BlockPage.token_transfers(transaction, count: 3))
+      |> assert(BlockPage.token_transfers(transaction, count: 3))
     end
 
     test "show reorg detail page", %{session: session} do
@@ -146,7 +146,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       session
       |> BlockListPage.visit_page()
       |> assert_has(BlockListPage.block(%Block{number: 314}))
-      |> assert_has(BlockListPage.place_holder_blocks(3))
+      |> assert(BlockListPage.place_holder_blocks(3))
     end
   end
 
@@ -170,7 +170,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       session
       |> BlockListPage.visit_uncles_page()
       |> assert_has(BlockListPage.block(uncle))
-      |> assert_has(BlockListPage.blocks(10))
+      |> assert(BlockListPage.blocks(10))
     end
   end
 
@@ -182,7 +182,7 @@ defmodule BlockScoutWeb.ViewingBlocksTest do
       session
       |> BlockListPage.visit_reorgs_page()
       |> assert_has(BlockListPage.block(reorg))
-      |> assert_has(BlockListPage.blocks(10))
+      |> assert(BlockListPage.blocks(10))
     end
   end
 end
