@@ -10,40 +10,6 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
 
   @api_true [api?: true]
 
-  def gettxinfo(conn, params) do
-    with {:txhash_param, {:ok, txhash_param}} <- fetch_transaction_hash(params),
-         {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param),
-         {:transaction, {:ok, %Transaction{revert_reason: revert_reason, error: error} = transaction}} <-
-           transaction_from_hash(transaction_hash),
-         paging_options <- paging_options(params) do
-      logs = Chain.transaction_to_logs(transaction_hash, Keyword.merge(paging_options, @api_true))
-      {logs, next_page} = split_list_by_page(logs, paging_options[:paging_options])
-
-      transaction_updated =
-        if (error == "Reverted" || error == "execution reverted") && !revert_reason do
-          %Transaction{transaction | revert_reason: Transaction.fetch_transaction_revert_reason(transaction)}
-        else
-          transaction
-        end
-
-      render(conn, :gettxinfo, %{
-        transaction: transaction_updated,
-        block_height: Chain.block_height(),
-        logs: logs,
-        next_page_params: next_page_params(next_page, logs, params)
-      })
-    else
-      {:transaction, :error} ->
-        render(conn, :error, error: "Transaction not found")
-
-      {:txhash_param, :error} ->
-        render(conn, :error, error: "Query parameter txhash is required")
-
-      {:format, :error} ->
-        render(conn, :error, error: "Invalid txhash format")
-    end
-  end
-
   def gettxreceiptstatus(conn, params) do
     with {:txhash_param, {:ok, txhash_param}} <- fetch_transaction_hash(params),
          {:format, {:ok, transaction_hash}} <- to_transaction_hash(txhash_param) do
@@ -72,15 +38,24 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
     end
   end
 
-  defp fetch_transaction_hash(params) do
-    {:txhash_param, Map.fetch(params, "txhash")}
+  @doc """
+  Handles the `gettxinfo` action of the `transaction` module.
+
+  Responds with the transaction identified by the `txhash` query parameter
+  together with a page of its logs.
+  """
+  @spec gettxinfo(Plug.Conn.t(), map()) :: Plug.Conn.t()
+  def gettxinfo(conn, %{"txhash" => txhash_param} = params) do
+    case Chain.string_to_full_hash(txhash_param) do
+      {:ok, transaction_hash} -> render_transaction_info(conn, transaction_hash, params)
+      :error -> render(conn, :error, error: "Invalid txhash format")
+    end
   end
 
-  defp transaction_from_hash(transaction_hash) do
-    case Chain.hash_to_transaction(transaction_hash, DenormalizationHelper.extend_block_necessity([], :required)) do
-      {:error, :not_found} -> {:transaction, :error}
-      {:ok, transaction} -> {:transaction, {:ok, transaction}}
-    end
+  def gettxinfo(conn, _params), do: render(conn, :error, error: "Query parameter txhash is required")
+
+  defp fetch_transaction_hash(params) do
+    {:txhash_param, Map.fetch(params, "txhash")}
   end
 
   defp to_transaction_hash(transaction_hash_string) do
@@ -102,4 +77,33 @@ defmodule BlockScoutWeb.API.RPC.TransactionController do
       _ -> ""
     end
   end
+
+  # Responds with the transaction and the requested page of its logs, or with an
+  # error when no transaction has the given hash.
+  defp render_transaction_info(conn, transaction_hash, params) do
+    case Chain.hash_to_transaction(transaction_hash, DenormalizationHelper.extend_block_necessity([], :required)) do
+      {:ok, transaction} ->
+        paging_options = paging_options(params)
+        logs = Chain.transaction_to_logs(transaction_hash, Keyword.merge(paging_options, @api_true))
+        {logs, next_page} = split_list_by_page(logs, paging_options[:paging_options])
+
+        render(conn, :gettxinfo, %{
+          transaction: with_revert_reason(transaction),
+          block_height: Chain.block_height(),
+          logs: logs,
+          next_page_params: next_page_params(next_page, logs, params)
+        })
+
+      {:error, :not_found} ->
+        render(conn, :error, error: "Transaction not found")
+    end
+  end
+
+  # Fetches the revert reason of a reverted transaction if it is not stored yet.
+  defp with_revert_reason(%Transaction{revert_reason: nil, error: error} = transaction)
+       when error in ["Reverted", "execution reverted"] do
+    %Transaction{transaction | revert_reason: Transaction.fetch_transaction_revert_reason(transaction)}
+  end
+
+  defp with_revert_reason(transaction), do: transaction
 end

@@ -627,38 +627,6 @@ defmodule BlockScoutWeb.Etherscan do
     "result" => nil
   }
 
-  @transaction_gettxinfo_example_value %{
-    "status" => "1",
-    "result" => %{
-      "blockNumber" => "3",
-      "confirmations" => "0",
-      "from" => "0x000000000000000000000000000000000000000c",
-      "gasLimit" => "91966",
-      "gasUsed" => "95123",
-      "gasPrice" => "100000",
-      "hash" => "0x0000000000000000000000000000000000000000000000000000000000000004",
-      "input" => "0x04",
-      "logs" => [
-        %{
-          "address" => "0x000000000000000000000000000000000000000e",
-          "data" => "0x00",
-          "topics" => ["First Topic", "Second Topic", "Third Topic", "Fourth Topic"]
-        }
-      ],
-      "success" => true,
-      "timeStamp" => "1541018182",
-      "to" => "0x000000000000000000000000000000000000000d",
-      "value" => "67612",
-      revertReason: "No credit of that type"
-    }
-  }
-
-  @transaction_gettxinfo_example_value Map.update!(
-                                         @transaction_gettxinfo_example_value,
-                                         "result",
-                                         &Map.merge(&1, @l1_fee_example_fields)
-                                       )
-
   @transaction_gettxreceiptstatus_example_value %{
     "status" => "1",
     "message" => "OK",
@@ -842,33 +810,6 @@ defmodule BlockScoutWeb.Etherscan do
     type: "revert_reason",
     definition: "Revert reason of transaction.",
     example: ~s("No credit of that type")
-  }
-
-  @logs_details %{
-    name: "Log Detail",
-    fields: %{
-      address: @address_hash_type,
-      topics: %{
-        type: "topics",
-        definition: "An array including the topics for the log.",
-        example: ~s(["0xf63780e752c6a54a94fc52715dbc5518a3b4c3c2833d301a204226548a2a8545"])
-      },
-      data: %{
-        type: "data",
-        definition: "Non-indexed log parameters.",
-        example: ~s("0x")
-      },
-      blockNumber: %{
-        type: "block number",
-        definition: "A nonnegative number used to identify blocks.",
-        example: ~s("0x5c958")
-      },
-      index: %{
-        type: "log index",
-        definition: "A nonnegative number used to identify logs.",
-        example: ~s("1")
-      }
-    }
   }
 
   @token_holder_details %{
@@ -1331,39 +1272,6 @@ defmodule BlockScoutWeb.Etherscan do
       }
     }
   }
-
-  @transaction_info_model %{
-    name: "TransactionInfo",
-    fields: %{
-      hash: @transaction_hash_type,
-      timeStamp: %{
-        type: "timestamp",
-        definition: "The transaction's block-timestamp.",
-        example: ~s("1439232889")
-      },
-      blockNumber: @block_number_type,
-      confirmations: @confirmation_type,
-      success: %{
-        type: "boolean",
-        definition: "Flag for success during transaction execution",
-        example: ~s(true)
-      },
-      from: @address_hash_type,
-      to: @address_hash_type,
-      value: @wei_type,
-      input: @input_type,
-      gasLimit: @wei_type,
-      gasUsed: @gas_type,
-      gasPrice: @wei_type,
-      logs: %{
-        type: "array",
-        array_type: @logs_details
-      },
-      revertReason: @revert_reason_type
-    }
-  }
-
-  @transaction_info_model Map.update!(@transaction_info_model, :fields, &Map.merge(&1, @l1_fee_doc_fields))
 
   @transaction_status_model %{
     name: "TransactionStatus",
@@ -3235,49 +3143,6 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
-  @transaction_gettxinfo_action %{
-    name: "gettxinfo",
-    description: "Get transaction info.",
-    required_params: [
-      %{
-        key: "txhash",
-        placeholder: "transactionHash",
-        type: "string",
-        description: "Transaction hash. Hash of contents of the transaction."
-      }
-    ],
-    optional_params: [
-      %{
-        key: "index",
-        type: "integer",
-        description: "A nonnegative integer that represents the log index to be used for pagination."
-      }
-    ],
-    responses: [
-      %{
-        code: "200",
-        description: "successful operation",
-        example_value: Utils.JSON.encode!(@transaction_gettxinfo_example_value),
-        model: %{
-          name: "Result",
-          fields: %{
-            status: @status_type,
-            message: @message_type,
-            result: %{
-              type: "model",
-              model: @transaction_info_model
-            }
-          }
-        }
-      },
-      %{
-        code: "200",
-        description: "error",
-        example_value: Utils.JSON.encode!(@transaction_gettxreceiptstatus_example_value_error)
-      }
-    ]
-  }
-
   @transaction_gettxreceiptstatus_action %{
     name: "gettxreceiptstatus",
     description: "Get transaction receipt status. Also available through a GraphQL 'transaction' query.",
@@ -3422,13 +3287,120 @@ defmodule BlockScoutWeb.Etherscan do
     ]
   }
 
+  @transaction_gettxinfo_example_result %{
+    "hash" => "0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4",
+    "timeStamp" => "1541018182",
+    "blockNumber" => "34092",
+    "confirmations" => "6005998",
+    "success" => true,
+    "from" => "0x8f0e5c6d1a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "to" => "0x3b1c7e9d2f4a6b8c0d1e2f3a4b5c6d7e8f9a0b1c",
+    "value" => "0",
+    "input" =>
+      "0xa9059cbb0000000000000000000000005a6b7c8d9e0f1a2b3c4d5e6f708192a3b4c5d6e70000000000000000000000000000000000000000000000000de0b6b3a7640000",
+    "gasLimit" => "122261",
+    "gasUsed" => "51627",
+    "gasPrice" => "1000000000",
+    "revertReason" => "",
+    "logs" => [
+      %{
+        "address" => "0x3b1c7e9d2f4a6b8c0d1e2f3a4b5c6d7e8f9a0b1c",
+        "topics" => [
+          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+          "0x0000000000000000000000008f0e5c6d1a2b3c4d5e6f708192a3b4c5d6e7f809",
+          "0x0000000000000000000000005a6b7c8d9e0f1a2b3c4d5e6f708192a3b4c5d6e7",
+          nil
+        ],
+        "data" => "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+        "index" => "0"
+      }
+    ],
+    "next_page_params" => nil
+  }
+
+  @transaction_gettxinfo_example_value %{
+    "status" => "1",
+    "message" => "OK",
+    "result" => Map.merge(@transaction_gettxinfo_example_result, @l1_fee_example_fields)
+  }
+
+  @transaction_info_log_model %{
+    name: "TransactionInfoLog",
+    fields: %{
+      address: @address_hash_type,
+      topics: %{
+        type: "topics",
+        definition: "Topics of the log in order. Always four items, the missing ones are null.",
+        example: ~s(["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef", null, null, null])
+      },
+      data: %{type: "data", definition: "Hex-encoded non-indexed log arguments.", example: ~s("0x")},
+      index: %{type: "log index", definition: "A nonnegative number used to identify logs.", example: ~s("1")}
+    }
+  }
+
+  @transaction_info_fields %{
+    hash: @transaction_hash_type,
+    timeStamp: %{
+      type: "timestamp",
+      definition: "Unix timestamp of the block the transaction was included in.",
+      example: ~s("1541018182")
+    },
+    blockNumber: @block_number_type,
+    confirmations: @confirmation_type,
+    success: %{type: "boolean", definition: "Flag for success during transaction execution", example: ~s(true)},
+    from: @address_hash_type,
+    to: @address_hash_type,
+    value: @wei_type,
+    input: @input_type,
+    gasLimit: @gas_type,
+    gasUsed: @gas_type,
+    gasPrice: @wei_type,
+    logs: %{type: "array", array_type: @transaction_info_log_model},
+    revertReason: @revert_reason_type
+  }
+
+  @transaction_info_model %{name: "TransactionInfo", fields: Map.merge(@transaction_info_fields, @l1_fee_doc_fields)}
+
+  @transaction_gettxinfo_result_model %{
+    name: "Result",
+    fields: %{status: @status_type, message: @message_type, result: %{type: "model", model: @transaction_info_model}}
+  }
+
+  @transaction_gettxinfo_action %{
+    name: "gettxinfo",
+    description: "Get a transaction by its hash, including execution status, gas data and a page of emitted logs.",
+    required_params: [
+      %{
+        key: "txhash",
+        placeholder: "transactionHash",
+        type: "string",
+        description: "Hash of the transaction to look up."
+      }
+    ],
+    optional_params: [
+      %{
+        key: "index",
+        type: "integer",
+        description: "A nonnegative integer that represents the log index to be used for pagination."
+      }
+    ],
+    responses: [
+      %{
+        code: "200",
+        description: "successful operation",
+        example_value: Utils.JSON.encode!(@transaction_gettxinfo_example_value),
+        model: @transaction_gettxinfo_result_model
+      },
+      %{
+        code: "200",
+        description: "error",
+        example_value: Utils.JSON.encode!(@transaction_gettxreceiptstatus_example_value_error)
+      }
+    ]
+  }
   @transaction_module %{
     name: "transaction",
-    actions: [
-      @transaction_gettxinfo_action,
-      @transaction_gettxreceiptstatus_action,
-      @transaction_getstatus_action
-    ]
+    actions: [@transaction_gettxinfo_action, @transaction_gettxreceiptstatus_action, @transaction_getstatus_action]
   }
 
   @documentation [
