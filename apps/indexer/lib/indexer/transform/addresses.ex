@@ -238,6 +238,15 @@ defmodule Indexer.Transform.Addresses do
 
   defstruct pending: false
 
+  # The sender of a transaction whose `nonce` is not the account nonce. The declaration has no
+  # `:nonce`, so the address gets only its hash and the coin balance block number.
+  @sender_without_account_nonce_fields [
+    [
+      %{from: :block_number, to: :fetched_coin_balance_block_number},
+      %{from: :from_address_hash, to: :hash}
+    ]
+  ]
+
   if @chain_type == :zksync do
     @created_contract_doc """
     A contract created in an internal transaction has its `created_contract_address_hash` extracted.
@@ -518,6 +527,29 @@ defmodule Indexer.Transform.Addresses do
       ]
 
   #{@merged_contract_code_doc}
+  The `nonce` of an EIP-8430 transaction (EIP-2718 type `0x79`) is the account nonce of the sender only if the
+  `nonce_key` of the transaction is `0`. For each other `nonce_key`, and for an absent `nonce_key`, the sender is
+  extracted without the `nonce`.
+
+      iex> Indexer.Transform.Addresses.extract_addresses(
+      ...>   %{
+      ...>     transactions: [
+      ...>       %{
+      ...>         block_number: 1,
+      ...>         from_address_hash: "0x0000000000000000000000000000000000000001",
+      ...>         nonce: 7,
+      ...>         eip_8430_fields: %{nonce_key: 5}
+      ...>       }
+      ...>     ]
+      ...>   }
+      ...> )
+      [
+        %{
+          fetched_coin_balance_block_number: 1,
+          hash: "0x0000000000000000000000000000000000000001"
+        }
+      ]
+
   All data must have some way of extracting the `fetched_coin_balance_block_number` or an `ArgumentError` will be raised when
   none of the supported extract formats matches the params.
 
@@ -563,7 +595,11 @@ defmodule Indexer.Transform.Addresses do
               optional(:created_contract_address_hash) => String.t(),
               optional(:execution_node_hash) => String.t(),
               optional(:wrapped_to_address_hash) => String.t(),
-              optional(:fee_payer_address_hash) => String.t()
+              optional(:fee_payer_address_hash) => String.t(),
+              optional(:eip_8430_fields) => %{
+                optional(:nonce_key) => non_neg_integer() | nil,
+                optional(any()) => any()
+              }
             }
           ],
           optional(:logs) => [
@@ -652,6 +688,8 @@ defmodule Indexer.Transform.Addresses do
   def extract_addresses(fetched_data, options \\ []) when is_map(fetched_data) and is_list(options) do
     state = struct!(__MODULE__, options)
 
+    {fetched_data, transactions_without_account_nonce} = pop_transaction_nonces_outside_account_nonce(fetched_data)
+
     addresses =
       for {entity_key, entity_fields} <- @entity_to_address_map,
           (entity_items = Map.get(fetched_data, entity_key)) != nil,
@@ -659,9 +697,53 @@ defmodule Indexer.Transform.Addresses do
 
     addresses
     |> List.flatten()
+    |> Enum.concat(
+      extract_addresses_from_collection(
+        transactions_without_account_nonce,
+        @sender_without_account_nonce_fields,
+        state
+      )
+    )
     |> Enum.concat(chain_type_addresses(fetched_data, state))
     |> merge_addresses()
   end
+
+  # Removes the `nonce` from each transaction whose `nonce` is not the account nonce of the
+  # sender. Returns the updated data and the list of the transactions that changed.
+  #
+  # A declaration of `@entity_to_address_map` gives no address if one of its fields is absent.
+  # Thus the declaration of the sender, which includes `:nonce`, skips a transaction without the
+  # `nonce`. The caller extracts the senders of the returned transactions with
+  # `@sender_without_account_nonce_fields`. All other declarations of the transactions do not
+  # read the `nonce`, so they give the same addresses as before.
+  @spec pop_transaction_nonces_outside_account_nonce(map()) :: {map(), [map()]}
+  defp pop_transaction_nonces_outside_account_nonce(%{transactions: transactions} = fetched_data)
+       when is_list(transactions) do
+    {updated_transactions, transactions_without_account_nonce} =
+      Enum.map_reduce(transactions, [], fn transaction, acc ->
+        if nonce_is_account_nonce?(transaction) do
+          {transaction, acc}
+        else
+          transaction_without_nonce = Map.delete(transaction, :nonce)
+          {transaction_without_nonce, [transaction_without_nonce | acc]}
+        end
+      end)
+
+    {%{fetched_data | transactions: updated_transactions}, Enum.reverse(transactions_without_account_nonce)}
+  end
+
+  defp pop_transaction_nonces_outside_account_nonce(fetched_data), do: {fetched_data, []}
+
+  # Tells whether the `nonce` of the transaction is the account nonce of the sender.
+  #
+  # An EIP-8430 transaction (EIP-2718 type `0x79`) has the `:eip_8430_fields` key. Its `nonce` is
+  # the account nonce only if the `nonce_key` is `0`. For a `nonce_key` from `1` to `2^256 - 2`,
+  # the `nonce` is the sequence number of a nonce channel. For `2^256 - 1`, the transaction is in
+  # the nonce-free mode. An absent or `nil` `nonce_key` is unknown, so the `nonce` is not used.
+  @spec nonce_is_account_nonce?(map()) :: boolean()
+  defp nonce_is_account_nonce?(%{eip_8430_fields: %{nonce_key: 0}}), do: true
+  defp nonce_is_account_nonce?(%{eip_8430_fields: _eip_8430_fields}), do: false
+  defp nonce_is_account_nonce?(_transaction), do: true
 
   def extract_addresses_from_collection(items, fields, state),
     do: Enum.flat_map(items, &extract_addresses_from_item(&1, fields, state))

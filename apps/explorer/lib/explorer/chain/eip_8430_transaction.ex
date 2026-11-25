@@ -8,6 +8,7 @@ defmodule Explorer.Chain.EIP8430Transaction do
   use Explorer.Schema
 
   alias Explorer.Chain.{Data, Hash, JSONValue, Transaction}
+  alias Explorer.Repo
 
   @optional_attrs ~w(metadata payer sender_auth payer_auth account_changes)a
   # The values that each row must have, also the row of a pending transaction.
@@ -134,5 +135,33 @@ defmodule Explorer.Chain.EIP8430Transaction do
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@pending_required_attrs)
     |> foreign_key_constraint(:transaction_hash)
+  end
+
+  @doc """
+    Returns the `nonce_key` values of the given transactions.
+
+    The `nonce_key` is the nonce channel of an EIP-8430 transaction. The result has an entry
+    only for a transaction that has a row in `eip_8430_transactions`. For an empty list, the
+    function sends no query.
+
+    ## Parameters
+    - `transaction_hashes`: The hashes of the transactions.
+
+    ## Returns
+    A map from the transaction hash to the `nonce_key` of the transaction.
+  """
+  @spec transaction_hashes_to_nonce_keys([Hash.Full.t()]) :: %{Hash.Full.t() => Decimal.t()}
+  def transaction_hashes_to_nonce_keys([]), do: %{}
+
+  def transaction_hashes_to_nonce_keys(transaction_hashes) when is_list(transaction_hashes) do
+    query =
+      from(eip_8430_transaction in __MODULE__,
+        where: eip_8430_transaction.transaction_hash in ^transaction_hashes,
+        select: {eip_8430_transaction.transaction_hash, eip_8430_transaction.nonce_key}
+      )
+
+    query
+    |> Repo.all()
+    |> Map.new()
   end
 end

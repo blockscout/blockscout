@@ -319,6 +319,98 @@ defmodule Indexer.Transform.AddressesTest do
              }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 34, nonce: 12}]
     end
 
+    test "the sender of an EIP-8430 transaction with `nonce_key` 0 gets the nonce" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+
+      assert Addresses.extract_addresses(%{
+               transactions: [
+                 %{block_number: 34, from_address_hash: sender_hash, nonce: 12, eip_8430_fields: %{nonce_key: 0}}
+               ]
+             }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 34, nonce: 12}]
+    end
+
+    test "the sender of an EIP-8430 transaction of a nonce channel is extracted without the nonce" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+
+      assert Addresses.extract_addresses(%{
+               transactions: [
+                 %{block_number: 34, from_address_hash: sender_hash, nonce: 12, eip_8430_fields: %{nonce_key: 5}}
+               ]
+             }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 34}]
+    end
+
+    test "the sender of an EIP-8430 transaction in the nonce-free mode is extracted without the nonce" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+      nonce_free_nonce_key = Bitwise.bsl(1, 256) - 1
+
+      assert Addresses.extract_addresses(%{
+               transactions: [
+                 %{
+                   block_number: 34,
+                   from_address_hash: sender_hash,
+                   nonce: 0,
+                   eip_8430_fields: %{nonce_key: nonce_free_nonce_key}
+                 }
+               ]
+             }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 34}]
+    end
+
+    test "the sender of an EIP-8430 transaction with a `nil` `nonce_key` is extracted without the nonce" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+
+      assert Addresses.extract_addresses(%{
+               transactions: [
+                 %{block_number: 34, from_address_hash: sender_hash, nonce: 12, eip_8430_fields: %{nonce_key: nil}}
+               ]
+             }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 34}]
+    end
+
+    test "the sender gets the nonce of the usual transaction, not of the EIP-8430 transaction of a nonce channel" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+
+      assert Addresses.extract_addresses(%{
+               transactions: [
+                 %{block_number: 34, from_address_hash: sender_hash, nonce: 12},
+                 %{block_number: 35, from_address_hash: sender_hash, nonce: 900, eip_8430_fields: %{nonce_key: 5}}
+               ]
+             }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 35, nonce: 12}]
+    end
+
+    test "the sender of a pending EIP-8430 transaction of a nonce channel is extracted without the nonce" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+
+      assert Addresses.extract_addresses(
+               %{
+                 transactions: [
+                   %{block_number: nil, from_address_hash: sender_hash, nonce: 12, eip_8430_fields: %{nonce_key: 5}}
+                 ]
+               },
+               pending: true
+             ) == [%{hash: sender_hash, fetched_coin_balance_block_number: nil}]
+    end
+
+    test "the other addresses of an EIP-8430 transaction of a nonce channel are extracted" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+      to_hash = "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
+
+      assert %{
+               transactions: [
+                 %{
+                   block_number: 34,
+                   from_address_hash: sender_hash,
+                   to_address_hash: to_hash,
+                   nonce: 12,
+                   eip_8430_fields: %{nonce_key: 5}
+                 }
+               ]
+             }
+             |> Addresses.extract_addresses()
+             |> Enum.sort_by(& &1.hash) == [
+               %{hash: sender_hash, fetched_coin_balance_block_number: 34},
+               %{hash: to_hash, fetched_coin_balance_block_number: 34}
+             ]
+    end
+
     if @chain_type == :eden do
       test "recipients of the batched calls are extracted with the coin balance block number" do
         first_call_hash = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"
