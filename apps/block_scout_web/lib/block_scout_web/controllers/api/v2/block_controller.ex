@@ -513,16 +513,14 @@ defmodule BlockScoutWeb.API.V2.BlockController do
     parameters:
       base_params() ++
         [block_hash_or_number_param()] ++
-        define_paging_params(["index"]),
+        define_paging_params(Schemas.Withdrawal.ChainTypeCustomizations.paging_params_names()),
     responses: [
       ok:
         {"Withdrawals in the specified block, with pagination. Note that block_number and timestamp fields are not included in this endpoint.",
          "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
-           next_page_params_example: %{
-             "index" => 88_192_653
-           }
+           next_page_params_example: Schemas.Withdrawal.ChainTypeCustomizations.next_page_params_example()
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       not_found: NotFoundResponse.response()

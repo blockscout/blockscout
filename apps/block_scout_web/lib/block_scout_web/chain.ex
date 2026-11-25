@@ -908,6 +908,16 @@ defmodule BlockScoutWeb.Chain do
     end
   end
 
+  if @chain_type == :bera do
+    alias Explorer.Chain.Withdrawal
+
+    # On Bera chain type the withdrawal index is not unique, so withdrawals are
+    # paginated by the block number and the index.
+    def paging_params(%Withdrawal{block_number: block_number, index: index}) do
+      %{block_number: block_number, index: index}
+    end
+  end
+
   def paging_params(%Address{
         hash: hash,
         fetched_coin_balance: fetched_coin_balance,

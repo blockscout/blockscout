@@ -6,6 +6,8 @@ defmodule Explorer.Chain.Import.Runner.Withdrawals do
 
   require Ecto.Query
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Ecto.{Changeset, Multi, Repo}
   alias Explorer.Chain.{Import, Withdrawal}
   alias Explorer.Prometheus.Instrumenter
@@ -18,6 +20,11 @@ defmodule Explorer.Chain.Import.Runner.Withdrawals do
   @timeout 60_000
 
   @type imported :: [Withdrawal.t()]
+
+  # On Bera chain type the withdrawal index is not unique (see
+  # `Explorer.Chain.Withdrawal`), so withdrawals are identified by
+  # `(block_number, index)`.
+  @conflict_target if @chain_type == :bera, do: [:block_number, :index], else: [:index]
 
   @impl Import.Runner
   def ecto_schema_module, do: Withdrawal
@@ -66,13 +73,13 @@ defmodule Explorer.Chain.Import.Runner.Withdrawals do
     on_conflict = Map.get_lazy(options, :on_conflict, &default_on_conflict/0)
 
     # Enforce Withdrawal ShareLocks order (see docs: sharelocks.md)
-    ordered_changes_list = Enum.sort_by(changes_list, & &1.index)
+    ordered_changes_list = Enum.sort_by(changes_list, &Map.take(&1, @conflict_target))
 
     {:ok, _} =
       Import.insert_changes_list(
         repo,
         ordered_changes_list,
-        conflict_target: [:index],
+        conflict_target: @conflict_target,
         on_conflict: on_conflict,
         for: Withdrawal,
         returning: true,

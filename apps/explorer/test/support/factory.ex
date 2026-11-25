@@ -1607,9 +1607,9 @@ defmodule Explorer.Factory do
     }
   end
 
-  def withdrawal_factory do
-    block = build(:block)
-    address = build(:address)
+  def withdrawal_factory(attrs) do
+    block = Map.get_lazy(attrs, :block, fn -> build(:block) end)
+    address = Map.get_lazy(attrs, :address, fn -> build(:address) end)
 
     %Withdrawal{
       index: withdrawal_index(),
@@ -1620,6 +1620,14 @@ defmodule Explorer.Factory do
       address: address,
       address_hash: address.hash
     }
+    |> struct!(withdrawal_factory_chain_type_fields(block))
+    |> merge_attributes(attrs)
+  end
+
+  if @chain_type == :bera do
+    defp withdrawal_factory_chain_type_fields(block), do: %{block_number: block.number}
+  else
+    defp withdrawal_factory_chain_type_fields(_block), do: %{}
   end
 
   def withdrawal_index do

@@ -41,6 +41,7 @@ jobs:
               "default",
               "arbitrum",
               "arc",
+              "bera",
               "blackfort",
               "eden",
               "ethereum",
