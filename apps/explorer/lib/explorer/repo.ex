@@ -16,7 +16,7 @@ defmodule Explorer.Repo do
   def init(_, opts) do
     {:ok, opts} = ConfigHelper.init_repo_module(__MODULE__, opts)
 
-    {:ok, AddressIdToAddressHashCache.add_clear_on_connect(opts)}
+    {:ok, AddressIdToAddressHashCache.add_invalidation_on_connect(opts)}
   end
 
   def logged_transaction(fun_or_multi, opts \\ []) do
@@ -131,7 +131,7 @@ defmodule Explorer.Repo do
     def init(_, opts) do
       {:ok, opts} = ConfigHelper.init_repo_module(__MODULE__, opts)
 
-      {:ok, AddressIdToAddressHashCache.add_clear_on_connect(opts)}
+      {:ok, AddressIdToAddressHashCache.add_invalidation_on_connect(opts)}
     end
   end
 

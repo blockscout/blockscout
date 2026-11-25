@@ -219,7 +219,7 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
 
       # the entries of a batch are accessed in its order; a single batch casts a
       # single eviction
-      Cache.put(mappings, Repo)
+      put(mappings)
       wait_for_eviction()
 
       # 7_000 of 25_000 are expected to be evicted; the estimate is off by about 100
@@ -236,55 +236,113 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
     end
   end
 
-  describe "clearing on connect" do
-    test "clear/1 empties both tables, and is harmless while the cache isn't running" do
-      assert Cache.clear(:connection) == :ok
-
+  describe "invalidation" do
+    test "hides every cached mapping, and later reads fill the cache again" do
       start_cache(100)
 
       [{address_id, address_hash} = mapping] = random_mappings(1)
-      Cache.put([mapping], Repo)
+      put([mapping])
 
       assert Cache.get_ids([address_hash]) == {%{address_hash => address_id}, []}
-      assert Cache.clear(:connection) == :ok
+
+      Cache.invalidate()
 
       assert Cache.get_ids([address_hash]) == {%{}, [address_hash]}
       assert Cache.get_hashes([address_id]) == {%{}, [address_id]}
+
+      put([mapping])
+
+      assert Cache.get_ids([address_hash]) == {%{address_hash => address_id}, []}
+      assert Cache.get_hashes([address_id]) == {%{address_id => address_hash}, []}
     end
 
-    test "add_clear_on_connect/1 clears before the after_connect callback the options have" do
-      clear = {Cache, :clear, []}
+    test "rejects the mappings of a read that began before it" do
+      start_cache(100)
 
-      assert Cache.add_clear_on_connect(pool_size: 1) == [pool_size: 1]
+      [{address_id, address_hash} = mapping] = random_mappings(1)
+
+      # the read begins, and the cache is invalidated while the read is under way
+      read_epoch = Cache.epoch()
+      Cache.invalidate()
+      Cache.put([mapping], Repo, read_epoch)
+
+      assert Cache.get_ids([address_hash]) == {%{}, [address_hash]}
+      assert Cache.get_hashes([address_id]) == {%{}, [address_id]}
+
+      # not even stored: the entries would look recently used to the eviction
+      assert :ets.info(:address_hash_to_address_id_cache, :size) == 0
+      assert :ets.info(:address_id_to_address_hash_cache, :size) == 0
+    end
+
+    test "a read paused before Cache.put/3 caches nothing once the cache is invalidated meanwhile" do
+      # created before the cache starts, so that only the paused read could cache it
+      %{address_id: address_id, address_hash: existing_hash} = AddressIdToAddressHash.find_or_create(address_hash())
+
+      start_cache(100)
+      pause_after_mapping_reads()
+
+      for {address_hash, read} <- [
+            {existing_hash, &AddressIdToAddressHash.hash_to_id/1},
+            {address_hash(), &AddressIdToAddressHash.find_or_create/1}
+          ] do
+        test_process = self()
+
+        reader =
+          Task.async(fn ->
+            Process.put(:pause_after_mapping_read, test_process)
+            read.(address_hash)
+          end)
+
+        # the reader has got the mapping from the database, but hasn't cached it yet
+        assert_receive {:paused, reader_process}
+        Cache.invalidate()
+        send(reader_process, :resume)
+        Task.await(reader)
+
+        assert Cache.get_ids([address_hash]) == {%{}, [address_hash]}
+      end
+
+      # without an invalidation in between, the same read fills the cache
+      assert AddressIdToAddressHash.hash_to_id(existing_hash) == address_id
+      assert Cache.get_ids([existing_hash]) == {%{existing_hash => address_id}, []}
+    end
+
+    test "is harmless while the cache isn't running" do
+      assert Cache.epoch() == nil
+      assert Cache.invalidate(:connection) == :ok
+      assert Cache.put(random_mappings(1), Repo, nil) == :ok
+    end
+
+    test "add_invalidation_on_connect/1 invalidates before the after_connect callback the options have" do
+      invalidate = {Cache, :invalidate, []}
+
+      assert Cache.add_invalidation_on_connect(pool_size: 1) == [pool_size: 1]
 
       start_cache(100)
 
-      assert Cache.add_clear_on_connect(pool_size: 1)[:after_connect] == clear
-      assert Cache.add_clear_on_connect(after_connect: nil)[:after_connect] == clear
+      assert Cache.add_invalidation_on_connect(pool_size: 1)[:after_connect] == invalidate
+      assert Cache.add_invalidation_on_connect(after_connect: nil)[:after_connect] == invalidate
 
-      [{_address_id, address_hash} = mapping] = random_mappings(1)
-      Cache.put([mapping], Repo)
+      for existing <- [fn connection -> send(connection, :existing) end, {:erlang, :send, [:existing]}] do
+        after_connect = Cache.add_invalidation_on_connect(after_connect: existing)[:after_connect]
+        epoch = Cache.epoch()
 
-      # the test process stands in for the connection, and the callback it had
-      # finds the cache cleared already
-      existing = fn connection -> send(connection, {:existing, Cache.get_ids([address_hash])}) end
-      Cache.add_clear_on_connect(after_connect: existing)[:after_connect].(self())
+        # the test process stands in for the connection
+        after_connect.(self())
 
-      assert_received {:existing, {%{}, [^address_hash]}}
-
-      Cache.add_clear_on_connect(after_connect: {:erlang, :send, [:existing_mfa]})[:after_connect].(self())
-
-      assert_received :existing_mfa
+        assert Cache.epoch() != epoch
+        assert_received :existing
+      end
     end
 
-    test "Explorer.Repo and Explorer.Repo.Replica1 clear the cache when a connection connects" do
+    test "Explorer.Repo and Explorer.Repo.Replica1 invalidate the cache when a connection connects" do
       put_cache_config(100)
 
-      assert Repo.config()[:after_connect] == {Cache, :clear, []}
-      assert Replica1.config()[:after_connect] == {Cache, :clear, []}
+      assert Repo.config()[:after_connect] == {Cache, :invalidate, []}
+      assert Replica1.config()[:after_connect] == {Cache, :invalidate, []}
     end
 
-    test "a connection clears the cache before serving a query, and connects without the cache" do
+    test "a connection invalidates the cache before serving a query, and connects without the cache" do
       put_cache_config(100)
 
       # connections of their own, outside of the sandbox
@@ -295,12 +353,12 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
 
       start_supervised!(Cache)
       [{_address_id, address_hash} = mapping] = random_mappings(1)
-      Cache.put([mapping], Repo)
+      put([mapping])
 
       with_cache = start_supervised!(Supervisor.child_spec({Postgrex, options}, id: :with_cache))
       assert %{rows: [[1]]} = Postgrex.query!(with_cache, "SELECT 1", [])
 
-      # nothing to wait for: the connection serves queries only once it has cleared the cache
+      # nothing to wait for: the connection serves queries only once it has invalidated the cache
       assert Cache.get_ids([address_hash]) == {%{}, [address_hash]}
     end
   end
@@ -328,15 +386,45 @@ defmodule Explorer.Utility.AddressIdToAddressHashTest do
     end)
   end
 
+  # Pauses the reads of mappings of the processes that ask for it, see
+  # `pause_after_mapping_read/4`.
+  defp pause_after_mapping_reads do
+    handler_id = {__MODULE__, :pause_after_mapping_read}
+
+    :ok =
+      :telemetry.attach(handler_id, [:explorer, :repo, :query], &__MODULE__.pause_after_mapping_read/4, nil)
+
+    on_exit(fn -> :telemetry.detach(handler_id) end)
+  end
+
+  @doc false
+  # Runs in the process that made the query, right after the query. A process
+  # that put the test process under `:pause_after_mapping_read` stops there after
+  # it has read mappings, until the test resumes it.
+  def pause_after_mapping_read(_event, _measurements, %{source: "address_ids_to_address_hashes", query: query}, _) do
+    with "SELECT" <> _ <- query,
+         test_process when is_pid(test_process) <- Process.get(:pause_after_mapping_read) do
+      send(test_process, {:paused, self()})
+
+      receive do
+        :resume -> :ok
+      end
+    end
+  end
+
+  def pause_after_mapping_read(_event, _measurements, _metadata, _config), do: :ok
+
   defp random_mappings(count) do
     Enum.map(1..count, fn address_id ->
       {address_id, %Hash{byte_count: 20, bytes: :crypto.strong_rand_bytes(20)}}
     end)
   end
 
-  defp put_one_by_one(mappings), do: Enum.each(mappings, &Cache.put([&1], Repo))
+  defp put(mappings), do: Cache.put(mappings, Repo, Cache.epoch())
 
-  # The eviction is cast by `Cache.put/2`, which ran in this process, so it is
+  defp put_one_by_one(mappings), do: Enum.each(mappings, &put([&1]))
+
+  # The eviction is cast by `Cache.put/3`, which ran in this process, so it is
   # handled before this call.
   defp wait_for_eviction, do: :sys.get_state(Cache)
 

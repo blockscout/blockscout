@@ -103,6 +103,9 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
   defp find_or_create_missing([]), do: []
 
   defp find_or_create_missing(address_hashes) do
+    # taken before the database is touched, see `Cache.put/3`
+    cache_epoch = Cache.epoch()
+
     Repo.safe_insert_all(
       __MODULE__,
       Enum.map(address_hashes, &%{address_hash: &1}),
@@ -114,7 +117,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
       |> where([a], a.address_hash in ^address_hashes)
       |> Repo.all()
 
-    Cache.put(Enum.map(records, &{&1.address_id, &1.address_hash}), Repo)
+    Cache.put(Enum.map(records, &{&1.address_id, &1.address_hash}), Repo, cache_epoch)
 
     records
   end
@@ -231,6 +234,8 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
 
   defp fetch_mappings(values, field, options) do
     repo = Chain.select_repo(options)
+    # taken before the database is touched, see `Cache.put/3`
+    cache_epoch = Cache.epoch()
 
     mappings =
       __MODULE__
@@ -238,7 +243,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash do
       |> select([a], {a.address_id, a.address_hash})
       |> repo.all()
 
-    Cache.put(mappings, repo)
+    Cache.put(mappings, repo, cache_epoch)
 
     mappings
   end

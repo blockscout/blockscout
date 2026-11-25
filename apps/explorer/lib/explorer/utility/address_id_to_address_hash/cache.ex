@@ -14,16 +14,21 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
 
     * A mapping created inside a transaction is gone if the transaction rolls
       back, so only the mappings read or created outside of a transaction are
-      cached, see `put/2`.
+      cached, see `put/3`.
     * A failover to a lagging asynchronous replica, or a restore, loses the
       latest committed mappings. The application reaches the new database only
-      through new connections, so the cache is cleared whenever a connection of
-      `Explorer.Repo` or `Explorer.Repo.Replica1` connects, before the connection
-      serves any query, see `add_clear_on_connect/1`. A reconnect after a
-      client-side timeout clears the cache as well, which costs only cache hits.
-      A read that is under way meanwhile can still cache what it got from the old
-      database, but only if its process stalls between the end of the read and
-      `put/2` until a connection has reconnected to the new one.
+      through new connections, so the cache is invalidated whenever a connection
+      of `Explorer.Repo` or `Explorer.Repo.Replica1` connects, before the
+      connection serves any query, see `add_invalidation_on_connect/1`. A
+      reconnect after a client-side timeout invalidates the cache as well, which
+      costs only cache hits.
+
+  An invalidation starts a new epoch rather than emptying the tables. Every entry
+  keeps the epoch in which the read that it came from began, and lookups take
+  only the entries of the current epoch. So a read that is under way while the
+  cache is invalidated never fills it, even if the read ends after the
+  invalidation, and a lookup that overlaps an invalidation misses. The entries of
+  past epochs are never accessed again, so they are the first ones to be evicted.
 
   A connection pooler (PgBouncer and the like) can keep the connections of the
   application open through a failover or a restore. The cache can't notice it
@@ -32,7 +37,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
 
   Each direction is kept in its own table. A table holds at most `:cache_max_size`
   entries of the `Explorer.Utility.AddressIdToAddressHash` config
-  (`CACHE_ADDRESS_ID_MAX_SIZE`); a pair cached in both tables takes about 225
+  (`CACHE_ADDRESS_ID_MAX_SIZE`); a pair cached in both tables takes about 240
   bytes. Every entry keeps the time of its last access, and once a table outgrows
   the limit, its least recently used entries are evicted until it is 10% below
   the limit.
@@ -48,6 +53,7 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
 
   @ids_table :address_hash_to_address_id_cache
   @hashes_table :address_id_to_address_hash_cache
+  @epoch_table :address_id_to_address_hash_cache_epoch
 
   @byte_count Hash.Address.byte_count()
 
@@ -64,6 +70,10 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
     :ets.new(@ids_table, [:set, :named_table, :public, write_concurrency: true])
     :ets.new(@hashes_table, [:set, :named_table, :public, write_concurrency: true])
 
+    # Created last: the cache takes and stores nothing until the epoch is set.
+    :ets.new(@epoch_table, [:set, :named_table, :public, read_concurrency: true])
+    :ets.insert(@epoch_table, {:epoch, new_epoch()})
+
     {:ok, nil}
   end
 
@@ -78,37 +88,48 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
   end
 
   @doc """
-  Makes the given repo options clear the cache whenever a connection of the repo
-  pool connects, before the connection serves any query: DBConnection gives a
-  connection to its clients only once its `:after_connect` callback returns. A
-  callback the options already have runs after the clearing.
+  Makes the given repo options invalidate the cache whenever a connection of the
+  repo pool connects, before the connection serves any query: DBConnection gives
+  a connection to its clients only once its `:after_connect` callback returns. A
+  callback the options already have runs after the invalidation.
 
   The options are returned as they are while the cache is disabled.
   """
-  @spec add_clear_on_connect(Keyword.t()) :: Keyword.t()
-  def add_clear_on_connect(repo_options) do
+  @spec add_invalidation_on_connect(Keyword.t()) :: Keyword.t()
+  def add_invalidation_on_connect(repo_options) do
     if enabled?() do
-      Keyword.update(repo_options, :after_connect, with_clear(nil), &with_clear/1)
+      Keyword.update(repo_options, :after_connect, with_invalidation(nil), &with_invalidation/1)
     else
       repo_options
     end
   end
 
   @doc """
-  Empties the cache.
+  Invalidates every cached mapping by starting a new epoch, see the moduledoc.
 
   It is the `:after_connect` callback of the repo pools, so it never raises: a
   callback that raises makes the connection reconnect over and over.
   """
-  @spec clear(term()) :: :ok
-  def clear(_connection \\ nil) do
-    :ets.delete_all_objects(@ids_table)
-    :ets.delete_all_objects(@hashes_table)
+  @spec invalidate(term()) :: :ok
+  def invalidate(_connection \\ nil) do
+    :ets.insert(@epoch_table, {:epoch, new_epoch()})
 
     :ok
   rescue
     # Nothing is cached while the cache isn't running.
     ArgumentError -> :ok
+  end
+
+  @doc """
+  Returns the current epoch, see the moduledoc, or `nil` while the cache isn't
+  running. Take it before reading mappings from the database, and pass it to
+  `put/3` along with them.
+  """
+  @spec epoch() :: pos_integer() | nil
+  def epoch do
+    :ets.lookup_element(@epoch_table, :epoch, 2)
+  rescue
+    ArgumentError -> nil
   end
 
   @doc """
@@ -128,8 +149,8 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
   @spec get_ids([Hash.Address.t() | term()]) :: {%{Hash.Address.t() => non_neg_integer()}, [term()]}
   def get_ids(address_hashes) do
     get(address_hashes, fn
-      %Hash{bytes: bytes} -> access(@ids_table, bytes)
-      _ -> nil
+      %Hash{bytes: bytes}, epoch -> access(@ids_table, bytes, epoch)
+      _, _epoch -> nil
     end)
   end
 
@@ -143,39 +164,54 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
   @spec get_hashes([non_neg_integer() | term()]) :: {%{non_neg_integer() => Hash.Address.t()}, [term()]}
   def get_hashes(address_ids) do
     get(address_ids, fn
-      address_id when is_integer(address_id) ->
-        with bytes when is_binary(bytes) <- access(@hashes_table, address_id) do
+      address_id, epoch when is_integer(address_id) ->
+        with bytes when is_binary(bytes) <- access(@hashes_table, address_id, epoch) do
           %Hash{byte_count: @byte_count, bytes: bytes}
         end
 
-      _ ->
+      _, _epoch ->
         nil
     end)
   end
 
   @doc """
   Caches the given `{address_id, address_hash}` mappings, which `repo` has just
-  returned.
+  returned for a read that began in `read_epoch`, see `epoch/0`.
 
-  Nothing is cached if `repo` returned the mappings inside a transaction: they are
-  committed only with the transaction, which can still roll back.
+  Nothing is cached if the cache has been invalidated since the read began, or if
+  `repo` returned the mappings inside a transaction: they are committed only with
+  the transaction, which can still roll back.
   """
-  @spec put([{non_neg_integer(), Hash.Address.t()}], Ecto.Repo.t()) :: :ok
-  def put([], _repo), do: :ok
+  @spec put([{non_neg_integer(), Hash.Address.t()}], Ecto.Repo.t(), pos_integer() | nil) :: :ok
+  def put([], _repo, _read_epoch), do: :ok
+  def put(_mappings, _repo, nil), do: :ok
 
-  def put(mappings, repo) do
-    if running?() and not repo.in_transaction?() do
-      insert(mappings)
+  def put(mappings, repo, read_epoch) do
+    # The entries keep `read_epoch`, so they are never taken if the cache is
+    # invalidated after this check, even while they are being inserted.
+    if read_epoch == epoch() and not repo.in_transaction?() do
+      insert(mappings, read_epoch)
     end
 
     :ok
   end
 
   defp get(keys, access_fun) do
-    if running?(), do: split_found(keys, access_fun), else: {%{}, keys}
+    case epoch() do
+      nil -> {%{}, keys}
+      lookup_epoch -> get_in_epoch(keys, access_fun, lookup_epoch)
+    end
   rescue
     # The tables go away with the process.
     ArgumentError -> {%{}, keys}
+  end
+
+  # A lookup that overlaps an invalidation may have taken entries of the epoch
+  # that the invalidation ended, so it misses entirely then.
+  defp get_in_epoch(keys, access_fun, lookup_epoch) do
+    result = split_found(keys, &access_fun.(&1, lookup_epoch))
+
+    if epoch() == lookup_epoch, do: result, else: {%{}, keys}
   end
 
   defp split_found(keys, access_fun) do
@@ -190,27 +226,29 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
     {found, Enum.reverse(missing)}
   end
 
-  # Returns the cached value of `key` and records the access.
-  defp access(table, key) do
+  # Returns the value cached for `key` in `epoch`, and records the access. The
+  # access doesn't change the epoch of the entry, so it can't revive an entry that
+  # an invalidation ended in the meantime.
+  defp access(table, key, epoch) do
     case :ets.lookup(table, key) do
-      [{^key, value, _last_access}] ->
+      [{^key, value, _last_access, ^epoch}] ->
         :ets.update_element(table, key, {3, next_access()})
         value
 
-      [] ->
+      _ ->
         nil
     end
   end
 
-  defp insert(mappings) do
+  defp insert(mappings, epoch) do
     :ets.insert(
       @ids_table,
-      Enum.map(mappings, fn {address_id, %Hash{bytes: bytes}} -> {bytes, address_id, next_access()} end)
+      Enum.map(mappings, fn {address_id, %Hash{bytes: bytes}} -> {bytes, address_id, next_access(), epoch} end)
     )
 
     :ets.insert(
       @hashes_table,
-      Enum.map(mappings, fn {address_id, %Hash{bytes: bytes}} -> {address_id, bytes, next_access()} end)
+      Enum.map(mappings, fn {address_id, %Hash{bytes: bytes}} -> {address_id, bytes, next_access(), epoch} end)
     )
 
     max_size = max_size()
@@ -222,6 +260,24 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
     # The tables go away with the process.
     ArgumentError -> :ok
   end
+
+  # The `:after_connect` callback that invalidates the cache and then runs the
+  # given one, if any.
+  defp with_invalidation(nil), do: {__MODULE__, :invalidate, []}
+
+  defp with_invalidation(after_connect) do
+    fn connection ->
+      invalidate(connection)
+      run_after_connect(after_connect, connection)
+    end
+  end
+
+  defp run_after_connect({module, function, args}, connection), do: apply(module, function, [connection | args])
+  defp run_after_connect(fun, connection), do: fun.(connection)
+
+  # Unique within the runtime, so that an epoch never comes back, not even in the
+  # cache started anew after a crash.
+  defp new_epoch, do: :erlang.unique_integer([:positive])
 
   # Strictly increasing, so that no two entries share their last access and the
   # eviction cutoff separates the entries exactly.
@@ -256,34 +312,18 @@ defmodule Explorer.Utility.AddressIdToAddressHash.Cache do
   end
 
   defp delete_least_recently_used(table, size, count) do
-    case :ets.select(table, [{{:_, :_, :"$1"}, [], [:"$1"]}], @sample_size) do
+    case :ets.select(table, [{{:_, :_, :"$1", :_}, [], [:"$1"]}], @sample_size) do
       {accesses, _continuation} ->
         sample_size = length(accesses)
         index = (count * sample_size) |> div(size) |> max(1) |> min(sample_size - 1)
         cutoff = accesses |> Enum.sort() |> Enum.at(index)
 
-        :ets.select_delete(table, [{{:_, :_, :"$1"}, [{:<, :"$1", cutoff}], [true]}])
+        :ets.select_delete(table, [{{:_, :_, :"$1", :_}, [{:<, :"$1", cutoff}], [true]}])
 
       :"$end_of_table" ->
         0
     end
   end
-
-  # The `:after_connect` callback that clears the cache and then runs the given
-  # one, if any.
-  defp with_clear(nil), do: {__MODULE__, :clear, []}
-
-  defp with_clear(after_connect) do
-    fn connection ->
-      clear(connection)
-      run_after_connect(after_connect, connection)
-    end
-  end
-
-  defp run_after_connect({module, function, args}, connection), do: apply(module, function, [connection | args])
-  defp run_after_connect(fun, connection), do: fun.(connection)
-
-  defp running?, do: :ets.whereis(@ids_table) != :undefined
 
   defp max_size do
     Application.get_env(:explorer, AddressIdToAddressHash, [])[:cache_max_size] || 0
