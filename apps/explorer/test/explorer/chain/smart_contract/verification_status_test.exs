@@ -56,4 +56,32 @@ defmodule Explorer.Chain.SmartContract.VerificationStatusTest do
       assert {0, nil} = VerificationStatus.set_pending_statuses_to_passed("not-an-address")
     end
   end
+
+  describe "set_failed_if_pending/2" do
+    test "inserts a failed row when there is no row for the uid" do
+      address = insert(:address)
+
+      assert {:ok, _} = VerificationStatus.set_failed_if_pending("uid-1", to_string(address.hash))
+
+      assert Repo.get_by(VerificationStatus, uid: "uid-1").status == 2
+    end
+
+    test "flips a pending row to failed" do
+      address = insert(:address)
+      {:ok, _} = VerificationStatus.insert_status("uid-1", :pending, to_string(address.hash))
+
+      assert {:ok, _} = VerificationStatus.set_failed_if_pending("uid-1", address.hash)
+
+      assert Repo.get_by(VerificationStatus, uid: "uid-1").status == 2
+    end
+
+    test "leaves an already passed row untouched" do
+      address = insert(:address)
+      {:ok, _} = VerificationStatus.insert_status("uid-1", :pass, to_string(address.hash))
+
+      assert {:ok, _} = VerificationStatus.set_failed_if_pending("uid-1", address.hash)
+
+      assert Repo.get_by(VerificationStatus, uid: "uid-1").status == 1
+    end
+  end
 end

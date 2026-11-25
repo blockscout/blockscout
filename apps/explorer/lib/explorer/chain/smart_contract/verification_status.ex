@@ -117,6 +117,38 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
     end
   end
 
+  @doc """
+  Marks the verification attempt as failed (`status = 2`) unless it is already resolved.
+
+  Used when the verification attempt failed or its job crashed. The row is inserted if the
+  job crashed before inserting the pending one. A row that is already resolved (e.g. set
+  to passed by `set_pending_statuses_to_passed/1` because the contract got verified via
+  another path meanwhile) is left untouched.
+
+  ## Parameters
+  - `uid`: The unique identifier of the verification attempt.
+  - `address_hash`: The address of the contract being verified, as an
+    `Explorer.Chain.Hash.Address` struct or a `0x`-prefixed string.
+
+  ## Returns
+  - `{:ok, t()}` or `{:error, Ecto.Changeset.t()}` as returned by `Repo.insert/2`. When the
+    row is already resolved and left untouched, the returned struct doesn't reflect the
+    stored status.
+  """
+  @spec set_failed_if_pending(String.t(), Hash.Address.t() | binary()) :: {:ok, t()} | {:error, Ecto.Changeset.t()}
+  def set_failed_if_pending(uid, address_hash) do
+    now = DateTime.utc_now()
+
+    %__MODULE__{}
+    |> changeset(%{uid: uid, status: :fail, contract_address_hash: address_hash})
+    |> Repo.insert(
+      on_conflict: from(vs in __MODULE__, where: vs.status == 0, update: [set: [status: 2, updated_at: ^now]]),
+      conflict_target: :uid,
+      # the conditional update above skips resolved rows, which is not an error here
+      allow_stale: true
+    )
+  end
+
   defp normalize_address_hash(%Hash{} = hash), do: {:ok, hash}
   defp normalize_address_hash(address_hash) when is_binary(address_hash), do: Chain.string_to_address_hash(address_hash)
   defp normalize_address_hash(_), do: :error
