@@ -227,13 +227,9 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
            |> Enum.unzip(),
          {:import, :ok} <- {:import, import_authorizations(List.flatten(updated_authorizations))} do
       entries_to_retry =
-        new_entries
-        |> Enum.filter(
-          &Enum.any?(&1, fn
-            {:authorization, %{status: nil}} -> true
-            _ -> false
-          end)
-        )
+        Enum.filter(new_entries, fn %{entries: inner_entries} ->
+          Enum.any?(inner_entries, &match?({:authorization, %{status: nil}}, &1))
+        end)
 
       if Enum.empty?(entries_to_retry) do
         :ok

@@ -392,6 +392,35 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
     end
   end
 
+  describe "async_fetch/3 when the node returns no nonce for the signer" do
+    setup %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      SignedAuthorizationStatus.Supervisor.Case.start_supervised!(json_rpc_named_arguments: json_rpc_named_arguments)
+
+      :ok
+    end
+
+    test "retries the block until the node returns the nonce",
+         %{json_rpc_named_arguments: json_rpc_named_arguments} do
+      %{block: block, signer: signer, transactions: transactions, authorization: authorization} =
+        insert_block_with_authorization(signer_transactions: [], authorization_nonce: 100)
+
+      # The first request is successful as a whole, but the node returns an error for the address of
+      # the signer. The first `run/2` cannot calculate the status, so the status stays `nil`. The
+      # fetcher must return the block for a retry. Without the retry, the second request does not
+      # occur and the status stays `nil`.
+      #
+      # The first `run/2` reads the chain ID after the nonce request, so the chain ID request is
+      # the second request.
+      expect_nonce_request(json_rpc_named_arguments, signer, block, {:address_error, "header not found"})
+      expect_chain_id_request(json_rpc_named_arguments)
+      expect_nonce_request(json_rpc_named_arguments, signer, block, {:ok, 100})
+
+      assert :ok = SignedAuthorizationStatus.async_fetch(transactions, [authorization], false)
+
+      assert wait_for_status(authorization) == :ok
+    end
+  end
+
   describe "init/3 with EIP-8430 transactions" do
     test "requests the nonce from the node for a block that the fetcher loads from the database",
          %{json_rpc_named_arguments: json_rpc_named_arguments} do
@@ -417,6 +446,9 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
   # Each item of `signer_transactions` has `:nonce`, `:type`, and an optional `:nonce_key`. An item
   # with `:nonce_key` gets a row in `eip_8430_transactions`.
   defp insert_block_with_authorization(options) do
+    # The fetcher requests the nonce at the block before `block`. The first block of the factory
+    # can have the number 0, which has no block before it. This block takes that number.
+    insert(:block)
     block = insert(:block)
     signer = insert(:address)
 
@@ -453,7 +485,8 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
   end
 
   # Expects one `eth_getTransactionCount` request for the nonce of `address` at the end of the
-  # block before `block`. `result` is `{:ok, nonce}` or an error of the transport.
+  # block before `block`. `result` is `{:ok, nonce}`, `{:address_error, message}` for an error that
+  # the node returns only for this address, or an error of the transport.
   defp expect_nonce_request(json_rpc_named_arguments, address, block, result) do
     if json_rpc_named_arguments[:transport] == EthereumJSONRPC.Mox do
       address_string = to_string(address.hash)
@@ -469,6 +502,7 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatusTest do
                                                 _options ->
         case result do
           {:ok, nonce} -> {:ok, [%{id: id, result: integer_to_quantity(nonce)}]}
+          {:address_error, message} -> {:ok, [%{id: id, error: %{code: -32000, message: message}}]}
           error -> error
         end
       end)
