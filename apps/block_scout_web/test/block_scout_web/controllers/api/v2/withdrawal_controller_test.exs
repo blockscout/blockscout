@@ -2,6 +2,8 @@
 defmodule BlockScoutWeb.API.V2.WithdrawalControllerTest do
   use BlockScoutWeb.ConnCase
 
+  use Utils.CompileTimeEnvHelper, chain_type: [:explorer, :chain_type]
+
   alias Explorer.Chain.Withdrawal
 
   describe "/withdrawals" do
@@ -51,7 +53,14 @@ defmodule BlockScoutWeb.API.V2.WithdrawalControllerTest do
   end
 
   defp compare_item(%Withdrawal{} = withdrawal, json) do
-    assert withdrawal.index == json["index"]
+    assert expected_withdrawal_index(withdrawal) == json["index"]
+  end
+
+  if @chain_type == :bera do
+    # on Bera chain type the index is a decimal rendered as a string
+    defp expected_withdrawal_index(withdrawal), do: to_string(withdrawal.index)
+  else
+    defp expected_withdrawal_index(withdrawal), do: withdrawal.index
   end
 
   defp check_paginated_response(first_page_resp, second_page_resp, list) do

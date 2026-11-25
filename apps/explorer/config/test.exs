@@ -69,6 +69,7 @@ config :explorer, Explorer.Repo.Account,
 
 for repo <- [
       Explorer.Repo.Arbitrum,
+      Explorer.Repo.Bera,
       Explorer.Repo.Beacon,
       Explorer.Repo.Blackfort,
       Explorer.Repo.BridgedTokens,

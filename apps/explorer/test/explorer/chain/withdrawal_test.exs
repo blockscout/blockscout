@@ -19,11 +19,12 @@ defmodule Explorer.Chain.WithdrawalTest do
     end
 
     test "with duplicate information" do
-      %Withdrawal{index: index} = insert(:withdrawal)
+      %Withdrawal{index: index, block: block} = insert(:withdrawal)
 
+      # the same block is used, since on Bera chain type the index is unique within a block only
       assert {:error, %Changeset{valid?: false, errors: [index: {"has already been taken", _}]}} =
                %Withdrawal{}
-               |> Withdrawal.changeset(params_for(:withdrawal, index: index))
+               |> Withdrawal.changeset(params_for(:withdrawal, index: index, block: block))
                |> Repo.insert()
     end
   end

@@ -3,6 +3,7 @@
 CHAIN_TYPES=(
   arbitrum
   arc
+  bera
   blackfort
   eden
   ethereum

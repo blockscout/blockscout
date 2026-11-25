@@ -80,6 +80,7 @@ export type paths = {
 /** Chain-specific public API (`CHAIN_TYPE` set). */
 export * as arbitrum from "./dist/chains/arbitrum.schema";
 export * as arc from "./dist/chains/arc.schema";
+export * as bera from "./dist/chains/bera.schema";
 export * as blackfort from "./dist/chains/blackfort.schema";
 export * as eden from "./dist/chains/eden.schema";
 export * as ethereum from "./dist/chains/ethereum.schema";
