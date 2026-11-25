@@ -12,6 +12,7 @@ defmodule ConfigHelper do
     chain_identity_repos =
       %{
         {:arbitrum, nil} => [Explorer.Repo.Arbitrum],
+        {:bera, nil} => [Explorer.Repo.Bera],
         {:blackfort, nil} => [Explorer.Repo.Blackfort],
         {:eden, nil} => [Explorer.Repo.Eden],
         {:ethereum, nil} => [Explorer.Repo.Beacon],
@@ -470,6 +471,7 @@ defmodule ConfigHelper do
     "default" => :default,
     "arbitrum" => :arbitrum,
     "arc" => :arc,
+    "bera" => :bera,
     "blackfort" => :blackfort,
     "eden" => :eden,
     "ethereum" => :ethereum,

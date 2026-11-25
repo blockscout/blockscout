@@ -1044,14 +1044,17 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     summary: "List validator withdrawals involving a specific address",
     description:
       "Retrieves withdrawals involving a specific address, typically for proof-of-stake networks supporting validator withdrawals.",
-    parameters: base_params() ++ [address_hash_param()] ++ define_paging_params(["index"]),
+    parameters:
+      base_params() ++
+        [address_hash_param()] ++
+        define_paging_params(Schemas.Withdrawal.ChainTypeCustomizations.paging_params_names()),
     responses: [
       ok:
         {"Withdrawals for the specified address, with pagination. Note that receiver field is not included in this endpoint.",
          "application/json",
          paginated_response(
            items: Schemas.Withdrawal,
-           next_page_params_example: %{"index" => 88_192_653}
+           next_page_params_example: Schemas.Withdrawal.ChainTypeCustomizations.next_page_params_example()
          )},
       unprocessable_entity: JsonErrorResponse.response(),
       forbidden: ForbiddenResponse.response()
