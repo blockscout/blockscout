@@ -92,7 +92,7 @@ type ArbitrumPath = arbitrum.paths[keyof arbitrum.paths];
 
 Synced with `.github/workflows/generate-swagger.yml` via `scripts/chain-types.sh`:
 
-`arbitrum`, `arc`, `blackfort`, `ethereum`, `filecoin`, `neon`, `optimism`, `optimism-celo`, `rsk`, `scroll`, `shibarium`, `stability`, `suave`, `zetachain`, `zilliqa`, `zksync`
+`arbitrum`, `arc`, `bera`, `blackfort`, `ethereum`, `filecoin`, `neon`, `optimism`, `optimism-celo`, `rsk`, `scroll`, `shibarium`, `stability`, `suave`, `zetachain`, `zilliqa`, `zksync`
 
 When CI adds or removes a chain type, update `scripts/chain-types.sh` and `index.ts`.
 

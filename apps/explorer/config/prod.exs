@@ -19,6 +19,7 @@ for repo <- [
 
       # Chain-type dependent repos
       Explorer.Repo.Arbitrum,
+      Explorer.Repo.Bera,
       Explorer.Repo.Beacon,
       Explorer.Repo.Blackfort,
       Explorer.Repo.Celo,
