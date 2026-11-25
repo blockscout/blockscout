@@ -24,6 +24,13 @@ function generateDatePicker (classSelector, defaultDate) {
   })
 }
 
+// Reads the server-rendered flag telling whether reCAPTCHA is turned off.
+function isReCaptchaTurnedOff () {
+  const flagElement = document.getElementById('js-re-captcha-off')
+  const flag = flagElement ? (flagElement.textContent || '') : ''
+  return flag.trim().toLowerCase() === 'true'
+}
+
 $button.on('click', () => {
   // @ts-ignore
    
@@ -31,10 +38,6 @@ $button.on('click', () => {
   // @ts-ignore
    
   const reCaptchaV3ClientKey = document.getElementById('js-re-captcha-v3-client-key').value
-  // @ts-ignore
-   
-  const reCaptchaDisabledRaw = document.getElementById('js-re-captcha-disabled').value
-  const reCaptchaDisabled = reCaptchaDisabledRaw && reCaptchaDisabledRaw.toLowerCase() === 'true'
   const addressHash = $button.data('address-hash')
   const from = $('.js-datepicker-from').val()
   const to = $('.js-datepicker-to').val()
@@ -42,9 +45,12 @@ $button.on('click', () => {
   const filterType = urlParams.get('filter_type')
   const filterValue = urlParams.get('filter_value')
   const baseURL = `${$button.data('link')}?address_id=${addressHash}&from_period=${from}&to_period=${to}&filter_type=${filterType}&filter_value=${filterValue}`
-  if (reCaptchaDisabled) {
+  if (isReCaptchaTurnedOff()) {
     download(baseURL)
-  } else if (reCaptchaV3ClientKey) {
+    return
+  }
+
+  if (reCaptchaV3ClientKey) {
     disableBtnWithSpinner()
     // @ts-ignore
     // eslint-disable-next-line
