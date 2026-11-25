@@ -164,7 +164,5 @@ defmodule NFTMediaHandler do
   # regular URLs unchanged. So an unchanged URL means the host still comes from on-chain
   # metadata and must be validated against the SSRF blacklist, while a rewritten one points at
   # a gateway the operator chose (possibly on a private address) and must not be.
-  defp maybe_process_ipfs(uri) do
-    TokenMetadataRetriever.resolve_nft_media_url(uri)
-  end
+  defp maybe_process_ipfs(uri), do: TokenMetadataRetriever.resolve_nft_media_url(uri)
 end

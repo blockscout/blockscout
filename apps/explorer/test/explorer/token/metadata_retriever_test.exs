@@ -1355,7 +1355,7 @@ defmodule Explorer.Token.MetadataRetrieverTest do
       assert {:error, "VM execution error"} == MetadataRetriever.fetch_json(data)
     end
 
-    test "Process CIDv0 IPFS links" do
+    test "Process CID v0 IPFS links" do
       data = "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
 
       result = %{
@@ -1532,36 +1532,59 @@ defmodule Explorer.Token.MetadataRetrieverTest do
     end
   end
 
-  describe "IPFS link validation" do
-    test "valid_ipfs_path?/1 returns true for valid CIDv0 (Qm...)" do
-      valid_cid_v0 = "ipfs://QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco"
-      assert MetadataRetriever.valid_ipfs_path?(valid_cid_v0)
+  describe "ipfs_resource_id?/1" do
+    @cid_v0 "QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP"
+    @cid_v1 "bafybeid4ed2ua7fwupv4nx2ziczr3edhygl7ws3yx6y2juon7xakgj6cfm"
+
+    test "accepts a bare content identifier of either version" do
+      assert MetadataRetriever.ipfs_resource_id?(@cid_v0)
+      assert MetadataRetriever.ipfs_resource_id?(@cid_v1)
     end
 
-    test "valid_ipfs_path?/1 returns true for valid CIDv1 (b...)" do
-      valid_cid_v1 = "ipfs://bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3hlgtif73fqpyae"
-      assert MetadataRetriever.valid_ipfs_path?(valid_cid_v1)
+    test "accepts a content identifier followed by a path" do
+      assert MetadataRetriever.ipfs_resource_id?(@cid_v0 <> "/1.json")
+      assert MetadataRetriever.ipfs_resource_id?(@cid_v1 <> "/metadata/1.json")
+      assert MetadataRetriever.ipfs_resource_id?(@cid_v1 <> "/")
     end
 
-    test "valid_ipfs_path?/1 returns true for short valid CIDv1" do
-      short_cid_v1 = "ipfs://bafybeic"
-      assert MetadataRetriever.valid_ipfs_path?(short_cid_v1)
+    test "requires at least 7 characters after the version 1 prefix" do
+      assert MetadataRetriever.ipfs_resource_id?("b" <> String.duplicate("a", 7))
+      refute MetadataRetriever.ipfs_resource_id?("b" <> String.duplicate("a", 6))
     end
 
-    test "valid_ipfs_path?/1 returns false for empty string" do
-      refute MetadataRetriever.valid_ipfs_path?("")
+    test "rejects a version 0 identifier of the wrong length" do
+      refute MetadataRetriever.ipfs_resource_id?(String.slice(@cid_v0, 0..-2//1))
+      refute MetadataRetriever.ipfs_resource_id?(@cid_v0 <> "a")
     end
 
-    test "valid_ipfs_path?/1 returns false for malformed path like ipfs://invalid" do
-      refute MetadataRetriever.valid_ipfs_path?("ipfs://invalid")
+    test "rejects characters outside the identifier alphabet" do
+      # `0`, `O`, `I` and `l` are not part of the base58 alphabet
+      for excluded <- ["0", "O", "I", "l"] do
+        refute MetadataRetriever.ipfs_resource_id?("Qm" <> String.duplicate(excluded, 44))
+      end
+
+      # base32 has neither upper-case letters nor the digits `0`, `1`, `8` and `9`
+      refute MetadataRetriever.ipfs_resource_id?(String.upcase(@cid_v1))
+      refute MetadataRetriever.ipfs_resource_id?("b" <> String.duplicate("1", 7))
+      refute MetadataRetriever.ipfs_resource_id?(@cid_v1 <> "\n")
     end
 
-    test "HTTP request is NOT made when path is invalid" do
-      invalid_path = "ipfs://invalid"
+    test "rejects input that carries no content identifier" do
+      refute MetadataRetriever.ipfs_resource_id?("")
+      refute MetadataRetriever.ipfs_resource_id?("/" <> @cid_v0)
+      refute MetadataRetriever.ipfs_resource_id?("ipfs://" <> @cid_v0)
+      refute MetadataRetriever.ipfs_resource_id?("invalid")
+      refute MetadataRetriever.ipfs_resource_id?(nil)
+      refute MetadataRetriever.ipfs_resource_id?(42)
+    end
+  end
 
-      # We assert that it returns the error immediately without any HTTP mock being called.
-      # If it tried to make a request, it would fail because no expectation is set for this URL.
-      assert MetadataRetriever.fetch_json({:ok, [invalid_path]}) == {:error, "invalid ipfs path"}
+  describe "fetch_json/4 with a malformed IPFS link" do
+    # No HTTP stub is registered here, so a request to the gateway would fail the test.
+    test "returns an error without requesting the gateway" do
+      for token_uri <- ["ipfs://invalid", "ipfs://ipfs/invalid", "https://example.com/ipfs/invalid", "ipfs://"] do
+        assert {:error, "invalid ipfs path"} = MetadataRetriever.fetch_json({:ok, [token_uri]})
+      end
     end
   end
 

@@ -21,7 +21,7 @@ defmodule Explorer.Token.MetadataRetriever do
   @no_uri_error "no uri"
   @vm_execution_error "VM execution error"
   @invalid_base64_data "invalid data:application/json;base64"
-  @invalid_ipfs_path "invalid ipfs path"
+  @invalid_ipfs_resource_id_error "invalid ipfs path"
   @invalid_swarm_path "invalid swarm path"
   @metadata_too_large "metadata too large"
   @default_headers [{"User-Agent", "blockscout-12.1.0"}]
@@ -1016,7 +1016,7 @@ defmodule Explorer.Token.MetadataRetriever do
   def resolve_nft_media_url(url) do
     case classify_nft_url(url) do
       {:ipfs, resource_id} ->
-        if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do
+        if ipfs_resource_id?(resource_id) do
           {ipfs_link(resource_id), ipfs_headers()}
         else
           {url, []}
@@ -1036,7 +1036,7 @@ defmodule Explorer.Token.MetadataRetriever do
         {url, []}
 
       {:bare_path, path} ->
-        if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+        if ipfs_resource_id?(path) do
           {ipfs_link(path), ipfs_headers()}
         else
           {url, []}
@@ -1181,7 +1181,7 @@ defmodule Explorer.Token.MetadataRetriever do
   defp fetch_from_ipfs_or_ar?(token_uri_string, ipfs_params, token_id, hex_token_id, from_base_uri?) do
     case classify_nft_url(token_uri_string) do
       {:ipfs, resource_id} ->
-        fetch_from_ipfs_if_valid_path(resource_id, hex_token_id)
+        fetch_ipfs_resource(resource_id, hex_token_id)
 
       {:arweave, resource_id} ->
         fetch_from_arweave(resource_id, hex_token_id)
@@ -1207,7 +1207,7 @@ defmodule Explorer.Token.MetadataRetriever do
 
   # A bare path is either an IPFS CID/path or raw JSON returned directly by `tokenURI`.
   defp fetch_from_bare_path(path, token_uri_string, hex_token_id) do
-    if is_binary(path) and valid_ipfs_path?(public_ipfs_link(path)) do
+    if ipfs_resource_id?(path) do
       fetch_from_ipfs(path, hex_token_id)
     else
       with :ok <- check_payload_size(token_uri_string) do
@@ -1231,6 +1231,15 @@ defmodule Explorer.Token.MetadataRetriever do
       )
 
       {:error, "invalid #{type}"}
+  end
+
+  # Refuses to contact the gateway for anything that is not a well-formed IPFS resource id.
+  defp fetch_ipfs_resource(resource_id, hex_token_id) do
+    if ipfs_resource_id?(resource_id) do
+      fetch_from_ipfs(resource_id, hex_token_id)
+    else
+      {:error, @invalid_ipfs_resource_id_error}
+    end
   end
 
   defp fetch_from_ipfs(ipfs_uid, hex_token_id) do
@@ -1495,15 +1504,45 @@ defmodule Explorer.Token.MetadataRetriever do
     String.replace(token_uri, @erc1155_token_id_placeholder, hex_token_id)
   end
 
-  def valid_ipfs_path?(path) when is_binary(path) do
-    # CIDv0: ipfs://Qm[1-9A-HJ-NP-Za-km-z]{44}
-    # CIDv1: ipfs://b[a-z2-7]{7,}
-    # Path format: ipfs://[CID]/optional/path
-    ipfs_path_regular_expression = ~r/^ipfs:\/\/(Qm[1-9A-HJ-NP-Za-km-z]{44}|b[a-z2-7]{7,})(\/.*)?$/
-    String.match?(path, ipfs_path_regular_expression)
+  @doc """
+  Checks whether `resource_id` can be requested from an IPFS gateway.
+
+  A resource id is a content identifier, optionally followed by a path inside
+  the content it addresses (`"<cid>/path/to/file"`). Only the content
+  identifier is inspected, and two encodings are accepted:
+
+    * version 0: `Qm` followed by 44 base58 characters;
+    * version 1 in base32: `b` followed by at least 7 characters of the
+      lower-case RFC 4648 alphabet.
+
+  Anything that is not a binary is rejected.
+
+  ## Examples
+
+      iex> Explorer.Token.MetadataRetriever.ipfs_resource_id?("QmT1Yz43R1PLn2RVovAnEM5dHQEvpTcnwgX8zftvY1FcjP/1.json")
+      true
+
+      iex> Explorer.Token.MetadataRetriever.ipfs_resource_id?("not-a-content-identifier")
+      false
+  """
+  @spec ipfs_resource_id?(term()) :: boolean()
+  def ipfs_resource_id?(resource_id) when is_binary(resource_id) do
+    [content_id | _path_inside_content] = String.split(resource_id, "/", parts: 2)
+
+    ipfs_content_id?(content_id)
   end
 
-  def valid_ipfs_path?(_), do: false
+  def ipfs_resource_id?(_resource_id), do: false
+
+  defp ipfs_content_id?("Qm" <> base58_digest) when byte_size(base58_digest) == 44 do
+    String.match?(base58_digest, ~r/\A[1-9A-HJ-NP-Za-km-z]+\z/)
+  end
+
+  defp ipfs_content_id?("b" <> base32_body) when byte_size(base32_body) >= 7 do
+    String.match?(base32_body, ~r/\A[a-z2-7]+\z/)
+  end
+
+  defp ipfs_content_id?(_content_id), do: false
 
   @doc """
   Returns `true` when `hash` is a valid ETH Swarm keccak-256 content address.
@@ -1520,14 +1559,6 @@ defmodule Explorer.Token.MetadataRetriever do
   end
 
   def valid_swarm_hash?(_), do: false
-
-  defp fetch_from_ipfs_if_valid_path(resource_id, hex_token_id) do
-    if is_binary(resource_id) and valid_ipfs_path?(public_ipfs_link(resource_id)) do
-      fetch_from_ipfs(resource_id, hex_token_id)
-    else
-      {:error, @invalid_ipfs_path}
-    end
-  end
 
   # Inline payloads (`data:application/json...` and bare JSON returned by `tokenURI`) are decoded in
   # place, so they are bounded before any decoding; base64 payloads are measured in encoded form.
