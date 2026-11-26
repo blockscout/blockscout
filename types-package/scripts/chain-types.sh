@@ -8,7 +8,6 @@ CHAIN_TYPES=(
   eden
   ethereum
   filecoin
-  neon
   optimism
   optimism-celo
   rsk

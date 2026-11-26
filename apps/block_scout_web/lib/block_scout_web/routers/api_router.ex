@@ -208,10 +208,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
       get("/:transaction_hash_param/summary", V2.TransactionController, :summary)
       get("/:transaction_hash_param/preview", V2.TransactionController, :preview)
 
-      chain_scope :neon do
-        get("/:transaction_hash_param/external-transactions", V2.TransactionController, :external_transactions)
-      end
-
       if @chain_type == :ethereum do
         get("/:transaction_hash_param/blobs", V2.TransactionController, :blobs)
       end

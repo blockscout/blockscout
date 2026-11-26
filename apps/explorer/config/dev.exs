@@ -32,8 +32,7 @@ for repo <- [
       Explorer.Repo.Stability,
       Explorer.Repo.Suave,
       Explorer.Repo.Zilliqa,
-      Explorer.Repo.ZkSync,
-      Explorer.Repo.Neon
+      Explorer.Repo.ZkSync
     ] do
   config :explorer, repo, timeout: :timer.seconds(80)
 end
