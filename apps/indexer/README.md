@@ -131,7 +131,7 @@ Most of them are based on `Indexer.BufferedTask`, and the basic algorithm goes l
 
 ### On-demand fetchers
 
-These are triggered by the API to make the requested data as up to date as possible. Most of them are started by `Indexer.Application` in every application mode, including `api`; `on_demand/internal_transaction` and `on_demand/neon_solana_transactions` are plain modules called directly by the API.
+These are triggered by the API to make the requested data as up to date as possible. Most of them are started by `Indexer.Application` in every application mode, including `api`; `on_demand/internal_transaction` is a plain module called directly by the API.
 
 - `on_demand/coin_balance`: address coin balance
 - `on_demand/token_balance`: address token balances
@@ -141,7 +141,6 @@ These are triggered by the API to make the requested data as up to date as possi
 - `on_demand/first_trace`: internal transactions of a transaction
 - `on_demand/internal_transaction`: internal transactions when they are not stored in the database
 - `on_demand/token_instance_metadata_refetch` and `on_demand/nft_collection_metadata_refetch`: NFT metadata refetch requested by a user
-- `on_demand/neon_solana_transactions`: Solana transactions linked to Neon transactions
 
 ### Temporary workers and migrators
 

@@ -53,8 +53,7 @@ jobs:
               "stability",
               "zetachain",
               "zilliqa",
-              "zksync",
-              "neon"
+              "zksync"
             ];
 
             // Add/remove CI matrix chain types for "ci:core" label here

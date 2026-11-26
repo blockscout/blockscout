@@ -85,7 +85,6 @@ export * as blackfort from "./dist/chains/blackfort.schema";
 export * as eden from "./dist/chains/eden.schema";
 export * as ethereum from "./dist/chains/ethereum.schema";
 export * as filecoin from "./dist/chains/filecoin.schema";
-export * as neon from "./dist/chains/neon.schema";
 export * as optimism from "./dist/chains/optimism.schema";
 export * as optimismCelo from "./dist/chains/optimism-celo.schema";
 export * as rsk from "./dist/chains/rsk.schema";
