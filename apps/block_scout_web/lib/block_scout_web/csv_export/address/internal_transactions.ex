@@ -68,16 +68,12 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
 
   # The internal transactions missing in the DB are fetched from the node within a limited scan (see
   # `BlockScoutWeb.Chain.address_to_internal_transactions/2`), so the export goes on with the block where the scan
-  # stopped until the period or the export limit is covered. A scan that doesn't get past the block it goes on with
-  # means that the node fails to trace that block: the export fails then instead of leaving its internal transactions
-  # out.
-  defp fetch_internal_transactions_of_period(address_hash, options, fetched \\ [], last_next_block_number \\ nil) do
+  # stopped until the period or the export limit is covered. Each scan gets past the block it goes on with: a block
+  # that fails to be traced raises (`raise_on_fetch_error`), so the scan stops only when its rounds are over.
+  defp fetch_internal_transactions_of_period(address_hash, options, fetched \\ []) do
     case address_to_internal_transactions(address_hash, options) do
       {:ok, internal_transactions} ->
         fetched ++ internal_transactions
-
-      {:incomplete, _internal_transactions, ^last_next_block_number} ->
-        raise "Failed to fetch internal transactions of block #{last_next_block_number} from the node"
 
       {:incomplete, internal_transactions, next_block_number} ->
         %PagingOptions{page_size: page_size} = paging_options = Keyword.fetch!(options, :paging_options)
@@ -87,12 +83,7 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactions do
           |> Keyword.put(:to_block, next_block_number)
           |> Keyword.put(:paging_options, %{paging_options | page_size: page_size - length(internal_transactions)})
 
-        fetch_internal_transactions_of_period(
-          address_hash,
-          next_options,
-          fetched ++ internal_transactions,
-          next_block_number
-        )
+        fetch_internal_transactions_of_period(address_hash, next_options, fetched ++ internal_transactions)
     end
   end
 

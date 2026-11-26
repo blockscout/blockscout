@@ -331,9 +331,8 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
       - `:from_block` - lower boundary for block number
       - `:to_block` - upper boundary for block number
       - `:raise_on_fetch_error` - when `true`, a failed trace batch raises instead of
-        being logged and skipped, so callers that need a complete result (e.g. CSV
-        export) fail explicitly rather than return a partial or empty list.
-        Defaults to `false`.
+        making the result incomplete, so callers that need a complete result (e.g. CSV
+        export) fail explicitly. Defaults to `false`.
 
     The blocks that the address placeholders point at are traced in at most `#{@max_address_fetch_rounds}` rounds,
     and the search also stops at blocks that fail to be traced, not to leave a gap. In both cases, the result is
@@ -755,35 +754,36 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   # Traces blocks in batches of `blocks_batch_size()` sent in parallel. A failed
   # batch is logged and its blocks are returned along with the traced part, so
   # that the callers don't leave silent gaps in paginated results. With
-  # `raise_on_fetch_error: true` the failure is raised instead.
+  # `raise_on_fetch_error: true` the failure is raised instead, once all the
+  # batches are done.
   defp fetch_blocks_internal_transactions(block_numbers, json_rpc_named_arguments, options) do
-    block_numbers
-    |> Enum.chunk_every(blocks_batch_size())
-    |> Task.async_stream(
-      fn chunk -> {chunk, EthereumJSONRPC.fetch_block_internal_transactions(chunk, json_rpc_named_arguments)} end,
-      timeout: :infinity
-    )
-    |> Enum.reduce({[], []}, fn
-      {:ok, {_chunk, {:ok, internal_transactions}}}, {traced_chunks, failed_block_numbers} ->
-        {[internal_transactions | traced_chunks], failed_block_numbers}
+    {traced_chunks, failed_block_numbers} =
+      block_numbers
+      |> Enum.chunk_every(blocks_batch_size())
+      |> Task.async_stream(
+        fn chunk -> {chunk, EthereumJSONRPC.fetch_block_internal_transactions(chunk, json_rpc_named_arguments)} end,
+        timeout: :infinity
+      )
+      |> Enum.reduce({[], []}, fn
+        {:ok, {_chunk, {:ok, internal_transactions}}}, {traced_chunks, failed_block_numbers} ->
+          {[internal_transactions | traced_chunks], failed_block_numbers}
 
-      {:ok, {chunk, error}}, {traced_chunks, failed_block_numbers} ->
-        Logger.error("Failed to fetch internal transactions for blocks #{inspect(chunk)}: #{inspect(error)}")
-        {traced_chunks, chunk ++ failed_block_numbers}
-    end)
-    |> to_trace_result(options)
+        {:ok, {chunk, error}}, {traced_chunks, failed_block_numbers} ->
+          Logger.error("Failed to fetch internal transactions for blocks #{inspect(chunk)}: #{inspect(error)}")
+          {traced_chunks, chunk ++ failed_block_numbers}
+      end)
+
+    if failed_block_numbers != [], do: maybe_raise_fetch_error(options, "blocks")
+
+    to_trace_result({traced_chunks, failed_block_numbers})
   end
 
-  defp to_trace_result({traced_chunks, failed_block_numbers}, options) do
+  defp to_trace_result({traced_chunks, failed_block_numbers}) do
     internal_transactions_params = traced_chunks |> Enum.reverse() |> Enum.concat()
 
     case failed_block_numbers do
-      [] ->
-        {:ok, internal_transactions_params}
-
-      _ ->
-        maybe_raise_fetch_error(options, "blocks")
-        {:error, internal_transactions_params, Enum.uniq(failed_block_numbers)}
+      [] -> {:ok, internal_transactions_params}
+      _ -> {:error, internal_transactions_params, Enum.uniq(failed_block_numbers)}
     end
   end
 
@@ -812,9 +812,9 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
   end
 
   # Traces transactions in cross-block batches of `transactions_batch_size()`
-  # sent in parallel, instead of one batch per block. A failed batch is skipped
-  # with a log, the same way a failed per-block batch was skipped before, unless
-  # `raise_on_fetch_error: true` is set.
+  # sent in parallel, instead of one batch per block. A failed batch is logged,
+  # and the blocks of its transactions are returned along with the traced part.
+  # With `raise_on_fetch_error: true` the first failed batch raises instead.
   defp fetch_transactions_internal_transactions(transactions, json_rpc_named_arguments, options) do
     transactions
     |> Enum.chunk_every(transactions_batch_size())
@@ -831,9 +831,11 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransaction do
           "Failed to fetch internal transactions for transactions #{inspect(Enum.map(chunk, & &1.hash_data))}: #{inspect(error_or_ignore)}"
         )
 
+        maybe_raise_fetch_error(options, "transactions")
+
         {traced_chunks, Enum.map(chunk, & &1.block_number) ++ failed_block_numbers}
     end)
-    |> to_trace_result(options)
+    |> to_trace_result()
   end
 
   defp maybe_raise_fetch_error(options, source) do

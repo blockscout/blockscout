@@ -3,6 +3,7 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
   use EthereumJSONRPC.Case, async: false
   use Explorer.DataCase
 
+  import ExUnit.CaptureLog
   import Mox
 
   alias Explorer.Chain.InternalTransaction
@@ -1111,16 +1112,19 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
         {:error, %{code: -32000, message: "trace failed"}}
       end)
 
-      %{address: address, opts: [paging_options: %PagingOptions{page_size: 2}]}
+      %{address: address, address_id: id_to_hash.address_id, opts: [paging_options: %PagingOptions{page_size: 2}]}
     end
 
     for block_traceable? <- [true, false] do
       @block_traceable? block_traceable?
 
-      test "returns empty list by default (block_traceable?: #{block_traceable?})", %{address: address, opts: opts} do
+      test "reports the failed block by default (block_traceable?: #{block_traceable?})", %{
+        address: address,
+        opts: opts
+      } do
         put_geth_env(@block_traceable?)
 
-        assert InternalTransactionOnDemand.fetch_by_address(address.hash, opts) == []
+        assert {:incomplete, [], 1} = InternalTransactionOnDemand.fetch_by_address(address.hash, opts)
       end
 
       test "raises with raise_on_fetch_error: true (block_traceable?: #{block_traceable?})", %{
@@ -1133,6 +1137,35 @@ defmodule Indexer.Fetcher.OnDemand.InternalTransactionTest do
           InternalTransactionOnDemand.fetch_by_address(address.hash, [raise_on_fetch_error: true] ++ opts)
         end
       end
+    end
+
+    test "raises at the first failed batch of transactions with raise_on_fetch_error: true", %{
+      address: address,
+      address_id: address_id,
+      opts: opts
+    } do
+      Application.put_env(:indexer, Indexer.Fetcher.OnDemand.InternalTransaction, transactions_batch_size: 1)
+      put_geth_env(false)
+
+      # another transaction of the address, traced in a batch of its own
+      insert(:deleted_internal_transactions_address_placeholder,
+        address_id: address_id,
+        block_number: 2,
+        count_tos: 0,
+        count_froms: 1
+      )
+
+      :transaction |> insert() |> with_block(insert(:block, number: 2))
+
+      log =
+        capture_log(fn ->
+          assert_raise RuntimeError, ~r/for transactions/, fn ->
+            InternalTransactionOnDemand.fetch_by_address(address.hash, [raise_on_fetch_error: true] ++ opts)
+          end
+        end)
+
+      # the batch after the failed one is not waited for
+      assert [_] = Regex.scan(~r/Failed to fetch internal transactions for transactions/, log)
     end
 
     defp put_geth_env(block_traceable?) do

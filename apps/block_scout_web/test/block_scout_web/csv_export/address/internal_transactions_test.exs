@@ -466,15 +466,17 @@ defmodule BlockScoutWeb.CsvExport.Address.InternalTransactionsTest do
 
         insert_blocks_with_placeholders(1..3, context)
 
-        # block 2 fails to be traced in the first scan, and again in the scan going on with it
-        expect(EthereumJSONRPC.Mox, :json_rpc, 5, fn [%{id: id, params: [block_quantity, _]}], _ ->
+        # the first scan traces the blocks one by one, and block 2 fails
+        expect(EthereumJSONRPC.Mox, :json_rpc, 3, fn [%{id: id, params: [block_quantity, _]}], _ ->
           case EthereumJSONRPC.quantity_to_integer(block_quantity) do
             2 -> {:ok, [%{id: id, error: %{code: -32_000, message: "tracing failed"}}]}
             block_number -> {:ok, [%{id: id, result: block_traces_with_call_to(address, block_number, "0x1")}]}
           end
         end)
 
-        assert_raise RuntimeError, ~r/block 2/, fn -> exported_block_numbers(address, context, []) end
+        assert_raise RuntimeError, ~r/Failed to fetch internal transactions on demand for blocks/, fn ->
+          exported_block_numbers(address, context, [])
+        end
       end
     end
 
