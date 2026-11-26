@@ -10,7 +10,6 @@ MIX_FILES=(
     "$(pwd)/apps/utils/mix.exs"
     "$(pwd)/apps/nft_media_handler/mix.exs"
 )
-CONFIG_FILE="$(pwd)/rel/config.exs"
 DOCKER_COMPOSE_FILE="$(pwd)/docker-compose/docker-compose.yml"
 DOCKER_COMPOSE_NO_SERVICES_FILE="$(pwd)/docker-compose/no-services.yml"
 MAKE_FILE="$(pwd)/docker/Makefile"
@@ -83,7 +82,6 @@ bump_backend_version() {
         sed_inplace "s/version: \"$current_version\"/version: \"$new_version\"/" "$MIX_FILE" || exit 1
     done
 
-    sed_inplace "s/version: \"$current_version\"/version: \"$new_version\"/" "$CONFIG_FILE" || exit 1
     sed_inplace "s/RELEASE_VERSION ?= '$current_version'/RELEASE_VERSION ?= '$new_version'/" "$MAKE_FILE" || exit 1
 
     # Replace the old version with the new version in the GitHub workflows files

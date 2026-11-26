@@ -20,7 +20,6 @@ RUN mix local.hex --force
 RUN mix do deps.get, local.rebar --force, deps.compile --skip-umbrella-children
 
 COPY config ./config
-COPY rel ./rel
 COPY apps ./apps
 
 ##############################################################
