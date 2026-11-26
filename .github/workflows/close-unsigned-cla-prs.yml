@@ -1,0 +1,151 @@
+name: Close PRs with unsigned CLA
+
+# Pull requests whose `license/cla` commit status (set by CLA Assistant) is not
+# `success` get a reminder comment one week after they were opened, tagging the
+# author. If the CLA is still not signed a week after the reminder (and the PR
+# is at least two weeks old), the PR is closed.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only log what would be done, do not comment or close"
+        type: boolean
+        default: true
+
+permissions:
+  pull-requests: write
+  issues: write
+  statuses: read
+
+concurrency:
+  group: close-unsigned-cla-prs
+  cancel-in-progress: false
+
+jobs:
+  close-unsigned-cla-prs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remind and close PRs with unsigned CLA
+        uses: actions/github-script@v7
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        with:
+          script: |
+            const CLA_CONTEXT = "license/cla";
+            const DAY_MS = 24 * 60 * 60 * 1000;
+            const REMIND_AFTER_MS = 7 * DAY_MS;
+            const CLOSE_AFTER_MS = 14 * DAY_MS;
+            const GRACE_AFTER_REMINDER_MS = 7 * DAY_MS;
+            const REMINDER_MARKER = "<!-- cla-unsigned-reminder -->";
+            const CLOSE_MARKER = "<!-- cla-unsigned-close -->";
+
+            const dryRun = process.env.DRY_RUN === "true";
+            const { owner, repo } = context.repo;
+            const now = Date.now();
+
+            if (dryRun) core.info("Dry run: no comments will be posted and no PRs will be closed.");
+
+            const claStatus = async (ref) => {
+              const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, {
+                owner,
+                repo,
+                ref,
+                per_page: 100,
+              });
+
+              // Statuses are returned newest first; the first match is the current one.
+              return statuses.find((status) => status.context === CLA_CONTEXT);
+            };
+
+            const findReminder = async (issue_number) => {
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner,
+                repo,
+                issue_number,
+                per_page: 100,
+              });
+
+              return comments.find(
+                (comment) => comment.user?.type === "Bot" && comment.body?.includes(REMINDER_MARKER)
+              );
+            };
+
+            const comment = async (issue_number, body) => {
+              if (dryRun) return;
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            };
+
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: "open",
+              per_page: 100,
+            });
+
+            core.info(`Open PRs: ${pulls.length}`);
+
+            for (const pr of pulls) {
+              const number = pr.number;
+              const author = pr.user?.login;
+              const ageMs = now - new Date(pr.created_at).getTime();
+
+              if (ageMs < REMIND_AFTER_MS) continue;
+
+              if (!author || pr.user.type === "Bot") {
+                core.info(`#${number}: skipped, opened by a bot.`);
+                continue;
+              }
+
+              try {
+                const status = await claStatus(pr.head.sha);
+
+                if (!status) {
+                  core.info(`#${number}: skipped, no ${CLA_CONTEXT} status on ${pr.head.sha}.`);
+                  continue;
+                }
+
+                if (status.state === "success") continue;
+
+                const signUrl = status.target_url || `https://cla-assistant.io/${owner}/${repo}`;
+                const reminder = await findReminder(number);
+
+                if (!reminder) {
+                  core.info(`#${number}: CLA ${status.state}, posting reminder to @${author}.`);
+
+                  await comment(
+                    number,
+                    `${REMINDER_MARKER}\n` +
+                      `@${author}, thank you for your contribution! ` +
+                      `The [Contributor License Agreement](${signUrl}) for this pull request has not been signed yet.\n\n` +
+                      `If the CLA is not signed, this pull request will be automatically closed in 1 week.`
+                  );
+
+                  continue;
+                }
+
+                const sinceReminderMs = now - new Date(reminder.created_at).getTime();
+
+                if (ageMs < CLOSE_AFTER_MS || sinceReminderMs < GRACE_AFTER_REMINDER_MS) {
+                  core.info(`#${number}: CLA ${status.state}, reminder already posted, waiting.`);
+                  continue;
+                }
+
+                core.info(`#${number}: CLA ${status.state}, closing.`);
+
+                await comment(
+                  number,
+                  `${CLOSE_MARKER}\n` +
+                    `@${author}, this pull request is closed because the [Contributor License Agreement](${signUrl}) ` +
+                    `was not signed within 2 weeks. Feel free to sign the CLA and reopen it.`
+                );
+
+                if (!dryRun) {
+                  await github.rest.pulls.update({ owner, repo, pull_number: number, state: "closed" });
+                }
+              } catch (error) {
+                core.warning(`#${number}: ${error.message}`);
+              }
+            }
