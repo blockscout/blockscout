@@ -40,6 +40,7 @@ defmodule Explorer.Application do
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo.PrometheusLogger
   alias Explorer.Stats.HotSmartContractsCache
+  alias Explorer.Utility.AddressIdToAddressHash.Cache, as: AddressIdToAddressHashCache
   alias Explorer.Utility.Hammer
   alias Oban.Telemetry, as: ObanTelemetry
   alias Utils.ConfigHelper
@@ -144,6 +145,7 @@ defmodule Explorer.Application do
   defp configurable_children do
     configurable_children_set =
       [
+        configure_address_id_to_address_hash_cache(),
         configure(Explorer.Chain.Health.Monitor),
         only_in_mode(Explorer.SmartContract.SolcDownloader, :api),
         only_in_mode(Explorer.SmartContract.VyperDownloader, :api),
@@ -668,6 +670,10 @@ defmodule Explorer.Application do
     else
       []
     end
+  end
+
+  defp configure_address_id_to_address_hash_cache do
+    if AddressIdToAddressHashCache.enabled?(), do: AddressIdToAddressHashCache, else: []
   end
 
   defp configure_chain_type_dependent_con_cache do
