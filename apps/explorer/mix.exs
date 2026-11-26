@@ -124,7 +124,7 @@ defmodule Explorer.Mixfile do
       # Validation of the Superchain config file content
       {:toml, "~> 0.7"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.22.0"},
+      {:tesla, "~> 1.23.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
