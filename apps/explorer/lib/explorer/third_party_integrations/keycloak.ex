@@ -29,6 +29,9 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   @otp_length 6
   @otp_ttl_seconds 300
   @max_otp_attempts 3
+  @custom_settings_prefix "settings."
+  @max_setting_value_size 2048
+  @max_settings_count 100
 
   @spec enabled?() :: boolean()
   def enabled? do
@@ -71,6 +74,10 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   def link_email(%{uid: user_id, email: nil}, email, otp, _ip) do
     case verify_otp(email, otp) do
       :ok ->
+        # A known race: the admin API writes back the cached attributes of the user along with the email, so a setting
+        # written concurrently, e.g. on another Keycloak node shortly before, can be reverted. The window is small
+        # and the email is linked once per user, so the risk is accepted. Moving the email update to the extension,
+        # under the lock of the user row, would remove it.
         with :ok <-
                "#{users_path()}/#{user_id}"
                |> admin_put(%{email: email, emailVerified: true})
@@ -204,17 +211,225 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   end
 
   defp link_address_to_user(user_id, address_hash) do
-    with {:ok, user} <- get_user(user_id),
-         new_attributes = %{"address" => [String.downcase(address_hash)]},
-         merged =
-           Map.update(user, "attributes", new_attributes, fn attributes ->
-             Map.merge(attributes, new_attributes)
-           end),
-         :ok <-
-           "#{users_path()}/#{user_id}" |> admin_put(merged) |> handle_update("Failed to link address to user"),
+    with :ok <- put_address(user_id, String.downcase(address_hash)),
          {:ok, user} <- get_user(user_id) do
       {:ok, create_auth(user, address_hash)}
     end
+  end
+
+  # The extension sets only the address attribute. A read-modify-write of the whole user via the admin API
+  # would drop attributes, e.g. settings, written by a concurrent request after the user was read, so it is used
+  # only if the extension is not installed.
+  defp put_address(user_id, address) do
+    response = admin_request("#{extension_users_path()}/#{user_id}/address", :put, %{address: address})
+
+    if extension_missing?(response) do
+      log_extension_missing()
+
+      with {:ok, user} <- get_user(user_id) do
+        user_id
+        |> put_user_attributes(user, Map.put(user["attributes"] || %{}, "address", [address]))
+        |> handle_update("Failed to link address to user")
+      end
+    else
+      handle_update(response, "Failed to link address to user")
+    end
+  end
+
+  @doc """
+  Fetches account settings of a Keycloak user.
+
+  Settings are stored as user attributes prefixed with `#{@custom_settings_prefix}`.
+
+  ## Parameters
+  - `user_id`: Keycloak user ID
+
+  ## Returns
+  - `{:ok, settings}` with a flat map of setting keys to values
+  - `{:error, :user_not_found}` if there is no such user in Keycloak
+  - `:error` if the user could not be fetched
+  """
+  @spec get_user_settings(String.t()) :: {:ok, %{String.t() => String.t()}} | {:error, :user_not_found} | :error
+  def get_user_settings(user_id) do
+    case get_user(user_id) do
+      {:ok, user} -> {:ok, extract_settings(user)}
+      {:error, "User not found"} -> {:error, :user_not_found}
+      error -> error
+    end
+  end
+
+  @doc """
+  Applies a batch of changes to account settings of a Keycloak user.
+
+  A non-empty string value creates or replaces the setting, `nil` deletes it, keys absent
+  from `diff` are left untouched. The batch is validated here and then applied atomically by
+  the Keycloak extension (https://github.com/blockscout/keycloak-user-api-extension), which
+  changes only the attributes of the changed settings. Unlike a read-modify-write of the whole
+  user via the admin API, concurrent updates of different settings do not overwrite each other.
+  If the extension is not installed, the batch is applied with such a read-modify-write.
+
+  ## Parameters
+  - `user_id`: Keycloak user ID
+  - `diff`: map of setting keys to new values (`String.t()` or `nil`)
+
+  ## Returns
+  - `{:ok, settings}` with the full settings map after the update
+  - `{:invalid_settings, String.t()}` if the diff or the resulting settings are invalid
+  - `{:error, :user_not_found}` if there is no such user in Keycloak
+  - `:error` if a Keycloak request failed
+  """
+  @spec update_user_settings(String.t(), map()) ::
+          {:ok, %{String.t() => String.t()}} | {:invalid_settings, String.t()} | {:error, :user_not_found} | :error
+  def update_user_settings(user_id, diff) do
+    with :ok <- validate_settings_diff(diff) do
+      response = admin_request("#{extension_users_path()}/#{user_id}/settings", :patch, diff)
+
+      if extension_missing?(response),
+        do: update_user_settings_via_admin_api(user_id, diff),
+        else: handle_settings_update(response)
+    end
+  end
+
+  defp update_user_settings_via_admin_api(user_id, diff) do
+    log_extension_missing()
+
+    with {:ok, user} <- get_user(user_id),
+         settings = user |> extract_settings() |> apply_settings_diff(diff),
+         :ok <- validate_settings_count(settings),
+         :ok <-
+           user_id
+           |> put_user_attributes(user, put_settings(user["attributes"] || %{}, settings))
+           |> handle_admin_settings_update(),
+         # the stored settings can differ from the requested ones, e.g. a removed setting that is declared in the
+         # user profile with a default value gets the default value
+         {:ok, user} <- get_user(user_id) do
+      {:ok, extract_settings(user)}
+    else
+      {:error, "User not found"} -> {:error, :user_not_found}
+      error -> error
+    end
+  end
+
+  # Writes the attributes of a user read before via the admin API. Only the user profile is sent: the admin API
+  # also writes the account state of the representation, e.g. it would enable a user disabled after the read.
+  # The root attributes of the profile are sent too, as the admin API clears the editable ones that are missing.
+  defp put_user_attributes(user_id, user, attributes) do
+    body = user |> Map.take(["username", "email", "firstName", "lastName"]) |> Map.put("attributes", attributes)
+    admin_put("#{users_path()}/#{user_id}", body)
+  end
+
+  # the admin API validates the user profile, e.g. by the validators of a setting declared in it
+  defp handle_admin_settings_update({:ok, %{status_code: 400, body: body}} = response) do
+    case settings_validation_error(body) do
+      nil -> handle_update(response, "Failed to update user settings")
+      message -> {:invalid_settings, message}
+    end
+  end
+
+  defp handle_admin_settings_update(response), do: handle_update(response, "Failed to update user settings")
+
+  # The admin API responds with a single validation error or a list of them. It validates all attributes of the
+  # user, so errors of other attributes are not errors of the request.
+  defp settings_validation_error(body) do
+    errors =
+      case Utils.JSON.decode(body) do
+        {:ok, %{"errors" => [_ | _] = errors}} -> errors
+        {:ok, %{"field" => _} = error} -> [error]
+        _ -> []
+      end
+
+    if errors != [] and Enum.all?(errors, &settings_validation_error?/1) do
+      Enum.map_join(errors, ", ", &"Invalid #{&1["field"]}: #{&1["errorMessage"]}")
+    end
+  end
+
+  defp settings_validation_error?(%{"field" => @custom_settings_prefix <> _, "errorMessage" => message}),
+    do: is_binary(message)
+
+  defp settings_validation_error?(_error), do: false
+
+  defp handle_settings_update({:ok, %{status_code: 200, body: body}}), do: {:ok, Utils.JSON.decode!(body)}
+
+  # the extension also checks the number of settings, which depends on the stored ones
+  defp handle_settings_update({:ok, %{status_code: 422, body: body}} = response) do
+    case Utils.JSON.decode(body) do
+      {:ok, %{"error" => message}} when is_binary(message) -> {:invalid_settings, message}
+      _ -> handle_error(response, "Failed to update user settings")
+    end
+  end
+
+  # update_user_settings/2 handles other responses with 404 as a missing extension
+  defp handle_settings_update({:ok, %{status_code: 404}}), do: {:error, :user_not_found}
+
+  defp handle_settings_update(error), do: handle_error(error, "Failed to update user settings")
+
+  defp extract_settings(user) do
+    (user["attributes"] || %{})
+    |> Enum.flat_map(fn
+      {@custom_settings_prefix <> key, [value | _]} -> [{key, value}]
+      _ -> []
+    end)
+    |> Map.new()
+  end
+
+  defp apply_settings_diff(settings, diff) do
+    Enum.reduce(diff, settings, fn
+      {key, nil}, acc -> Map.delete(acc, key)
+      {key, value}, acc -> Map.put(acc, key, value)
+    end)
+  end
+
+  defp put_settings(attributes, settings) do
+    other_attributes = Map.reject(attributes, fn {name, _} -> String.starts_with?(name, @custom_settings_prefix) end)
+    settings_attributes = Map.new(settings, fn {key, value} -> {@custom_settings_prefix <> key, [value]} end)
+
+    Map.merge(other_attributes, settings_attributes)
+  end
+
+  defp validate_settings_count(settings) when map_size(settings) > @max_settings_count,
+    do: {:invalid_settings, "Number of settings exceeds #{@max_settings_count}"}
+
+  defp validate_settings_count(_settings), do: :ok
+
+  defp validate_settings_diff(diff) do
+    Enum.reduce_while(diff, :ok, fn {key, value}, :ok ->
+      case validate_setting(key, value) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp validate_setting(key, value) do
+    cond do
+      not (is_binary(key) and Regex.match?(~r/\A[a-z0-9_]{1,64}\z/, key)) ->
+        {:invalid_settings, "Invalid setting key #{inspect(key)}: must be 1-64 characters of a-z, 0-9 and _"}
+
+      is_nil(value) ->
+        :ok
+
+      not is_binary(value) ->
+        {:invalid_settings, "Invalid value for setting #{key}: must be a string or null"}
+
+      # Keycloak drops attributes with blank values, so such a setting would not be persisted
+      keycloak_blank?(value) ->
+        {:invalid_settings, "Invalid value for setting #{key}: must not be blank, use null to delete the setting"}
+
+      byte_size(value) > @max_setting_value_size ->
+        {:invalid_settings, "Value for setting #{key} exceeds #{@max_setting_value_size} bytes"}
+
+      true ->
+        :ok
+    end
+  end
+
+  # Mirrors Java's String.isBlank/0 (Character.isWhitespace/1), which Keycloak uses to drop attribute values.
+  # Non-blank values are stored by Keycloak as is, so they are not trimmed here either.
+  defp keycloak_blank?(value) do
+    Regex.match?(
+      ~r/\A[\x{9}-\x{D}\x{1C}-\x{20}\x{1680}\x{2000}-\x{2006}\x{2008}-\x{200A}\x{2028}\x{2029}\x{205F}\x{3000}]*\z/u,
+      value
+    )
   end
 
   @doc false
@@ -251,10 +466,12 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
     end
   end
 
-  defp admin_put(path, body) do
+  defp admin_put(path, body), do: admin_request(path, :put, body)
+
+  defp admin_request(path, method, body) do
     with {:ok, token} <- get_admin_token() do
       HttpClient.request(
-        :put,
+        method,
         build_url(path),
         auth_headers(token) ++ @json_headers,
         Utils.JSON.encode!(body)
@@ -327,11 +544,31 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
 
   defp handle_update(result, error_message) do
     case result do
-      {:ok, %{status_code: 204}} -> :ok
-      {:ok, %{status_code: 404}} -> {:error, "User not found"}
-      {:ok, %{status_code: 409}} -> {:error, "Email already in use by another account"}
-      error -> handle_error(error, error_message)
+      {:ok, %{status_code: 204}} ->
+        :ok
+
+      {:ok, %{status_code: 404, body: body}} ->
+        if user_not_found?(body), do: {:error, "User not found"}, else: handle_error(result, error_message)
+
+      {:ok, %{status_code: 409}} ->
+        {:error, "Email already in use by another account"}
+
+      error ->
+        handle_error(error, error_message)
     end
+  end
+
+  # Keycloak responds with 404 to a request to a missing endpoint as well, e.g. when the extension is not installed
+  defp user_not_found?(body), do: match?({:ok, %{"error" => "User not found"}}, Utils.JSON.decode(body))
+
+  defp extension_missing?({:ok, %{status_code: 404, body: body}}), do: not user_not_found?(body)
+  defp extension_missing?(_response), do: false
+
+  defp log_extension_missing do
+    Logger.warning(
+      "Keycloak extension https://github.com/blockscout/keycloak-user-api-extension is not installed, " <>
+        "so users are updated via the admin API, and concurrent updates of a user can overwrite each other"
+    )
   end
 
   defp build_url(path) do
@@ -342,6 +579,9 @@ defmodule Explorer.ThirdPartyIntegrations.Keycloak do
   end
 
   defp users_path, do: "/admin/realms/#{URI.encode(realm())}/users"
+
+  # endpoints of https://github.com/blockscout/keycloak-user-api-extension
+  defp extension_users_path, do: "/realms/#{URI.encode(realm())}/blockscout/users"
 
   defp extract_location_id(headers) do
     Enum.find_value(headers, fn {key, value} ->
