@@ -263,17 +263,9 @@ defmodule Explorer.Market.Source do
       Decimal.new("123.45")
   """
   @spec to_decimal(float() | integer() | Decimal.t() | String.t() | nil) :: Decimal.t() | nil
-  def to_decimal(nil), do: nil
-
-  def to_decimal(%Decimal{} = value), do: value
-
-  def to_decimal(value) when is_float(value) do
-    Decimal.from_float(value)
-  end
-
-  def to_decimal(value) when is_integer(value) or is_binary(value) do
-    Decimal.new(value)
-  end
+  def to_decimal(value) when is_nil(value) or is_struct(value, Decimal), do: value
+  def to_decimal(value) when is_float(value), do: Decimal.from_float(value)
+  def to_decimal(value) when is_integer(value) or is_binary(value), do: Decimal.new(value)
 
   @doc """
   Returns true if the value is nil or a Decimal equal to zero.
