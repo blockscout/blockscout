@@ -270,6 +270,11 @@ defmodule Explorer.Account.Auth0ToKeycloakMigration do
 
   # Auth0 export files are gzipped. If content is already decompressed
   # (e.g. HTTP client handled Content-Encoding), pass through as-is.
+  #
+  # The archive is the operator's own tenant export, downloaded from the
+  # location returned by the authenticated Auth0 Management API during a
+  # manually triggered one-off migration, so it is not attacker-controlled.
+  # sobelow_skip ["DOS.Decompression"]
   defp safe_gunzip(data) do
     :zlib.gunzip(data)
   rescue

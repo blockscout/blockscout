@@ -109,7 +109,7 @@ defmodule Explorer.Mixfile do
       {:prometheus_ex, "~> 5.1.0", override: true},
       # bypass optional dependency
       {:plug_cowboy, "~> 2.2", only: [:dev, :test]},
-      {:que, "~> 0.12.0"},
+      {:que, "~> 0.13.0"},
       {:sobelow, ">= 0.7.0", only: [:dev, :test], runtime: false},
       # Tracing
       {:spandex, "~> 3.0"},
@@ -124,7 +124,7 @@ defmodule Explorer.Mixfile do
       # Validation of the Superchain config file content
       {:toml, "~> 0.7"},
       {:con_cache, "~> 1.0"},
-      {:tesla, "~> 1.22.0"},
+      {:tesla, "~> 1.23.0"},
       {:cbor, "~> 1.0"},
       {:cloak_ecto, "~> 1.3.0"},
       {:redix, "~> 1.1"},
