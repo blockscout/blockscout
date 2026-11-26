@@ -16,8 +16,18 @@ config :block_scout_web, BlockScoutWeb.Tracer, disabled?: false
 
 config :logger, :block_scout_web, path: Path.absname("logs/test/block_scout_web.log")
 
-# Configure wallaby
-config :wallaby, screenshot_on_failure: true, driver: Wallaby.Chrome, js_errors: false
+# Configure Fluffy: browser requests carry the test's sandbox metadata for
+# these repos. Traces and screenshots of failed tests go to test-results/.
+config :fluffy, endpoint: BlockScoutWeb.Endpoint, ecto_repos: [Explorer.Repo]
+
+config :playwright, :test,
+  browser_name: :chromium,
+  viewport: %{width: 1200, height: 800},
+  action_timeout: 15_000,
+  navigation_timeout: 15_000,
+  test_id_attribute: "data-test",
+  trace: :retain_on_failure,
+  screenshot: :only_on_failure
 
 config :block_scout_web, BlockScoutWeb.Counters.BlocksIndexedCounter, enabled: false
 

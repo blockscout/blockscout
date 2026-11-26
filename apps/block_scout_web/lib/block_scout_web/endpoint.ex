@@ -39,7 +39,11 @@ defmodule BlockScoutWeb.Endpoint do
                      )
 
   if @sql_sandbox do
-    plug(Phoenix.Ecto.SQL.Sandbox, repo: Explorer.Repo)
+    plug(Phoenix.Ecto.SQL.Sandbox,
+      repo: Explorer.Repo,
+      header: Fluffy.Sandbox.header(),
+      sandbox: Fluffy.Sandbox.allowance()
+    )
   end
 
   if @disable_api? do
@@ -136,7 +140,7 @@ defmodule BlockScoutWeb.Endpoint do
 
     all_routes =
       [
-        {:_, Phoenix.Endpoint.Cowboy2Handler, {BlockScoutWeb.Endpoint, []}} | universal_proxy_routes
+        {:_, Plug.Cowboy.Handler, {BlockScoutWeb.Endpoint, []}} | universal_proxy_routes
       ]
       |> Enum.reverse()
 

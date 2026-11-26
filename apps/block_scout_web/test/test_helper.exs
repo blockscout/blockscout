@@ -7,9 +7,6 @@ File.mkdir_p!(junit_folder)
 # Counter `test --no-start`.  `--no-start` is needed for `:indexer` compatibility
 {:ok, _} = Application.ensure_all_started(:block_scout_web)
 
-{:ok, _} = Application.ensure_all_started(:wallaby)
-Application.put_env(:wallaby, :base_url, BlockScoutWeb.Endpoint.url())
-
 {:ok, _} = Application.ensure_all_started(:ex_machina)
 
 Bureaucrat.start(
@@ -20,7 +17,10 @@ Bureaucrat.start(
 
 # Bureaucrat.start()
 
-ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter])
+# Annotates failed tests on GitHub Actions.
+github = if System.get_env("GITHUB_ACTIONS"), do: [Playwright.Test.GitHubFormatter], else: []
+
+ExUnit.configure(formatters: [JUnitFormatter, ExUnit.CLIFormatter, Bureaucrat.Formatter | github])
 ExUnit.start()
 
 Mox.defmock(Explorer.Market.Source.TestSource, for: Explorer.Market.Source)

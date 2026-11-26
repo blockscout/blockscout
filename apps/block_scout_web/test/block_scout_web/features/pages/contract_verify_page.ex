@@ -2,9 +2,10 @@
 defmodule BlockScoutWeb.ContractVerifyPage do
   @moduledoc false
 
-  use Wallaby.DSL
+  use Fluffy.Assert
 
-  import Wallaby.Query
+  import Fluffy
+  import Fluffy.Locator
 
   def visit_page(session, address_hash) do
     visit(session, "/address/#{address_hash}/verify-via-flattened-code/new")
@@ -18,25 +19,26 @@ defmodule BlockScoutWeb.ContractVerifyPage do
         evm_version: evm_version
       }) do
     session
-    |> fill_in(css("[data-test='contract_name']"), with: contract_name)
-    |> fill_in(text_field("Enter the Solidity Contract Code"), with: source_code)
+    |> fill(by_test_id("contract_name"), contract_name)
+    |> fill(by_label("Enter the Solidity Contract Code"), source_code)
 
     case version do
-      nil -> nil
-      _ -> click(session, option(version))
+      # Leave the compiler's default selection in place; "default" is only an EVM option.
+      version when version in [nil, "default"] -> nil
+      _ -> select_option(session, by_label("Compiler", exact: true), %{label: version})
     end
 
     case evm_version do
       nil -> nil
-      _ -> click(session, option(evm_version))
+      _ -> select_option(session, by_label("EVM Version", exact: true), %{label: evm_version})
     end
 
     case optimization do
       true ->
-        click(session, radio_button("Yes"))
+        check(session, by_label("Yes", exact: true))
 
       false ->
-        click(session, radio_button("No"))
+        check(session, by_label("No", exact: true))
 
       _ ->
         nil
@@ -46,14 +48,10 @@ defmodule BlockScoutWeb.ContractVerifyPage do
   end
 
   def validation_error do
-    css("[data-test='contract-source-code-error']")
-  end
-
-  def has_message?(session, message) do
-    String.contains?(page_source(session), message)
+    by_test_id("contract-source-code-error")
   end
 
   def verify_and_publish(session) do
-    click(session, button("Verify & publish"))
+    click(session, by_role(:button, name: "Verify & publish"))
   end
 end

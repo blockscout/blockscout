@@ -122,13 +122,15 @@ defmodule BlockScoutWeb.Mixfile do
       {:meck, "~> 1.2", override: true, only: [:test], runtime: false},
       {:mock, "~> 0.3.0", only: [:test], runtime: false},
       {:number, "~> 1.0.1"},
-      {:phoenix, "== 1.6.17"},
+      {:phoenix, "~> 1.7.24"},
       {:phoenix_ecto, "~> 4.1"},
       {:phoenix_html, "== 4.4.0"},
       {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_live_reload, "~> 1.6", only: [:dev]},
       {:phoenix_live_view, "~> 1.1"},
       {:phoenix_pubsub, "~> 2.0"},
+      # Phoenix 1.7 no longer bundles Phoenix.View
+      {:phoenix_view, "~> 2.0"},
       {:prometheus_ex, "~> 5.1.0", override: true},
       # use `:cowboy` for WebServer with `:plug`
       {:plug_cowboy, "~> 2.2"},
@@ -151,7 +153,6 @@ defmodule BlockScoutWeb.Mixfile do
       # `:spandex` tracing of `:phoenix`
       {:spandex_phoenix, "~> 1.0"},
       {:timex, "~> 4.0.0"},
-      {:wallaby, "~> 0.30", only: :test, runtime: false},
       # `:cowboy` `~> 2.0` and Phoenix 1.4 compatibility
       {:ex_json_schema, "~> 0.11.0"},
       {:ueberauth, "~> 0.7"},
@@ -159,7 +160,8 @@ defmodule BlockScoutWeb.Mixfile do
       {:utils, in_umbrella: true},
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:open_api_spex, "~> 3.21"},
-      {:ymlr, "~> 5.1"}
+      {:ymlr, "~> 5.1"},
+      {:fluffy, "~> 0.9.0-rc.7", only: :test}
     ]
   end
 

@@ -55,8 +55,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       evm_version: "byzantium"
     })
     |> ContractVerifyPage.verify_and_publish()
-
-    assert AddressContractPage.on_page?(session, address)
+    |> assert(AddressContractPage.on_page(address))
   end
 
   test "with invalid data shows error messages", %{session: session, bypass: bypass} do
@@ -74,7 +73,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       evm_version: "byzantium"
     })
     |> ContractVerifyPage.verify_and_publish()
-    |> ContractVerifyPage.has_message?("There was an error validating your contract, please try again.")
+    |> assert(contain_text(ContractVerifyPage.validation_error(), "Empty contract source code."))
   end
 
   defp solc_bin_versions do

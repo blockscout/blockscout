@@ -79,7 +79,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
     session
     |> AddressPage.visit_page(address)
-    |> assert_text(AddressPage.balance(), "0.0000000000000005 ETH")
+    |> assert(contain_text(AddressPage.balance(), "0.0000000000000005 ETH"))
   end
 
   describe "viewing contract creator" do
@@ -104,7 +104,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(internal_transaction.created_contract_address)
-      |> assert_text(AddressPage.contract_creator(), "#{address_hash} at #{transaction_hash}")
+      |> assert(contain_text(AddressPage.contract_creator(), "#{address_hash} at #{transaction_hash}"))
     end
 
     test "see the contract creator and transaction links even when the creator is another contract", %{session: session} do
@@ -141,7 +141,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
 
       session
       |> AddressPage.visit_page(internal_transaction.created_contract_address)
-      |> assert_text(AddressPage.contract_creator(), "#{contract_hash} at #{transaction_hash}")
+      |> assert(contain_text(AddressPage.contract_creator(), "#{contract_hash} at #{transaction_hash}"))
     end
   end
 
@@ -178,8 +178,8 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.apply_filter("To")
-      |> refute_has(AddressPage.transaction(transactions.from_lincoln))
       |> assert_has(AddressPage.transaction(transactions.from_taft))
+      |> refute_has(AddressPage.transaction(transactions.from_lincoln))
     end
 
     test "only addresses not matching the page are links", %{
@@ -255,7 +255,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(addresses.lincoln)
       |> AddressPage.click_internal_transactions()
-      |> assert_has(AddressPage.internal_transactions(count: 2))
+      |> assert(AddressPage.internal_transactions(count: 2))
 
       internal_transaction =
         insert(:internal_transaction,
@@ -269,7 +269,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       Notifier.handle_event({:chain_event, :internal_transactions, :realtime, [internal_transaction]})
 
       session
-      |> assert_has(AddressPage.internal_transactions(count: 3))
+      |> assert(AddressPage.internal_transactions(count: 3))
       |> assert_has(AddressPage.internal_transaction(internal_transaction))
     end
 
@@ -367,9 +367,9 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_tokens()
       |> AddressPage.click_token_transfers(token)
-      |> assert_has(AddressPage.token_transfers(transaction, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, lincoln, count: 1))
-      |> assert_has(AddressPage.token_transfer(transaction, taft, count: 1))
+      |> assert(AddressPage.token_transfers(transaction, count: 1))
+      |> assert(AddressPage.token_transfer(transaction, lincoln, count: 1))
+      |> assert(AddressPage.token_transfer(transaction, taft, count: 1))
       |> refute_has(AddressPage.token_transfers_expansion(transaction))
     end
   end
@@ -420,43 +420,28 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
     end
 
     test "filter tokens balances by token name", %{session: session, lincoln: lincoln} do
-      next =
-        session
-        |> AddressPage.visit_page(lincoln)
-
-      Process.sleep(2_000)
-
-      next
+      session
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
-      |> assert_has(AddressPage.token_balance(count: 1))
-      |> assert_has(AddressPage.token_type(count: 1))
+      |> assert(AddressPage.token_balance(count: 1))
+      |> assert(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-721", text: "1"))
     end
 
     test "filter token balances by token symbol", %{session: session, lincoln: lincoln} do
-      next =
-        session
-        |> AddressPage.visit_page(lincoln)
-
-      Process.sleep(2_000)
-
-      next
+      session
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("T2")
-      |> assert_has(AddressPage.token_balance(count: 1))
-      |> assert_has(AddressPage.token_type(count: 1))
+      |> assert(AddressPage.token_balance(count: 1))
+      |> assert(AddressPage.token_type(count: 1))
       |> assert_has(AddressPage.token_type_count(type: "ERC-20", text: "1"))
     end
 
     test "reset token balances filter when dropdown closes", %{session: session, lincoln: lincoln} do
-      next =
-        session
-        |> AddressPage.visit_page(lincoln)
-
-      Process.sleep(2_000)
-
-      next
+      session
+      |> AddressPage.visit_page(lincoln)
       |> AddressPage.click_balance_dropdown_toggle()
       |> AddressPage.fill_balance_dropdown_search("ato")
       |> AddressPage.click_outside_of_the_dropdown()
@@ -480,7 +465,7 @@ defmodule BlockScoutWeb.ViewingAddressesTest do
       session
       |> AddressPage.visit_page(address)
       |> AddressPage.click_coin_balance_history()
-      |> assert_has(AddressPage.coin_balances(count: 2))
+      |> assert(AddressPage.coin_balances(count: 2))
     end
   end
 end
