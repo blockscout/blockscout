@@ -176,9 +176,7 @@ defmodule Explorer.Market.Fetcher.Coin do
 
   @doc false
   @spec table_name() :: atom()
-  def table_name do
-    config(:table_name) || @table_name
-  end
+  def table_name, do: config(:table_name) || @table_name
 
   @spec broadcast_event(atom()) :: :ok
   defp broadcast_event(event_type) do

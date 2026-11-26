@@ -1,7 +1,10 @@
 # SPDX-License-Identifier: LicenseRef-Blockscout
 defmodule Explorer.Market.Source.CoinGecko do
   @moduledoc """
-  Adapter for fetching exchange rates from https://coingecko.com
+  Market data source backed by the CoinGecko API (https://www.coingecko.com).
+
+  Provides native and secondary coin quotes, token prices, and price and
+  market cap history.
   """
 
   alias Explorer.Chain.Hash
