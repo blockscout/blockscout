@@ -87,13 +87,46 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
   end
 
   @doc """
+  Inserts the pending status of a verification attempt unless its `uid` is already taken.
+
+  The uid is built from the address and the submission time in seconds (see
+  `generate_uid/1`), so the attempts submitted for the same address within the same second
+  share it. Only the first of them is verified, and its status is reported for all of them.
+
+  ## Parameters
+  - `uid`: The unique identifier of the verification attempt.
+  - `address_hash`: The address of the contract being verified, as an
+    `Explorer.Chain.Hash.Address` struct or a `0x`-prefixed string.
+
+  ## Returns
+  - `:ok` if the status is inserted, `:already_exists` if the `uid` is already taken.
+  """
+  @spec insert_pending_status(String.t(), Hash.Address.t() | binary()) :: :ok | :already_exists
+  def insert_pending_status(uid, address_hash) do
+    {:ok, hash} = normalize_address_hash(address_hash)
+    now = DateTime.utc_now()
+
+    case Repo.insert_all(
+           __MODULE__,
+           [%{uid: uid, status: 0, contract_address_hash: hash, inserted_at: now, updated_at: now}],
+           on_conflict: :nothing,
+           conflict_target: :uid
+         ) do
+      {1, _} -> :ok
+      {0, _} -> :already_exists
+    end
+  end
+
+  @doc """
   Marks every pending (`status = 0`) verification attempt for the given address as passed (`status = 1`).
 
-  This reconciles status rows that were left pending because the verification worker
-  never reached `update_status/2` — e.g. it raised after inserting the pending row, or
-  the contract was ultimately verified via a path that does not write this table (API
-  v2, UI, Sourcify, eth_bytecode_db, Verifier Alliance). It is meant to be called
-  whenever a smart contract becomes verified through any path.
+  This reconciles status rows that are still pending when the contract gets verified with
+  a full match via another path, including the ones that don't write this table (API v2,
+  UI, Sourcify, eth_bytecode_db, Verifier Alliance): e.g. the RPC job is still running or
+  never resolved the status. The contract can't be re-verified then, so the attempts are
+  reported as passed, and a later failure of the job doesn't overwrite it (see
+  `set_failed_if_pending/2`). It is meant to be called whenever a smart contract becomes
+  verified with a full match through any path.
 
   ## Parameters
   - `address_hash`: The address of the verified contract, as an `Explorer.Chain.Hash.Address`
@@ -122,8 +155,8 @@ defmodule Explorer.Chain.SmartContract.VerificationStatus do
 
   Used when the verification attempt failed or its job crashed. The row is inserted if the
   job crashed before inserting the pending one. A row that is already resolved (e.g. set
-  to passed by `set_pending_statuses_to_passed/1` because the contract got verified via
-  another path meanwhile) is left untouched.
+  to passed by `set_pending_statuses_to_passed/1` because the contract got verified with a
+  full match via another path meanwhile) is left untouched.
 
   ## Parameters
   - `uid`: The unique identifier of the verification attempt.

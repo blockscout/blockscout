@@ -67,8 +67,8 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
 
   # Called by Que when `perform/1` crashed: report the failure, otherwise the RPC status
   # stays pending and the UI keeps waiting for the verification result forever.
-  # The result is broadcast without `conn`: the old UI form can't be re-rendered from
-  # the crash changeset.
+  # The result is broadcast without `conn`: the old UI is deprecated, its channel drops
+  # such a result, so its form keeps waiting, as before.
   def on_failure({type, %{"address_hash" => address_hash}, _input, uid}, error)
       when type in ["json_api", "flattened_api"] do
     log_crash(address_hash, error)
@@ -150,13 +150,21 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorker do
     end
   end
 
-  # See `broadcast/4` on skipping contracts already verified with a full match.
+  # The pending attempt is registered before the full match check: a full match committed
+  # after the check then marks it as passed (see
+  # `VerificationStatus.set_pending_statuses_to_passed/1`). An attempt sharing the uid with
+  # an earlier one is not verified (see `VerificationStatus.insert_pending_status/2`).
   defp publish_and_update_status(method, args, address_hash, uid) do
-    if SmartContract.verified_with_full_match?(address_hash) do
-      VerificationStatus.insert_status(uid, :pass, address_hash)
-    else
-      VerificationStatus.insert_status(uid, :pending, address_hash)
+    with :ok <- VerificationStatus.insert_pending_status(uid, address_hash) do
+      do_publish_and_update_status(method, args, address_hash, uid)
+    end
+  end
 
+  # See `broadcast/4` on skipping contracts already verified with a full match.
+  defp do_publish_and_update_status(method, args, address_hash, uid) do
+    if SmartContract.verified_with_full_match?(address_hash) do
+      VerificationStatus.update_status(uid, :pass)
+    else
       case apply(Publisher, method, args) do
         {:ok, _contract} ->
           VerificationStatus.update_status(uid, :pass)

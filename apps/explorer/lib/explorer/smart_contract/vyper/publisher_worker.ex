@@ -31,7 +31,8 @@ defmodule Explorer.SmartContract.Vyper.PublisherWorker do
 
   # Called by Que when `perform/1` crashed: report the failure, otherwise the UI keeps
   # waiting for the verification result forever. The result is broadcast without `conn`:
-  # the old UI form can't be re-rendered from the crash changeset.
+  # the old UI is deprecated, its channel drops such a result, so its form keeps waiting,
+  # as before.
   def on_failure({type, params}, error) when type in ["vyper_standard_json", "vyper_flattened"] do
     broadcast_crash(params["address_hash"], error)
   end

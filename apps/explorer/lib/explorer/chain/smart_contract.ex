@@ -912,11 +912,8 @@ defmodule Explorer.Chain.SmartContract do
     If the contract is inserted concurrently by another verification, the insert fails on
     the unique address constraint and is retried once to take the update path.
 
-    A partially verified result doesn't update a contract verified with a full match: the
-    existing contract is returned unchanged as `{:ok, smart_contract}`, as the contract ends
-    up verified anyway.
-
-    On success, pending verification statuses of the address are marked as passed.
+    When the contract ends up verified with a full match, pending verification statuses of
+    the address are marked as passed.
 
     ## Parameters
     - `address_hash`: The hash of the address for the smart contract.
@@ -940,11 +937,12 @@ defmodule Explorer.Chain.SmartContract do
   def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
     result = do_create_or_update_smart_contract(address_hash, attrs, verification_with_files?, true)
 
-    with {:ok, _} <- result do
-      # The contract is now verified through some path. Reconcile any verification-status
-      # rows for this address that were left pending (e.g. an RPC worker that raised before
-      # updating the status, or verification that completed via a path which does not write
-      # the status table). See Explorer.Chain.SmartContract.VerificationStatus.
+    with {:ok, %__MODULE__{partially_verified: partially_verified}} when partially_verified != true <- result do
+      # The contract is now verified with a full match through some path, so it can't be
+      # re-verified. Reconcile any verification-status rows for this address that are
+      # pending (e.g. verification completed via a path which does not write the status
+      # table). A partial match doesn't resolve other attempts: they may still get a full
+      # match or fail. See Explorer.Chain.SmartContract.VerificationStatus.
       VerificationStatus.set_pending_statuses_to_passed(address_hash)
     end
 
@@ -976,14 +974,6 @@ defmodule Explorer.Chain.SmartContract do
           )
 
         {:error, %{changeset | action: :insert}}
-
-      # A partial result doesn't downgrade a full match. Such requests are rejected when
-      # accepted, but the contract could get verified with a full match concurrently (see
-      # `maybe_retry_after_concurrent_insert/5`). The attempt is still successful then, as
-      # the contract ends up verified. A full match committed after the lookup (or not yet
-      # visible on the replica) is not detected here.
-      !smart_contract.partially_verified && Map.get(attrs, :partially_verified) ->
-        {:ok, smart_contract}
 
       true ->
         update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)

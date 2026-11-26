@@ -24,6 +24,18 @@ defmodule Explorer.SmartContract.Solidity.PublisherWorkerTest do
       assert Repo.get_by(VerificationStatus, uid: uid).status == 1
     end
 
+    test "doesn't process the RPC verification attempt sharing the uid with an earlier one", %{
+      hash_string: hash_string
+    } do
+      uid = VerificationStatus.generate_uid(hash_string)
+      {:ok, _} = VerificationStatus.insert_status(uid, :pending, hash_string)
+
+      PublisherWorker.perform({"json_api", %{"address_hash" => hash_string}, "{}", uid})
+
+      # the status is resolved by the earlier attempt
+      assert Repo.get_by(VerificationStatus, uid: uid).status == 0
+    end
+
     test "broadcasts a successful verification result without verifying", %{hash_string: hash_string} do
       Subscriber.to(:contract_verification_result, :on_demand)
 

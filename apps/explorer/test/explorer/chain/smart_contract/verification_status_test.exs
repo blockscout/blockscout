@@ -84,4 +84,23 @@ defmodule Explorer.Chain.SmartContract.VerificationStatusTest do
       assert Repo.get_by(VerificationStatus, uid: "uid-1").status == 1
     end
   end
+
+  describe "insert_pending_status/2" do
+    test "inserts a pending row" do
+      address = insert(:address)
+
+      assert :ok = VerificationStatus.insert_pending_status("uid-1", to_string(address.hash))
+
+      assert Repo.get_by(VerificationStatus, uid: "uid-1").status == 0
+    end
+
+    test "leaves the row of the uid already taken by another attempt untouched" do
+      address = insert(:address)
+      {:ok, _} = VerificationStatus.insert_status("uid-1", :pass, to_string(address.hash))
+
+      assert :already_exists = VerificationStatus.insert_pending_status("uid-1", address.hash)
+
+      assert Repo.get_by(VerificationStatus, uid: "uid-1").status == 1
+    end
+  end
 end
