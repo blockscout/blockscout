@@ -21,7 +21,6 @@ RUN mix local.hex --force
 RUN MIX_OS_DEPS_COMPILE_PARTITION_COUNT=$(nproc) mix do deps.get + local.rebar --force + deps.compile --skip-umbrella-children
 
 COPY config ./config
-COPY rel ./rel
 COPY apps ./apps
 
 ##############################################################
