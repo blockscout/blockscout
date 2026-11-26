@@ -23,13 +23,14 @@ defmodule BlockScoutWeb.ContractVerifyPage do
     |> fill(by_label("Enter the Solidity Contract Code"), source_code)
 
     case version do
-      nil -> nil
-      _ -> select(session, version)
+      # Leave the compiler's default selection in place; "default" is only an EVM option.
+      version when version in [nil, "default"] -> nil
+      _ -> select_option(session, by_label("Compiler", exact: true), %{label: version})
     end
 
     case evm_version do
       nil -> nil
-      _ -> select(session, evm_version)
+      _ -> select_option(session, by_label("EVM Version", exact: true), %{label: evm_version})
     end
 
     case optimization do
@@ -44,11 +45,6 @@ defmodule BlockScoutWeb.ContractVerifyPage do
     end
 
     session
-  end
-
-  # Picks the option in whichever select offers it.
-  defp select(session, option) do
-    select_option(session, filter(by_css("select"), has: by_role(:option, name: option, exact: true)), option)
   end
 
   def validation_error do
