@@ -58,6 +58,12 @@ defmodule Indexer.Transform.Addresses do
         %{from: :value, to: :fetched_coin_balance}
       ]
     ],
+    coin_balance_candidates: [
+      [
+        %{from: :address_hash, to: :hash},
+        %{from: :block_number, to: :fetched_coin_balance_block_number}
+      ]
+    ],
     blocks: [
       [
         %{from: :number, to: :fetched_coin_balance_block_number},
@@ -532,6 +538,11 @@ defmodule Indexer.Transform.Addresses do
               required(:number) => non_neg_integer()
             }
           ],
+          optional(:coin_balance_candidates) =>
+            MapSet.t(%{
+              required(:address_hash) => String.t(),
+              required(:block_number) => non_neg_integer()
+            }),
           optional(:internal_transactions) => [
             %{
               required(:block_number) => non_neg_integer(),

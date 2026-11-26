@@ -58,15 +58,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
       end)
       |> Enum.reject(fn val -> is_nil(val) end)
 
-    # for :arc chain type we also need to parse the `NativeCoinTransferred`, `NativeCoinMinted`, `NativeCoinBurned`, EIP-7708 events
-    filtered_arc_logs =
-      if chain_type() == :arc do
-        handle_arc_transfer_logs(logs_params)
-      else
-        []
-      end
-
-    MapSet.new(filtered_logs ++ filtered_arc_logs)
+    MapSet.new(filtered_logs ++ native_transfer_params(logs_params))
   end
 
   defp reducer({:transactions_params, transactions_params}, initial) when is_list(transactions_params) do
@@ -84,14 +76,14 @@ defmodule Indexer.Transform.AddressCoinBalances do
     end)
   end
 
-  # Handles Arc chain type logs.
+  # Extracts participants from EIP-7708 system logs and Arc-specific native transfer logs.
   #
   # ## Parameters
   # - `logs_params`: The given list of logs.
   #
   # ## Returns
   # - The list of `address_hash, block_number` pairs.
-  @spec handle_arc_transfer_logs([
+  @spec native_transfer_params([
           %{
             :first_topic => String.t(),
             :second_topic => String.t(),
@@ -101,11 +93,12 @@ defmodule Indexer.Transform.AddressCoinBalances do
             optional(:type) => String.t() | nil
           }
         ]) :: [%{:address_hash => String.t(), :block_number => non_neg_integer()}]
-  defp handle_arc_transfer_logs(logs_params) do
+  defp native_transfer_params(logs_params) do
+    arc? = chain_type() == :arc
     arc_native_coin_transferred_event = TokenTransfer.arc_native_coin_transferred_event()
     arc_native_coin_minted_event = TokenTransfer.arc_native_coin_minted_event()
     arc_native_coin_burned_event = TokenTransfer.arc_native_coin_burned_event()
-    arc_native_token_system_address = arc_native_token_system_address()
+    arc_native_token_system_address = if arc?, do: arc_native_token_system_address()
     eip7708_transfer_topic = TokenTransfer.constant()
     eip7708_system_address = TokenTransfer.eip7708_system_address()
 
@@ -118,17 +111,21 @@ defmodule Indexer.Transform.AddressCoinBalances do
 
       %{
         first_topic: ^eip7708_transfer_topic,
-        second_topic: second_topic,
-        third_topic: third_topic,
-        address_hash: ^eip7708_system_address,
+        second_topic: "0x000000000000000000000000" <> <<_::binary-size(40)>> = second_topic,
+        third_topic: "0x000000000000000000000000" <> <<_::binary-size(40)>> = third_topic,
+        address_hash: address_hash,
         block_number: block_number
       }
-      when is_integer(block_number) and is_binary(second_topic) and is_binary(third_topic) ->
-        [
-          %{address_hash: truncate_address_hash(second_topic), block_number: block_number},
-          %{address_hash: truncate_address_hash(third_topic), block_number: block_number}
-        ]
-        |> Enum.filter(fn %{address_hash: address_hash} -> address_hash != @burn_address_hash_string end)
+      when is_integer(block_number) and is_binary(address_hash) ->
+        if String.downcase(address_hash) == eip7708_system_address do
+          for topic <- [second_topic, third_topic],
+              participant = truncate_address_hash(topic),
+              participant != @burn_address_hash_string do
+            %{address_hash: participant, block_number: block_number}
+          end
+        else
+          []
+        end
 
       %{
         first_topic: ^arc_native_coin_transferred_event,
@@ -137,7 +134,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
         address_hash: ^arc_native_token_system_address,
         block_number: block_number
       }
-      when is_integer(block_number) ->
+      when arc? and is_integer(block_number) ->
         [
           %{address_hash: truncate_address_hash(second_topic), block_number: block_number},
           %{address_hash: truncate_address_hash(third_topic), block_number: block_number}
@@ -149,7 +146,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
         address_hash: ^arc_native_token_system_address,
         block_number: block_number
       }
-      when is_integer(block_number) ->
+      when arc? and is_integer(block_number) ->
         [%{address_hash: truncate_address_hash(second_topic), block_number: block_number}]
 
       %{
@@ -158,7 +155,7 @@ defmodule Indexer.Transform.AddressCoinBalances do
         address_hash: ^arc_native_token_system_address,
         block_number: block_number
       }
-      when is_integer(block_number) ->
+      when arc? and is_integer(block_number) ->
         [%{address_hash: truncate_address_hash(second_topic), block_number: block_number}]
 
       _ ->

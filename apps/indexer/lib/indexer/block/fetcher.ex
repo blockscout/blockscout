@@ -214,18 +214,6 @@ defmodule Indexer.Block.Fetcher do
            ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
-         addresses =
-           Addresses.extract_addresses(%{
-             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
-             blocks: blocks,
-             logs: logs,
-             mint_transfers: mint_transfers,
-             shibarium_bridge_operations: shibarium_bridge_operations,
-             token_transfers: token_transfers,
-             transactions: transactions_with_receipts,
-             withdrawals: withdrawals_params,
-             celo_pending_account_operations: celo_pending_account_operations
-           }),
          coin_balances_params_set =
            %{
              beneficiary_params: MapSet.to_list(beneficiary_params_set),
@@ -235,6 +223,19 @@ defmodule Indexer.Block.Fetcher do
              withdrawals: withdrawals_params
            }
            |> AddressCoinBalances.params_set(),
+         addresses =
+           Addresses.extract_addresses(%{
+             block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
+             blocks: blocks,
+             coin_balance_candidates: coin_balances_params_set,
+             logs: logs,
+             mint_transfers: mint_transfers,
+             shibarium_bridge_operations: shibarium_bridge_operations,
+             token_transfers: token_transfers,
+             transactions: transactions_with_receipts,
+             withdrawals: withdrawals_params,
+             celo_pending_account_operations: celo_pending_account_operations
+           }),
          beneficiaries_with_gas_payment =
            beneficiaries_with_gas_payment(blocks, beneficiary_params_set, transactions_with_receipts),
          token_transfers_with_token = token_transfers_merge_token(token_transfers, tokens),
