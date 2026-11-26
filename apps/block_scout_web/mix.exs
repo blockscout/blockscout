@@ -161,7 +161,7 @@ defmodule BlockScoutWeb.Mixfile do
       {:bureaucrat, "~> 0.2.9", only: :test},
       {:open_api_spex, "~> 3.21"},
       {:ymlr, "~> 5.1"},
-      {:fluffy, "~> 0.9.0-rc.5", only: :test}
+      {:fluffy, "~> 0.9.0-rc.7", only: :test}
     ]
   end
 

@@ -7,8 +7,8 @@ defmodule BlockScoutWeb.AddressContractPage do
   import Fluffy
   import Fluffy.Locator
 
-  def on_page?(session, address) do
-    Fluffy.Playwright.evaluate(session, "() => location.pathname") =~ address_contract_path(address)
+  def on_page(address) do
+    page_url(&(&1.path == address_contract_path(address)))
   end
 
   def click_verify_and_publish(session) do

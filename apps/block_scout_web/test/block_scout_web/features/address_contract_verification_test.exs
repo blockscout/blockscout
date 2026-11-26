@@ -55,8 +55,7 @@ defmodule BlockScoutWeb.AddressContractVerificationTest do
       evm_version: "byzantium"
     })
     |> ContractVerifyPage.verify_and_publish()
-
-    assert AddressContractPage.on_page?(session, address)
+    |> assert(AddressContractPage.on_page(address))
   end
 
   test "with invalid data shows error messages", %{session: session, bypass: bypass} do
