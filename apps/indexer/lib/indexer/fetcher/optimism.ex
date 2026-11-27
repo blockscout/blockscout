@@ -554,7 +554,7 @@ defmodule Indexer.Fetcher.Optimism do
 
   @doc """
     Catches realtime L2 blocks from `:blocks, :realtime` subscription and forms a new realtime block range to be handled by a loop handler
-    in `Indexer.Fetcher.Optimism.Interop.Message`, `Indexer.Fetcher.Optimism.Interop.MessageFailed`, or `Indexer.Fetcher.Optimism.EIP1559ConfigUpdate` module.
+    in `Indexer.Fetcher.Optimism.EIP1559ConfigUpdate` module.
 
     ## Parameters
     - `blocks`: The list of new realtime L2 blocks arrived.

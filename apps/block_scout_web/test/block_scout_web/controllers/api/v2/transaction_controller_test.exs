@@ -665,22 +665,6 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{"allowed_peekers" => ["0x3078505152535455565758595a5b5C5D5E5f6061"]} = json_response(request, 200)
       end
     end
-
-    if @chain_type == :optimism do
-      test "returns transaction with interop message", %{conn: conn} do
-        transaction = insert(:transaction)
-
-        insert(:op_interop_message,
-          init_transaction_hash: transaction.hash,
-          payload: "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"
-        )
-
-        request = get(conn, "/api/v2/transactions/#{transaction.hash}")
-
-        assert %{"op_interop_messages" => [%{"payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"}]} =
-                 json_response(request, 200)
-      end
-    end
   end
 
   describe "/transactions/{transaction_hash}/internal-transactions" do

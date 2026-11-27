@@ -8,7 +8,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   alias BlockScoutWeb.API.V2.Helper
   alias Explorer.{Chain, Repo}
   alias Explorer.Chain.{Block, Data, Hash, Transaction}
-  alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, InteropMessage, Withdrawal}
+  alias Explorer.Chain.Optimism.{DisputeGame, FrameSequence, FrameSequenceBlob, Withdrawal}
   alias Explorer.Helper, as: ExplorerHelper
 
   @api_true [api?: true]
@@ -258,98 +258,6 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     count
   end
 
-  @doc """
-    Function to render GET requests to `/api/v2/optimism/interop/messages` endpoint.
-  """
-  def render("optimism_interop_messages.json", %{
-        messages: messages,
-        next_page_params: next_page_params
-      }) do
-    %{
-      items:
-        Enum.map(messages, fn message ->
-          msg =
-            %{
-              "unique_id" => InteropMessage.message_unique_id(message),
-              "nonce" => message.nonce,
-              "timestamp" => message.timestamp,
-              "status" => message.status,
-              "init_transaction_hash" => message.init_transaction_hash,
-              "relay_transaction_hash" => message.relay_transaction_hash,
-              "sender_address_hash" => message.sender_address_hash,
-              "target_address_hash" => message.target_address_hash,
-              "payload" => message.payload
-            }
-
-          # add chain info depending on whether this is incoming or outgoing message
-          msg
-          |> maybe_add_chain(:init_chain, message)
-          |> maybe_add_chain(:relay_chain, message)
-        end),
-      next_page_params: next_page_params
-    }
-  end
-
-  @doc """
-    Function to render GET requests to `/api/v2/optimism/interop/messages/:unique_id` endpoint.
-  """
-  def render("optimism_interop_message.json", %{message: message}) do
-    %{
-      "init_chain" => message.init_chain,
-      "init_transaction_hash" => message.init_transaction_hash,
-      "timestamp" => message.timestamp,
-      "sender_address_hash" => message.sender_address_hash,
-      "relay_chain" => message.relay_chain,
-      "relay_transaction_hash" => message.relay_transaction_hash,
-      "relay_transaction_failed" => message.failed,
-      "target_address_hash" => message.target_address_hash,
-      "transfer_token" => message.transfer_token,
-      "transfer_amount" => message.transfer_amount,
-      "transfer_from_address_hash" => message.transfer_from_address_hash,
-      "transfer_to_address_hash" => message.transfer_to_address_hash,
-      "nonce" => message.nonce,
-      "direction" => message.direction,
-      "status" => message.status,
-      "payload" => message.payload
-    }
-  end
-
-  @doc """
-    Function to render GET requests to `/api/v2/optimism/interop/public-key` endpoint.
-  """
-  def render("optimism_interop_public_key.json", %{public_key: public_key}) do
-    %{"public_key" => public_key}
-  end
-
-  @doc """
-    Function to render `relay` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
-  """
-  def render("optimism_interop_response.json", %{relay_transaction_hash: relay_transaction_hash, failed: failed}) do
-    %{
-      "relay_transaction_hash" => relay_transaction_hash,
-      "failed" => failed
-    }
-  end
-
-  @doc """
-    Function to render `init` response for the POST request to `/api/v2/import/optimism/interop/` endpoint.
-  """
-  def render("optimism_interop_response.json", %{
-        sender_address_hash: sender_address_hash,
-        target_address_hash: target_address_hash,
-        init_transaction_hash: init_transaction_hash,
-        timestamp: timestamp,
-        payload: payload
-      }) do
-    %{
-      "sender_address_hash" => sender_address_hash,
-      "target_address_hash" => target_address_hash,
-      "init_transaction_hash" => init_transaction_hash,
-      "timestamp" => if(not is_nil(timestamp), do: DateTime.to_unix(timestamp)),
-      "payload" => payload
-    }
-  end
-
   # Transforms an L1 batch into a map format for HTTP response.
   #
   # This function processes an Optimism L1 batch and converts it into a map that
@@ -446,7 +354,7 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
     - `transaction`: transaction structure containing extra Optimism-related info.
 
     ## Returns
-    An extended map containing `l1_*`, `op_withdrawals`, `op_interop_messages`, and other items related to Optimism.
+    An extended map containing `l1_*`, `op_withdrawals`, and other items related to Optimism.
   """
   @spec extend_transaction_json_response(map(), %{
           :__struct__ => Explorer.Chain.Transaction,
@@ -470,14 +378,14 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
   end
 
   # Extends the json output for a transaction adding Optimism-related info to the output
-  # (such as related withdrawals, operator fee, interop messages).
+  # (such as related withdrawals, operator fee).
   #
   # ## Parameters
   # - `out_json`: A map defining output json which will be extended.
   # - `transaction`: transaction structure containing necessary data for the OP fields.
   #
   # ## Returns
-  # - An extended map containing `op_withdrawals`, `operator_fee` (optional), `op_interop_messages` (optional).
+  # - An extended map containing `op_withdrawals` and `operator_fee` (optional).
   #   If the operator fee is zero, it's not presented in the resulting map.
   @spec add_optimism_fields(map(), Transaction.t()) :: map()
   defp add_optimism_fields(out_json, transaction) do
@@ -503,34 +411,14 @@ defmodule BlockScoutWeb.API.V2.OptimismView do
         }
       end)
 
-    interop_messages =
-      transaction.hash
-      |> InteropMessage.messages_by_transaction()
-
     out_json = Map.put(out_json, "op_withdrawals", withdrawals)
 
     operator_fee = Transaction.operator_fee(transaction)
 
-    # credo:disable-for-next-line
-    out_json =
-      if Decimal.gt?(operator_fee, Decimal.new(0)) do
-        Map.put(out_json, "operator_fee", operator_fee)
-      else
-        out_json
-      end
-
-    if interop_messages == [] do
-      out_json
+    if Decimal.gt?(operator_fee, Decimal.new(0)) do
+      Map.put(out_json, "operator_fee", operator_fee)
     else
       out_json
-      |> Map.put("op_interop_messages", interop_messages)
-    end
-  end
-
-  defp maybe_add_chain(msg, chain_key, message) do
-    case Map.fetch(message, chain_key) do
-      {:ok, chain} -> Map.put(msg, Atom.to_string(chain_key), chain)
-      _ -> msg
     end
   end
 

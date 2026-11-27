@@ -1670,19 +1670,6 @@ config :indexer, Indexer.Fetcher.Optimism.WithdrawalEvent.Supervisor, enabled: C
 config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.Supervisor,
   disabled?: ConfigHelper.chain_type() != :optimism
 
-config :indexer, Indexer.Fetcher.Optimism.Interop.Message.Supervisor, disabled?: ConfigHelper.chain_type() != :optimism
-
-config :indexer, Indexer.Fetcher.Optimism.Interop.MessageFailed.Supervisor,
-  disabled?: ConfigHelper.chain_type() != :optimism
-
-config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue.Supervisor,
-  disabled?: ConfigHelper.chain_type() != :optimism
-
-config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
-  disabled?:
-    ConfigHelper.chain_type() != :optimism ||
-      ConfigHelper.parse_bool_env_var("INDEXER_DISABLE_OPTIMISM_INTEROP_MULTICHAIN_EXPORT", "true")
-
 config :indexer, Indexer.Fetcher.Optimism,
   superchain_config_file_path: superchain_config_file_path,
   optimism_l1_rpc: System.get_env("INDEXER_OPTIMISM_L1_RPC"),
@@ -1726,21 +1713,6 @@ config :indexer, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate,
   chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_BLOCKS_CHUNK_SIZE", 25),
   holocene_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_HOLOCENE_TIMESTAMP"),
   jovian_timestamp_l2: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_JOVIAN_TIMESTAMP")
-
-config :indexer, Indexer.Fetcher.Optimism.Interop.Message,
-  start_block: ConfigHelper.parse_integer_or_nil_env_var("INDEXER_OPTIMISM_L2_INTEROP_START_BLOCK"),
-  blocks_chunk_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_L2_INTEROP_BLOCKS_CHUNK_SIZE", 4)
-
-config :indexer, Indexer.Fetcher.Optimism.Interop.MessageQueue,
-  chainscout_api_url: ConfigHelper.parse_url_env_var("INDEXER_OPTIMISM_CHAINSCOUT_API_URL", nil, true),
-  chainscout_fallback_map: ConfigHelper.parse_json_env_var("INDEXER_OPTIMISM_CHAINSCOUT_FALLBACK_MAP"),
-  private_key: System.get_env("INDEXER_OPTIMISM_INTEROP_PRIVATE_KEY", ""),
-  connect_timeout: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_CONNECT_TIMEOUT", 8),
-  recv_timeout: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_RECV_TIMEOUT", 10),
-  export_expiration: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_INTEROP_EXPORT_EXPIRATION_DAYS", 10)
-
-config :indexer, Indexer.Fetcher.Optimism.Interop.MultichainExport,
-  batch_size: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_MULTICHAIN_BATCH_SIZE", 100)
 
 config :indexer, Indexer.Fetcher.Optimism.OperatorFee,
   concurrency: ConfigHelper.parse_integer_env_var("INDEXER_OPTIMISM_OPERATOR_FEE_QUEUE_CONCURRENCY", 3),

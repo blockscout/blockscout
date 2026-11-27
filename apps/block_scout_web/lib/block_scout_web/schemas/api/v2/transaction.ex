@@ -173,23 +173,6 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction.ChainTypeCustomizations do
               items: TransactionWithdrawal,
               nullable: false
             },
-            op_interop_messages: %Schema{
-              type: :object,
-              nullable: false,
-              properties: %{
-                nonce: %Schema{type: :integer},
-                status: %Schema{type: :string, nullable: false, enum: ["Sent", "Relayed", "Failed"]},
-                sender_address_hash: General.AddressHashNullable,
-                target_address_hash: General.AddressHashNullable,
-                payload: General.HexData,
-                relay_chain: %Schema{type: :object, nullable: true},
-                relay_transaction_hash: General.FullHashNullable,
-                init_chain: %Schema{type: :object, nullable: true},
-                init_transaction_hash: General.FullHashNullable
-              },
-              required: [:nonce, :status, :sender_address_hash, :target_address_hash, :payload],
-              additionalProperties: false
-            },
             operator_fee: General.IntegerString
           }
         )

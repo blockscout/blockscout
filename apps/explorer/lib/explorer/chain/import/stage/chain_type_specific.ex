@@ -22,8 +22,7 @@ defmodule Explorer.Chain.Import.Stage.ChainTypeSpecific do
       Runner.Optimism.Deposits,
       Runner.Optimism.Withdrawals,
       Runner.Optimism.WithdrawalEvents,
-      Runner.Optimism.EIP1559ConfigUpdates,
-      Runner.Optimism.InteropMessages
+      Runner.Optimism.EIP1559ConfigUpdates
     ],
     zksync: [
       Runner.ZkSync.LifecycleTransactions,

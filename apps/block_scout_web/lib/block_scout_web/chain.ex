@@ -49,7 +49,6 @@ defmodule BlockScoutWeb.Chain do
 
   alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Optimism.FrameSequence, as: OptimismFrameSequence
-  alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Optimism.OutputRoot, as: OptimismOutputRoot
   alias Explorer.Chain.Scroll.Batch, as: ScrollBatch
   alias Explorer.Chain.Scroll.Bridge, as: ScrollBridge
@@ -689,18 +688,6 @@ defmodule BlockScoutWeb.Chain do
     [paging_options: %{@default_paging_options | key: {id}}]
   end
 
-  # Clause for `Explorer.Chain.Optimism.InteropMessage`,
-  #  returned by `BlockScoutWeb.API.V2.OptimismController.interop_messages/2` (`/api/v2/optimism/interop/messages`)
-  defp do_paging_options(%{timestamp: timestamp, init_transaction_hash: init_transaction_hash}) do
-    with {ts, ""} <- Integer.parse(timestamp),
-         {:ok, transaction_hash} <- string_to_full_hash(init_transaction_hash) do
-      [paging_options: %{@default_paging_options | key: {ts, transaction_hash}}]
-    else
-      _ ->
-        [paging_options: @default_paging_options]
-    end
-  end
-
   defp do_paging_options(%{
          token_contract_address_hash: token_contract_address_hash,
          token_id: token_id,
@@ -1027,10 +1014,6 @@ defmodule BlockScoutWeb.Chain do
 
   def paging_params(%OptimismOutputRoot{l2_output_index: index}) do
     %{index: index}
-  end
-
-  def paging_params(%OptimismInteropMessage{timestamp: timestamp, init_transaction_hash: init_transaction_hash}) do
-    %{timestamp: DateTime.to_unix(timestamp), init_transaction_hash: init_transaction_hash}
   end
 
   def paging_params(%SmartContract{} = smart_contract) do

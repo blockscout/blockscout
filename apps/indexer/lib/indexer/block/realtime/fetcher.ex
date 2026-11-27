@@ -379,13 +379,11 @@ defmodule Indexer.Block.Realtime.Fetcher do
   end
 
   # Removes all rows from `op_transaction_batches`, `op_withdrawals`,
-  # `op_eip1559_config_updates`, and `op_interop_messages` tables
+  # and `op_eip1559_config_updates` tables
   # previously written starting from the reorg block number
   defp do_remove_assets_by_number(:optimism, reorg_block_number) do
-    # credo:disable-for-lines:5 Credo.Check.Design.AliasUsage
+    # credo:disable-for-lines:3 Credo.Check.Design.AliasUsage
     Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.EIP1559ConfigUpdate)
-    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.Message)
-    Optimism.handle_realtime_l2_reorg(reorg_block_number, Indexer.Fetcher.Optimism.Interop.MessageFailed)
     Indexer.Fetcher.Optimism.TransactionBatch.handle_l2_reorg(reorg_block_number)
     Indexer.Fetcher.Optimism.Withdrawal.remove(reorg_block_number)
   end
