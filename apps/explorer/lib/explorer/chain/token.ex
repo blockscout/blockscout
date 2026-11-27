@@ -97,7 +97,7 @@ defmodule Explorer.Chain.Token do
   import Ecto.{Changeset, Query}
 
   alias Ecto.{Changeset, Multi}
-  alias Explorer.{Chain, SortingHelper}
+  alias Explorer.{Chain, PagingOptions, SortingHelper}
   alias Explorer.Chain.{Address, BridgedToken, Hash, Search, Token}
   alias Explorer.Chain.Cache.{BackgroundMigrations, BlockNumber}
   alias Explorer.Chain.Cache.Counters.TokenCounters
@@ -112,6 +112,15 @@ defmodule Explorer.Chain.Token do
     desc_nulls_last: :holder_count,
     asc: :name,
     asc: :contract_address_hash
+  ]
+
+  # The exact reverse of `@default_sorting`
+  @reversed_default_sorting [
+    asc_nulls_first: :circulating_market_cap,
+    asc_nulls_first: :fiat_value,
+    asc_nulls_first: :holder_count,
+    desc: :name,
+    desc: :contract_address_hash
   ]
 
   @derive {JSON.Encoder,
@@ -413,10 +422,35 @@ defmodule Explorer.Chain.Token do
   def base_token_query(type, sorting) do
     query = from(t in Token, preload: [:contract_address])
 
-    query |> apply_filter(type) |> SortingHelper.apply_sorting(sorting, @default_sorting)
+    query |> apply_filter(type) |> SortingHelper.apply_sorting(sorting, default_sorting(sorting))
   end
 
-  def default_sorting, do: @default_sorting
+  @doc """
+  Returns the sorting which completes the one requested by the client.
+
+  The columns the client did not sort by break the ties in the direction of the
+  requested sorting: an ascending sorting is completed by the reversed default
+  one. This way the ascending order of the list is the exact reverse of the
+  descending one, and both are read from the same index of the `tokens` table
+  (`tokens_no_market_data_holder_count_name_hash_index`), forward or backward. With
+  the ties broken in the opposite direction, the index does not give the order of
+  the list sorted by the holders count ascending, and the tokens which share a
+  holders count (there are hundreds of thousands of tokens with no holders) are
+  sorted on each request.
+
+  ## Parameters
+  - `sorting`: The sorting requested by the client, `[]` if there is none.
+
+  ## Returns
+  - The sorting params to pass to `Explorer.SortingHelper` as the default ones.
+  """
+  @spec default_sorting(SortingHelper.sorting_params()) :: SortingHelper.sorting_params()
+  def default_sorting(sorting \\ [])
+
+  def default_sorting([{order, _field} | _]) when order in [:asc, :asc_nulls_first, :asc_nulls_last],
+    do: @reversed_default_sorting
+
+  def default_sorting(_sorting), do: @default_sorting
 
   @doc """
   Lists the top `t:__MODULE__.t/0`'s'.
@@ -424,6 +458,9 @@ defmodule Explorer.Chain.Token do
   `filter` narrows the list down: a `0x`-prefixed address hash matches the token
   with that contract address only, any other string is full-text searched in the
   tokens' names and symbols.
+
+  The list which is not searched in is read in two parts, the tokens which have
+  market data and the ones which do not, see `list_top_split_by_market_data/4`.
   """
   @spec list_top(String.t() | nil, [
           Chain.paging_options()
@@ -437,6 +474,20 @@ defmodule Explorer.Chain.Token do
     token_type = Keyword.get(options, :token_type, nil)
     sorting = Keyword.get(options, :sorting, [])
 
+    if split_by_market_data?(filter, paging_options) do
+      list_top_split_by_market_data(token_type, sorting, paging_options, options)
+    else
+      options
+      |> list_top_base_query()
+      |> apply_filter(token_type)
+      |> apply_search_filter(filter)
+      |> SortingHelper.apply_sorting(sorting, default_sorting(sorting))
+      |> SortingHelper.page_with_sorting(paging_options, sorting, default_sorting(sorting))
+      |> Chain.select_repo(options).all()
+    end
+  end
+
+  defp list_top_base_query(options) do
     necessity_by_association =
       Keyword.get(options, :necessity_by_association, %{
         :contract_address => :optional
@@ -445,11 +496,98 @@ defmodule Explorer.Chain.Token do
     Token
     |> Chain.join_associations(necessity_by_association)
     |> ExplorerHelper.maybe_hide_scam_addresses_with_select(:contract_address_hash, options)
-    |> apply_filter(token_type)
-    |> apply_search_filter(filter)
-    |> SortingHelper.apply_sorting(sorting, @default_sorting)
-    |> SortingHelper.page_with_sorting(paging_options, sorting, @default_sorting)
-    |> Chain.select_repo(options).all()
+  end
+
+  # The split needs a page size, since each part of the list is cut to it, and both
+  # partial indexes: without them each part is a scan of the whole table. A searched
+  # list is short already, the search index narrows it down.
+  defp split_by_market_data?(filter, %PagingOptions{page_size: page_size}) when is_integer(page_size) do
+    (not is_binary(filter) or String.trim(filter) == "") and
+      BackgroundMigrations.get_heavy_indexes_create_tokens_no_market_data_holder_count_name_hash_index_finished() and
+      BackgroundMigrations.get_heavy_indexes_create_tokens_market_data_partial_index_finished()
+  end
+
+  defp split_by_market_data?(_filter, _paging_options), do: false
+
+  # Reads a page of the tokens list in two parts: the tokens which have a market cap
+  # or a fiat value, and the tokens which have neither.
+  #
+  # The second part is almost the whole table. Its tokens do not differ in the market
+  # columns, so in any sorting they go by the holders count, the name and the address
+  # hash, and `tokens_no_market_data_holder_count_name_hash_index` gives them in that
+  # order. The first part is a few thousand tokens at most, found by
+  # `tokens_market_data_partial_index` and sorted on each request. A single query over
+  # the whole table would need an index of all the tokens per sorting instead.
+  #
+  # Each part is ordered and cut to the page size on its own, then the two pages are
+  # merged into one. The second part is ordered by the columns of its index only: the
+  # planner does not conclude that the market columns are constant there, and does not
+  # take the index for the full `ORDER BY`. The page of each part still starts after
+  # the paging key in the full sorting, since the key may belong to the other part.
+  #
+  # The first query finds the address hashes of the page, the second one loads the tokens.
+  @spec list_top_split_by_market_data([String.t()] | nil, SortingHelper.sorting_params(), PagingOptions.t(), keyword()) ::
+          [__MODULE__.t()]
+  defp list_top_split_by_market_data(
+         token_type,
+         sorting,
+         %PagingOptions{page_size: page_size} = paging_options,
+         options
+       ) do
+    default_sorting = default_sorting(sorting)
+
+    no_market_data_sorting =
+      (sorting ++ default_sorting)
+      |> Enum.uniq_by(fn {_order, field} -> field end)
+      |> Enum.filter(fn {_order, field} -> field in [:holder_count, :name, :contract_address_hash] end)
+
+    part = fn market_data_condition, part_sorting, part_default_sorting ->
+      Token
+      |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
+      |> apply_filter(token_type)
+      |> where(^market_data_condition)
+      |> SortingHelper.apply_sorting(part_sorting, part_default_sorting)
+      |> SortingHelper.page_with_sorting(paging_options, sorting, default_sorting)
+      |> select([token], %{
+        contract_address_hash: token.contract_address_hash,
+        circulating_market_cap: token.circulating_market_cap,
+        fiat_value: token.fiat_value,
+        holder_count: token.holder_count,
+        name: token.name
+      })
+    end
+
+    with_market_data =
+      part.(
+        dynamic([token], not is_nil(token.circulating_market_cap) or not is_nil(token.fiat_value)),
+        sorting,
+        default_sorting
+      )
+
+    without_market_data =
+      part.(
+        dynamic([token], is_nil(token.circulating_market_cap) and is_nil(token.fiat_value)),
+        no_market_data_sorting,
+        no_market_data_sorting
+      )
+
+    parts =
+      from(token in subquery(with_market_data), union_all: ^from(token in subquery(without_market_data)))
+
+    contract_address_hashes =
+      from(token in subquery(parts), select: token.contract_address_hash)
+      |> SortingHelper.apply_sorting(sorting, default_sorting)
+      |> limit(^page_size)
+      |> Chain.select_repo(options).all()
+
+    tokens_by_hash =
+      options
+      |> list_top_base_query()
+      |> where([token], token.contract_address_hash in ^contract_address_hashes)
+      |> Chain.select_repo(options).all()
+      |> Map.new(&{&1.contract_address_hash, &1})
+
+    Enum.flat_map(contract_address_hashes, &List.wrap(tokens_by_hash[&1]))
   end
 
   defp apply_search_filter(query, filter) when is_binary(filter) do
