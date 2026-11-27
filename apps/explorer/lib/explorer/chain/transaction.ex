@@ -336,6 +336,7 @@ defmodule Explorer.Chain.Transaction do
     ContractMethod,
     Data,
     DenormalizationHelper,
+    EIP8430Transaction,
     Hash,
     InternalTransaction,
     MethodIdentifier,
@@ -2983,8 +2984,48 @@ defmodule Explorer.Chain.Transaction do
     |> Repo.aggregate(:count, :hash)
   end
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
+  # The `nonce_key` value of the nonce-free mode of EIP-8430: `2^256 - 1`.
+  @nonce_free_nonce_key Decimal.new(Bitwise.bsl(1, 256) - 1)
+
+  # Builds the SQL expression for the nonce channel of a transaction. The arguments are the
+  # binding of the transaction and the binding of its row in `eip_8430_transactions`, which
+  # comes from a left join.
+  #
+  # The values of the expression:
+  #   * an EIP-8430 transaction with a row: the `nonce_key` of the row.
+  #   * an EIP-8430 transaction without a row: `NULL`. The nonce channel is unknown.
+  #   * each other transaction, also a transaction with a `NULL` type: `0`.
+  #
+  # A comparison with `NULL` is not true in SQL. Thus a query that compares two nonce channels
+  # does not match a transaction with an unknown nonce channel.
+  defmacrop nonce_channel(transaction, eip_8430_transaction) do
+    quote do
+      fragment(
+        "CASE WHEN ? = ? THEN ? ELSE 0 END",
+        unquote(transaction).type,
+        unquote(@eip_8430_transaction_type),
+        unquote(eip_8430_transaction).nonce_key
+      )
+    end
+  end
+
   @doc """
-  Finds and updates replaced transactions in the database.
+  Finds the given pending transactions that are replaced and marks them as `dropped/replaced`.
+
+  A pending transaction from `transactions` is replaced if the database contains a different
+  transaction in a block with the same sender, nonce channel, and `nonce`. See
+  `update_replaced_transactions/2` for the full rule.
+
+  ## Parameters
+  - `transactions`: The pending transactions to examine. All keys are required.
+  - `timeout`: The timeout of the database update.
+
+  ## Returns
+  - `{count, nil}`, where `count` is the number of updated transactions.
+  - `{0, []}` if `transactions` is empty.
   """
   @spec find_and_update_replaced_transactions([
           %{
@@ -2998,7 +3039,7 @@ defmodule Explorer.Chain.Transaction do
   def find_and_update_replaced_transactions([], _timeout), do: {0, []}
 
   def find_and_update_replaced_transactions(transactions, timeout) do
-    query =
+    mined_duplicates_query =
       transactions
       |> Enum.reduce(
         __MODULE__,
@@ -3010,60 +3051,112 @@ defmodule Explorer.Chain.Transaction do
           )
         end
       )
+      |> join(:left, [t], eip_8430_transaction in EIP8430Transaction,
+        on: eip_8430_transaction.transaction_hash == t.hash
+      )
+      |> select([t, eip_8430_transaction], %{
+        hash: t.hash,
+        nonce: t.nonce,
+        from_address_hash: t.from_address_hash,
+        nonce_channel: nonce_channel(t, eip_8430_transaction)
+      })
       # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-      |> order_by(asc: :hash)
-      |> lock("FOR NO KEY UPDATE")
+      |> order_by([t], asc: t.hash)
+      # Postgres does not accept a row lock on the nullable side of an outer join, so the lock
+      # names the `transactions` table.
+      |> lock([t], fragment("FOR NO KEY UPDATE OF ?", t))
 
     hashes = Enum.map(transactions, & &1.hash)
 
-    transactions_to_update =
+    # Postgres accepts only inner joins in `UPDATE ... FROM`, so a subquery with the left join
+    # selects the hashes of the transactions to update.
+    replaced_transactions_query =
       from(pending in __MODULE__,
-        join: duplicate in subquery(query),
-        on: duplicate.nonce == pending.nonce and duplicate.from_address_hash == pending.from_address_hash,
-        where: pending.hash in ^hashes and is_nil(pending.block_hash)
+        left_join: pending_eip_8430_transaction in EIP8430Transaction,
+        on: pending_eip_8430_transaction.transaction_hash == pending.hash,
+        join: duplicate in subquery(mined_duplicates_query),
+        on:
+          duplicate.nonce == pending.nonce and duplicate.from_address_hash == pending.from_address_hash and
+            duplicate.hash != pending.hash and
+            duplicate.nonce_channel == nonce_channel(pending, pending_eip_8430_transaction),
+        where: pending.hash in ^hashes and is_nil(pending.block_hash),
+        where: nonce_channel(pending, pending_eip_8430_transaction) != type(^@nonce_free_nonce_key, :decimal),
+        select: %{hash: pending.hash}
       )
 
-    Repo.update_all(transactions_to_update, [set: [error: "dropped/replaced", status: :error]], timeout: timeout)
+    # The subquery does not lock the pending transactions. If the update waits for a row lock,
+    # Postgres evaluates again only the conditions on `t`. Thus the condition on `block_hash`
+    # is also here: it skips a transaction that a different process put in a block at the same
+    # time.
+    Repo.update_all(
+      from(t in __MODULE__,
+        join: s in subquery(replaced_transactions_query),
+        on: t.hash == s.hash,
+        where: is_nil(t.block_hash)
+      ),
+      [set: [error: "dropped/replaced", status: :error]],
+      timeout: timeout
+    )
   end
 
   @doc """
-  Updates the replaced transactions in the database.
+  Marks the pending transactions that the given mined transactions replace as `dropped/replaced`.
+
+  A mined transaction replaces a pending transaction if the two transactions have the same
+  sender, the same nonce channel, and the same `nonce`.
+
+  The nonce channel is a separate sequence of nonces for one sender:
+    * For an EIP-8430 transaction (EIP-2718 type `0x79`), the nonce channel is the `nonce_key`
+      value of its row in `eip_8430_transactions`.
+    * For each other transaction, the nonce channel is `0`. A transaction with a `NULL` type
+      is such a transaction.
+
+  The rule does not apply in these cases:
+    * One of the two transactions is in the nonce-free mode of EIP-8430: its `nonce_key` is
+      `2^256 - 1`. In this mode the `nonce` is always `0`, and it does not identify the
+      transaction.
+    * One of the two transactions is an EIP-8430 transaction without a row in
+      `eip_8430_transactions`. Its nonce channel is unknown. An import writes the transaction
+      and its row in separate database transactions, so each import has a short interval in
+      which the row is absent.
+    * The mined transaction is not in a block now. This occurs if a reorg removes its block
+      before this function runs. The import of the new block calls this function again.
+
+  The function reads the sender, the `nonce`, and the nonce channel of a mined transaction
+  from the database by its hash.
+
+  ## Parameters
+  - `transactions`: The mined transactions. All keys are required. The function ignores an
+    entry in which one of the values is `nil`.
+  - `timeout`: The timeout of the database update.
+
+  ## Returns
+  - `{count, nil}`, where `count` is the number of updated transactions.
+  - `{0, []}` if `transactions` is empty or the function ignores all entries.
   """
   @spec update_replaced_transactions([
           %{
             required(:nonce) => non_neg_integer,
             required(:from_address_hash) => Hash.Address.t(),
-            required(:block_hash) => Hash.Full.t()
+            required(:block_hash) => Hash.Full.t(),
+            required(:hash) => Hash.Full.t()
           }
         ]) :: {integer(), nil | [term()]}
   def update_replaced_transactions(transactions, timeout \\ :infinity) do
-    filters =
+    # Two mined transactions of one sender can have the same `nonce` in different nonce
+    # channels, so the hash identifies the mined transaction.
+    mined_transaction_hashes =
       transactions
       |> Enum.filter(fn transaction ->
-        transaction.block_hash && transaction.nonce && transaction.from_address_hash
+        transaction.block_hash && transaction.nonce && transaction.from_address_hash && transaction.hash
       end)
-      |> Enum.map(fn transaction ->
-        {transaction.nonce, transaction.from_address_hash}
-      end)
+      |> Enum.map(& &1.hash)
       |> Enum.uniq()
 
-    if Enum.empty?(filters) do
+    if Enum.empty?(mined_transaction_hashes) do
       {0, []}
     else
-      query =
-        filters
-        |> Enum.reduce(__MODULE__, fn {nonce, from_address}, query ->
-          from(t in query,
-            or_where:
-              t.nonce == ^nonce and
-                t.from_address_hash == ^from_address and
-                is_nil(t.block_hash) and
-                (is_nil(t.error) or t.error != "dropped/replaced")
-          )
-        end)
-        # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
-        |> order_by(asc: :hash)
-        |> lock("FOR NO KEY UPDATE")
+      query = pending_transactions_replaced_by_query(mined_transaction_hashes)
 
       Repo.update_all(
         from(t in __MODULE__, join: s in subquery(query), on: t.hash == s.hash),
@@ -3071,6 +3164,34 @@ defmodule Explorer.Chain.Transaction do
         timeout: timeout
       )
     end
+  end
+
+  # Builds the query for the hashes of the pending transactions that the mined transactions
+  # with the given hashes replace. The query locks the rows of the pending transactions. See
+  # `update_replaced_transactions/2` for the rule.
+  @spec pending_transactions_replaced_by_query([Hash.Full.t()]) :: Ecto.Query.t()
+  defp pending_transactions_replaced_by_query(mined_transaction_hashes) do
+    from(pending in __MODULE__,
+      left_join: pending_eip_8430_transaction in EIP8430Transaction,
+      on: pending_eip_8430_transaction.transaction_hash == pending.hash,
+      join: mined in __MODULE__,
+      on:
+        mined.nonce == pending.nonce and mined.from_address_hash == pending.from_address_hash and
+          mined.hash != pending.hash,
+      left_join: mined_eip_8430_transaction in EIP8430Transaction,
+      on: mined_eip_8430_transaction.transaction_hash == mined.hash,
+      where: mined.hash in ^mined_transaction_hashes and not is_nil(mined.block_hash),
+      where: is_nil(pending.block_hash) and (is_nil(pending.error) or pending.error != "dropped/replaced"),
+      where:
+        nonce_channel(pending, pending_eip_8430_transaction) == nonce_channel(mined, mined_eip_8430_transaction) and
+          nonce_channel(pending, pending_eip_8430_transaction) != type(^@nonce_free_nonce_key, :decimal),
+      select: %{hash: pending.hash},
+      # Enforce Transaction ShareLocks order (see docs: sharelocks.md)
+      order_by: [asc: pending.hash],
+      # Postgres does not accept a row lock on the nullable side of an outer join, so the
+      # lock names the binding of the pending transactions.
+      lock: fragment("FOR NO KEY UPDATE OF ?", pending)
+    )
   end
 
   @doc """
@@ -3110,8 +3231,8 @@ defmodule Explorer.Chain.Transaction do
 
   @doc """
   Streams pending transactions that have already been replaced, i.e. pending transactions for which a mined
-  transaction with the same `from_address_hash` and `nonce` exists, but which have not been marked as
-  `dropped/replaced` yet.
+  transaction with the same `from_address_hash`, nonce channel, and `nonce` exists, but which have not been marked as
+  `dropped/replaced` yet. See `update_replaced_transactions/2` for the full rule.
 
   Unlike `stream_pending_transactions/4` the result is not limited by the fetcher init limit: the result set only
   contains transactions that need to be updated, so it stays small.
@@ -3143,22 +3264,34 @@ defmodule Explorer.Chain.Transaction do
 
   @doc """
   Query to return pending transactions (see `pending_transactions_query/1`) for which a mined transaction with the same
-  `from_address_hash` and `nonce` already exists. Such transactions should be marked as `dropped/replaced`.
+  `from_address_hash`, nonce channel, and `nonce` already exists. Such transactions should be marked as
+  `dropped/replaced`.
+
+  The query does not return a transaction in the nonce-free mode of EIP-8430, and it does not compare an EIP-8430
+  transaction without a row in `eip_8430_transactions`. See `update_replaced_transactions/2` for the full rule.
   """
   @spec replaced_pending_transactions_query(Ecto.Queryable.t()) :: Ecto.Queryable.t()
   def replaced_pending_transactions_query(query) do
     mined_duplicate_query =
       from(mined in __MODULE__,
+        left_join: mined_eip_8430_transaction in EIP8430Transaction,
+        on: mined_eip_8430_transaction.transaction_hash == mined.hash,
         where:
           mined.nonce == parent_as(:pending).nonce and
             mined.from_address_hash == parent_as(:pending).from_address_hash and
-            not is_nil(mined.block_hash),
+            not is_nil(mined.block_hash) and
+            nonce_channel(mined, mined_eip_8430_transaction) ==
+              nonce_channel(parent_as(:pending), parent_as(:pending_eip_8430_transaction)),
         select: 1
       )
 
     from(transaction in query,
       as: :pending,
+      left_join: eip_8430_transaction in EIP8430Transaction,
+      as: :pending_eip_8430_transaction,
+      on: eip_8430_transaction.transaction_hash == transaction.hash,
       where: is_nil(transaction.block_hash) and (is_nil(transaction.error) or transaction.error != "dropped/replaced"),
+      where: nonce_channel(transaction, eip_8430_transaction) != type(^@nonce_free_nonce_key, :decimal),
       where: exists(mined_duplicate_query)
     )
   end

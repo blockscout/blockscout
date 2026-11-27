@@ -77,7 +77,8 @@ defmodule Indexer.Fetcher.ReplacedTransactionTest do
                    %{
                      block_hash: mined_transaction.block_hash,
                      nonce: mined_transaction.nonce,
-                     from_address_hash: mined_transaction.from_address_hash
+                     from_address_hash: mined_transaction.from_address_hash,
+                     hash: mined_transaction.hash
                    }
                  ],
                  false
@@ -190,6 +191,47 @@ defmodule Indexer.Fetcher.ReplacedTransactionTest do
     end
   end
 
+  # These tests call `run/2` directly and do not start the fetcher. A started fetcher runs
+  # `init/3` again each time its queue is empty, and `init/3` also finds the replaced
+  # transaction. Thus a test with a started fetcher does not show which entry caused the update.
+  describe "run/2 with EIP-8430 transactions" do
+    test "an entry of a mined transaction updates only the pending transaction in its nonce channel" do
+      %{mined: mined, same_channel: same_channel, other_channel: other_channel} = insert_nonce_channel_transactions()
+      insert(:eip_8430_transaction, transaction: mined, nonce_key: 1)
+
+      entry = {mined.block_hash.bytes, mined.nonce, mined.from_address_hash.bytes, mined.hash.bytes}
+
+      assert :ok = ReplacedTransaction.run([entry], nil)
+
+      assert_only_same_channel_replaced_now(same_channel, other_channel)
+    end
+
+    test "entries of pending transactions update only the transaction in the nonce channel of the mined transaction" do
+      %{mined: mined, same_channel: same_channel, other_channel: other_channel} = insert_nonce_channel_transactions()
+      insert(:eip_8430_transaction, transaction: mined, nonce_key: 1)
+
+      entries =
+        Enum.map([same_channel, other_channel], fn pending ->
+          {:pending, pending.nonce, pending.from_address_hash.bytes, pending.hash.bytes}
+        end)
+
+      assert :ok = ReplacedTransaction.run(entries, nil)
+
+      assert_only_same_channel_replaced_now(same_channel, other_channel)
+    end
+  end
+
+  describe "init/3 with EIP-8430 transactions" do
+    test "updates only the pending transaction in the nonce channel of the mined transaction on init" do
+      %{mined: mined, same_channel: same_channel, other_channel: other_channel} = insert_nonce_channel_transactions()
+      insert(:eip_8430_transaction, transaction: mined, nonce_key: 1)
+
+      ReplacedTransaction.Supervisor.Case.start_supervised!()
+
+      assert_only_same_channel_replaced(same_channel, other_channel)
+    end
+  end
+
   describe "async_fetch_pending/2" do
     test "marks a pending transaction imported after its replacement was mined" do
       address = insert(:address, hash: "0xb7cffe2ac19b9d5705a24cbe14fef5663af905a6")
@@ -257,6 +299,46 @@ defmodule Indexer.Fetcher.ReplacedTransactionTest do
 
       assert :ok = ReplacedTransaction.async_fetch_pending([], true)
     end
+  end
+
+  # Inserts three EIP-8430 transactions of one sender with the same `nonce`: a mined transaction
+  # for the nonce channel 1, a pending transaction in the nonce channel 1, and a pending
+  # transaction in the nonce channel 2. The mined transaction has no row in
+  # `eip_8430_transactions`: the test inserts the row.
+  defp insert_nonce_channel_transactions do
+    address = insert(:address)
+
+    mined = :transaction |> insert(from_address: address, nonce: 1, type: 0x79) |> with_block(status: :ok)
+
+    same_channel = insert(:transaction, from_address: address, nonce: 1, type: 0x79)
+    insert(:eip_8430_transaction, transaction: same_channel, nonce_key: 1)
+
+    other_channel = insert(:transaction, from_address: address, nonce: 1, type: 0x79)
+    insert(:eip_8430_transaction, transaction: other_channel, nonce_key: 2)
+
+    %{mined: mined, same_channel: same_channel, other_channel: other_channel}
+  end
+
+  defp assert_only_same_channel_replaced(same_channel, other_channel) do
+    found_replaced_transaction =
+      wait(fn ->
+        Repo.one!(from(t in Transaction, where: t.hash == ^same_channel.hash and t.status == ^:error))
+      end)
+
+    assert found_replaced_transaction.error == "dropped/replaced"
+
+    assert %Transaction{error: nil, status: nil} =
+             Repo.one!(from(t in Transaction, where: t.hash == ^other_channel.hash))
+  end
+
+  # The same assertions as in `assert_only_same_channel_replaced/2`, but without a wait: use
+  # it after a synchronous call.
+  defp assert_only_same_channel_replaced_now(same_channel, other_channel) do
+    assert %Transaction{error: "dropped/replaced", status: :error} =
+             Repo.one!(from(t in Transaction, where: t.hash == ^same_channel.hash))
+
+    assert %Transaction{error: nil, status: nil} =
+             Repo.one!(from(t in Transaction, where: t.hash == ^other_channel.hash))
   end
 
   defp wait(producer) do

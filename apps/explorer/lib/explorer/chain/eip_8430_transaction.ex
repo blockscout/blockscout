@@ -10,8 +10,11 @@ defmodule Explorer.Chain.EIP8430Transaction do
   alias Explorer.Chain.{Data, Hash, JSONValue, Transaction}
 
   @optional_attrs ~w(metadata payer sender_auth payer_auth account_changes)a
-  @required_attrs ~w(transaction_hash has_named_sender nonce_key valid_after valid_before payer_type
-                     resolved_payer_address_hash committed_phases_count)a
+  # The values that each row must have, also the row of a pending transaction.
+  @pending_required_attrs ~w(transaction_hash has_named_sender nonce_key valid_after valid_before payer_type)a
+  # The values from the receipt. A pending transaction has no receipt, so its row has no such values.
+  @receipt_attrs ~w(resolved_payer_address_hash committed_phases_count)a
+  @required_attrs @pending_required_attrs ++ @receipt_attrs
 
   @payer_types [:self, :open, :named, :unknown]
 
@@ -38,7 +41,9 @@ defmodule Explorer.Chain.EIP8430Transaction do
     * `payer_auth` - the authorization bytes of the payer.
     * `account_changes` - the account changes in the form that the node returns.
     * `resolved_payer_address_hash` - the address of the resolved payer from the receipt: the account that pays the fee.
+      `nil` for a transaction that was imported as pending and is not mined.
     * `committed_phases_count` - the number of call phases that committed, from the receipt.
+      `nil` for a transaction that was imported as pending and is not mined.
   """
   @type to_import :: %{
           transaction_hash: binary(),
@@ -69,7 +74,9 @@ defmodule Explorer.Chain.EIP8430Transaction do
     * `payer_auth` - the authorization bytes of the payer.
     * `account_changes` - the account changes in the form that the node returns.
     * `resolved_payer_address_hash` - the address of the resolved payer from the receipt: the account that pays the fee.
+      `nil` for a transaction that was imported as pending and is not mined.
     * `committed_phases_count` - the number of call phases that committed, from the receipt.
+      `nil` for a transaction that was imported as pending and is not mined.
     * `inserted_at` - timestamp indicating when the row was created.
     * `updated_at` - timestamp indicating when the row was last updated.
     * `transaction` - an instance of `Explorer.Chain.Transaction` referenced by `transaction_hash`.
@@ -86,8 +93,8 @@ defmodule Explorer.Chain.EIP8430Transaction do
     field(:sender_auth, Data)
     field(:payer_auth, Data)
     field(:account_changes, JSONValue)
-    field(:resolved_payer_address_hash, Hash.Address, null: false)
-    field(:committed_phases_count, :integer, null: false)
+    field(:resolved_payer_address_hash, Hash.Address)
+    field(:committed_phases_count, :integer)
 
     belongs_to(:transaction, Transaction,
       foreign_key: :transaction_hash,
@@ -100,13 +107,32 @@ defmodule Explorer.Chain.EIP8430Transaction do
   end
 
   @doc """
-    Validates that the `attrs` are valid.
+    Validates the `attrs` of the row of a mined transaction.
+
+    The receipt values `resolved_payer_address_hash` and `committed_phases_count` are
+    required. The block import uses this function, so it rejects a row without them.
   """
   @spec changeset(Ecto.Schema.t(), map()) :: Ecto.Changeset.t()
   def changeset(%__MODULE__{} = struct, attrs \\ %{}) do
     struct
     |> cast(attrs, @required_attrs ++ @optional_attrs)
     |> validate_required(@required_attrs)
+    |> foreign_key_constraint(:transaction_hash)
+  end
+
+  @doc """
+    Validates the `attrs` of the row of a pending transaction.
+
+    A pending transaction has no receipt, so the receipt values
+    `resolved_payer_address_hash` and `committed_phases_count` are not required. All other
+    rules are the same as in `changeset/2`. `Indexer.Fetcher.PendingTransaction` selects this
+    function with the `with: :pending_changeset` option of `Explorer.Chain.import/1`.
+  """
+  @spec pending_changeset(Ecto.Schema.t(), map()) :: Ecto.Changeset.t()
+  def pending_changeset(%__MODULE__{} = struct, attrs \\ %{}) do
+    struct
+    |> cast(attrs, @required_attrs ++ @optional_attrs)
+    |> validate_required(@pending_required_attrs)
     |> foreign_key_constraint(:transaction_hash)
   end
 end
