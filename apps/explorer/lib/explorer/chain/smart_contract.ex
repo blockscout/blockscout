@@ -909,6 +909,12 @@ defmodule Explorer.Chain.SmartContract do
     provided attributes, setting it up for verification. In this case, all contract methods
     from the ABI are freshly inserted as part of the new smart contract creation.
 
+    If the contract is inserted concurrently by another verification, the insert fails on
+    the unique address constraint and is retried once to take the update path.
+
+    When the contract ends up verified with a full match, pending verification statuses of
+    the address are marked as passed.
+
     ## Parameters
     - `address_hash`: The hash of the address for the smart contract.
     - `attrs`: A map containing attributes such as external libraries and secondary sources.
@@ -929,41 +935,76 @@ defmodule Explorer.Chain.SmartContract do
           boolean()
         ) :: {:error, Ecto.Changeset.t() | String.t()} | {:ok, Explorer.Chain.SmartContract.t()}
   def create_or_update_smart_contract(address_hash, attrs, verification_with_files?) do
-    smart_contract =
-      address_hash
-      |> address_hash_to_smart_contract(api?: true)
+    result = do_create_or_update_smart_contract(address_hash, attrs, verification_with_files?, true)
 
-    result =
-      cond do
-        is_nil(smart_contract) ->
-          create_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-
-        smart_contract.partially_verified && attrs.partially_verified &&
-            Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
-          changeset =
-            invalid_contract_changeset(
-              %SmartContract{address_hash: address_hash},
-              Helper.add_contract_code_md5(attrs),
-              "Cannot update partially verified smart contract with another partially verified contract",
-              nil,
-              verification_with_files?
-            )
-
-          {:error, %{changeset | action: :insert}}
-
-        true ->
-          update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
-      end
-
-    with {:ok, _} <- result do
-      # The contract is now verified through some path. Reconcile any verification-status
-      # rows for this address that were left pending (e.g. an RPC worker that raised before
-      # updating the status, or verification that completed via a path which does not write
-      # the status table). See Explorer.Chain.SmartContract.VerificationStatus.
+    with {:ok, %__MODULE__{partially_verified: partially_verified}} when partially_verified != true <- result do
+      # The contract is now verified with a full match through some path, so it can't be
+      # re-verified. Reconcile any verification-status rows for this address that are
+      # pending (e.g. verification completed via a path which does not write the status
+      # table). A partial match doesn't resolve other attempts: they may still get a full
+      # match or fail. See Explorer.Chain.SmartContract.VerificationStatus.
       VerificationStatus.set_pending_statuses_to_passed(address_hash)
     end
 
     result
+  end
+
+  # `first_attempt?` is false only on the retry after a concurrent insert, which must
+  # look the contract up in the primary DB rather than in the replica.
+  defp do_create_or_update_smart_contract(address_hash, attrs, verification_with_files?, first_attempt?) do
+    smart_contract =
+      address_hash
+      |> address_hash_to_smart_contract(api?: first_attempt?)
+
+    cond do
+      is_nil(smart_contract) ->
+        attrs
+        |> create_smart_contract(attrs.external_libraries, attrs.secondary_sources)
+        |> maybe_retry_after_concurrent_insert(address_hash, attrs, verification_with_files?, first_attempt?)
+
+      smart_contract.partially_verified && attrs.partially_verified &&
+          Application.get_env(:block_scout_web, :contract)[:partial_reverification_disabled] ->
+        changeset =
+          invalid_contract_changeset(
+            %SmartContract{address_hash: address_hash},
+            Helper.add_contract_code_md5(attrs),
+            "Cannot update partially verified smart contract with another partially verified contract",
+            nil,
+            verification_with_files?
+          )
+
+        {:error, %{changeset | action: :insert}}
+
+      true ->
+        update_smart_contract(attrs, attrs.external_libraries, attrs.secondary_sources)
+    end
+  end
+
+  # The contract may be inserted concurrently between the lookup and the insert, e.g. by
+  # the user's verification and the automatic eth_bytecode_db lookup. The insert then fails
+  # on the unique `address_hash` constraint, so it is retried once to take the update path.
+  defp maybe_retry_after_concurrent_insert(
+         {:error, %Changeset{} = changeset} = error,
+         address_hash,
+         attrs,
+         verification_with_files?,
+         true = _first_attempt?
+       ) do
+    if address_hash_unique_violation?(changeset) do
+      do_create_or_update_smart_contract(address_hash, attrs, verification_with_files?, false)
+    else
+      error
+    end
+  end
+
+  defp maybe_retry_after_concurrent_insert(result, _address_hash, _attrs, _verification_with_files?, _first_attempt?),
+    do: result
+
+  defp address_hash_unique_violation?(%Changeset{errors: errors}) do
+    case Keyword.get(errors, :address_hash) do
+      {_message, opts} -> opts[:constraint] == :unique
+      _ -> false
+    end
   end
 
   @doc """

@@ -9,6 +9,17 @@ defmodule Explorer.Chain.SmartContractTest do
 
   doctest Explorer.Chain.SmartContract
 
+  defmodule StaleReplica do
+    @moduledoc false
+    def one(_query), do: nil
+  end
+
+  defmodule LaggingReplica do
+    @moduledoc false
+    # still sees the contract as partially verified
+    def one(query), do: query |> Repo.one() |> Map.put(:partially_verified, true)
+  end
+
   setup :verify_on_exit!
   setup :set_mox_global
 
@@ -209,6 +220,122 @@ defmodule Explorer.Chain.SmartContractTest do
       attrs = %{partially_verified: true, external_libraries: [], secondary_sources: []}
 
       assert {:error, _} = SmartContract.create_or_update_smart_contract(address.hash, attrs, false)
+
+      assert Repo.get_by(VerificationStatus, uid: "pending-uid").status == 0
+    end
+
+    test "updates the contract inserted concurrently after the lookup", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      insert(:smart_contract, address_hash: address.hash, partially_verified: true, contract_code_md5: "123")
+      {:ok, _} = VerificationStatus.insert_status("pending-uid", :pending, to_string(address.hash))
+
+      # The replica lookup doesn't see the contract yet, as if it was inserted
+      # concurrently between the lookup and the insert.
+      :meck.new(Explorer.Chain, [:passthrough])
+
+      try do
+        :meck.expect(Explorer.Chain, :select_repo, fn options ->
+          if Keyword.get(options, :api?, false), do: __MODULE__.StaleReplica, else: Repo
+        end)
+
+        {result, _log} =
+          with_log(fn -> SmartContract.create_or_update_smart_contract(address.hash, valid_attrs, false) end)
+
+        assert {:ok, %SmartContract{partially_verified: false}} = result
+        assert Repo.get_by(VerificationStatus, uid: "pending-uid").status == 1
+      after
+        :meck.unload(Explorer.Chain)
+      end
+    end
+
+    test "rejects a partial match over the full match inserted concurrently after the lookup", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      insert(:smart_contract, address_hash: address.hash, partially_verified: false, contract_code_md5: "123")
+
+      # The replica lookup doesn't see the contract yet, as if it was inserted
+      # concurrently between the lookup and the insert.
+      :meck.new(Explorer.Chain, [:passthrough])
+
+      try do
+        :meck.expect(Explorer.Chain, :select_repo, fn options ->
+          if Keyword.get(options, :api?, false), do: __MODULE__.StaleReplica, else: Repo
+        end)
+
+        {result, _log} =
+          with_log(fn ->
+            SmartContract.create_or_update_smart_contract(
+              address.hash,
+              %{valid_attrs | partially_verified: true},
+              false
+            )
+          end)
+
+        assert {:error, %Ecto.Changeset{errors: [partially_verified: _]}} = result
+        assert %SmartContract{partially_verified: false} = Repo.get_by(SmartContract, address_hash: address.hash)
+      after
+        :meck.unload(Explorer.Chain)
+      end
+    end
+
+    test "keeps the full match and its sources when the lookup sees a stale partial match", %{
+      valid_attrs: valid_attrs,
+      address: address
+    } do
+      initial = Application.get_env(:block_scout_web, :contract) || []
+
+      Application.put_env(
+        :block_scout_web,
+        :contract,
+        Keyword.merge(initial, partial_reverification_disabled: false)
+      )
+
+      on_exit(fn -> Application.put_env(:block_scout_web, :contract, initial) end)
+
+      insert(:smart_contract, address_hash: address.hash, partially_verified: false, contract_code_md5: "123")
+
+      insert(:smart_contract_additional_source,
+        address_hash: address.hash,
+        file_name: "storage.sol",
+        contract_source_code: "contract Storage {}"
+      )
+
+      :meck.new(Explorer.Chain, [:passthrough])
+
+      try do
+        :meck.expect(Explorer.Chain, :select_repo, fn options ->
+          if Keyword.get(options, :api?, false), do: __MODULE__.LaggingReplica, else: Repo
+        end)
+
+        {result, _log} =
+          with_log(fn ->
+            SmartContract.create_or_update_smart_contract(
+              address.hash,
+              %{valid_attrs | partially_verified: true},
+              false
+            )
+          end)
+
+        assert {:error, %Ecto.Changeset{errors: [partially_verified: _]}} = result
+        assert %SmartContract{partially_verified: false} = Repo.get_by(SmartContract, address_hash: address.hash)
+        assert Repo.get_by(SmartContractAdditionalSource, address_hash: address.hash)
+      after
+        :meck.unload(Explorer.Chain)
+      end
+    end
+
+    test "doesn't reconcile pending statuses on a partial match", %{valid_attrs: valid_attrs, address: address} do
+      {:ok, _} = VerificationStatus.insert_status("pending-uid", :pending, to_string(address.hash))
+
+      assert {:ok, %SmartContract{partially_verified: true}} =
+               SmartContract.create_or_update_smart_contract(
+                 address.hash,
+                 %{valid_attrs | partially_verified: true},
+                 false
+               )
 
       assert Repo.get_by(VerificationStatus, uid: "pending-uid").status == 0
     end

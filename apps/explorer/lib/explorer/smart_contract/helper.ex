@@ -269,6 +269,27 @@ defmodule Explorer.SmartContract.Helper do
   end
 
   @doc """
+  Builds the error changeset broadcast as the verification result when a verification
+  job crashed before producing its own result.
+
+  ## Parameters
+  - `address_hash`: The address of the contract being verified.
+
+  ## Returns
+  - An invalid `Ecto.Changeset.t()` carrying the "unknown error" message.
+  """
+  @spec verification_crash_changeset(binary() | Hash.Address.t()) :: Ecto.Changeset.t()
+  def verification_crash_changeset(address_hash) do
+    # `verification_with_files? = true` is passed not because of files: it skips the
+    # required fields validation (only the address is known here, so the result would
+    # be full of irrelevant "can't be blank" errors) and puts the error on `:files`
+    # instead of `:contract_source_code`, as the crash isn't related to the source code.
+    %SmartContract{}
+    |> SmartContract.invalid_contract_changeset(%{address_hash: address_hash}, :unknown_error, nil, true)
+    |> Map.put(:action, :insert)
+  end
+
+  @doc """
   Pre-fetches implementation for unverified smart-contract or verified proxy smart-contract
   """
   @spec pre_fetch_implementations(Address.t()) :: Implementation.t() | nil
