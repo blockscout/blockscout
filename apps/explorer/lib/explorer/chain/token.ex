@@ -542,7 +542,7 @@ defmodule Explorer.Chain.Token do
       |> Enum.filter(fn {_order, field} -> field in [:holder_count, :name, :contract_address_hash] end)
 
     part = fn market_data_condition, part_sorting, part_default_sorting ->
-      Token
+      from(token in Token)
       |> ExplorerHelper.maybe_hide_scam_addresses(:contract_address_hash, options)
       |> apply_filter(token_type)
       |> where(^market_data_condition)
