@@ -98,5 +98,39 @@ defmodule Indexer.Transform.AddressTokenBalancesTest do
                  }
                ])
     end
+
+    for token_type <- ["ERC-20", "ERC-8056"] do
+      test "keeps the burn address for the fungible token #{token_type}" do
+        token_transfer_params = %{
+          block_number: 1,
+          from_address_hash: "0x5b8410f67eb8040bb1cd1e8a4ff9d5f6ce678a15",
+          to_address_hash: "0x0000000000000000000000000000000000000000",
+          token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc",
+          token_type: unquote(token_type),
+          token: %{type: unquote(token_type)},
+          token_ids: nil
+        }
+
+        params_set = AddressTokenBalances.params_set(%{token_transfers_params: [token_transfer_params]})
+
+        assert params_set ==
+                 MapSet.new([
+                   %{
+                     address_hash: "0x5b8410f67eb8040bb1cd1e8a4ff9d5f6ce678a15",
+                     block_number: 1,
+                     token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc",
+                     token_id: nil,
+                     token_type: unquote(token_type)
+                   },
+                   %{
+                     address_hash: "0x0000000000000000000000000000000000000000",
+                     block_number: 1,
+                     token_contract_address_hash: "0xe18035bf8712672935fdb4e5e431b1a0183d2dfc",
+                     token_id: nil,
+                     token_type: unquote(token_type)
+                   }
+                 ])
+      end
+    end
   end
 end

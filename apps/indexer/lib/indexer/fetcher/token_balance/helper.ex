@@ -10,6 +10,9 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
   alias Explorer.Utility.MissingBalanceOfToken
   alias Indexer.{BufferedTask, TokenBalances}
 
+  # lowercase, as the params of this module carry address hashes
+  @burn_address_hash_strings Enum.map(Explorer.Chain.SmartContract.burn_address_hash_strings(), &String.downcase/1)
+
   @default_max_batch_size 100
   @default_max_concurrency 10
 
@@ -144,9 +147,17 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
     |> handle_other_errors()
   end
 
+  # A revert of `balanceOf` for a burn address (the zero or the dead address)
+  # does not mean the token lacks `balanceOf`: some contracts reject those
+  # addresses only. Such a failure stays with its own row and is retried like
+  # any other error, instead of marking the whole token as missing `balanceOf`
+  # and dropping the placeholders of every holder.
   defp handle_missing_balance_of_tokens(failed_token_balances) do
     {missing_balance_of_balances, other_failed_balances} =
-      Enum.split_with(failed_token_balances, &EthereumJSONRPC.contract_failure?/1)
+      Enum.split_with(failed_token_balances, fn token_balance ->
+        EthereumJSONRPC.contract_failure?(token_balance) and
+          String.downcase(to_string(token_balance.address_hash)) not in @burn_address_hash_strings
+      end)
 
     MissingBalanceOfToken.insert_from_params(missing_balance_of_balances)
 
@@ -174,7 +185,13 @@ defmodule Indexer.Fetcher.TokenBalance.Helper do
     end)
   end
 
-  defp define_refetch_after(retries_count) do
+  @doc """
+  Returns when a token balance that failed `retries_count` times can be fetched
+  again: an exponential backoff, capped by the `max_refetch_interval` of
+  `Indexer.Fetcher.TokenBalance.Historical`.
+  """
+  @spec define_refetch_after(pos_integer()) :: DateTime.t()
+  def define_refetch_after(retries_count) do
     config = Application.get_env(:indexer, Indexer.Fetcher.TokenBalance.Historical)
 
     coef = config[:exp_timeout_coeff]

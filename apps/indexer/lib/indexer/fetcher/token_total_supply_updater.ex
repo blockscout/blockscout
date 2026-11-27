@@ -7,6 +7,7 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
   use GenServer
 
   alias Explorer.{Chain, Repo}
+  alias Explorer.Chain.Cache.BlockNumber
   alias Explorer.Chain.Cache.Counters.AverageBlockTime
   alias Explorer.Chain.{Hash, Token}
   alias Explorer.MicroserviceInterfaces.MultichainSearch
@@ -78,13 +79,17 @@ defmodule Indexer.Fetcher.TokenTotalSupplyUpdater do
     token = Repo.get_by(Token, contract_address_hash: address_hash)
 
     if token && !token.skip_metadata do
+      # pinned to the latest indexed block, stored with the result, see
+      # `Explorer.Chain.Token.update/4`
+      block_number = BlockNumber.get_max()
+
       token_params =
         address_hash
         |> Hash.to_string()
-        |> MetadataRetriever.get_total_supply_of()
+        |> MetadataRetriever.get_total_supply_of(block_number)
 
       if token_params !== %{} do
-        {:ok, _} = Token.update(token, token_params)
+        {:ok, _} = Token.update(token, Map.put(token_params, :total_supply_updated_at_block, block_number))
 
         MultichainSearch.prepare_token_total_supply_for_queue(token_params.total_supply)
       end

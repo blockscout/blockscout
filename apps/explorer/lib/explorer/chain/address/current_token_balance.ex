@@ -15,7 +15,7 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   import Explorer.Chain.SmartContract.Proxy.Models.Implementation, only: [proxy_implementations_association: 0]
 
   alias Explorer.{Chain, PagingOptions, Repo}
-  alias Explorer.Chain.{Address, Block, Hash, Token}
+  alias Explorer.Chain.{Address, Block, Hash, SmartContract, Token}
   alias Explorer.Chain.Address.TokenBalance
   alias Explorer.Chain.Cache.BackgroundMigrations
   alias Explorer.Utility.MissingBalanceOfToken
@@ -78,6 +78,8 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
 
   {:ok, burn_address_hash} = Chain.string_to_address_hash(burn_address_hash_string())
   @burn_address_hash burn_address_hash
+
+  @fungible_token_types ~w(ERC-20 ERC-8056)
 
   @doc """
   Builds an `Ecto.Query` to fetch the token holders from the given token contract address hash.
@@ -354,16 +356,155 @@ defmodule Explorer.Chain.Address.CurrentTokenBalance do
   @doc """
   Builds an `t:Ecto.Query.t/0` to fetch addresses that hold the token.
 
-  Token holders cannot be the burn address (#{@burn_address_hash}) and must have a non-zero value or be an ERC-7984 token.
+  Token holders must have a non-zero value or be an ERC-7984 token. The burn
+  address (#{@burn_address_hash}) is listed only for fungible tokens
+  (#{Enum.join(@fungible_token_types, ", ")}), where its balance is supply sent
+  there without lowering `totalSupply()`. It is still not counted in
+  `tokens.holder_count`, see `token_holders_query_for_count/1`.
   """
   def token_holders_query(token_contract_address_hash) do
     from(
       tb in __MODULE__,
       where: tb.token_contract_address_hash == ^token_contract_address_hash,
-      where: tb.address_hash != ^@burn_address_hash,
+      where: tb.address_hash != ^@burn_address_hash or tb.token_type in ^@fungible_token_types,
       where: tb.value > 0 or tb.token_type == "ERC-7984"
     )
   end
+
+  @typedoc """
+  Current balance row of a burn address, see `burn_address_balances/2`. The
+  balance at `block_number` is fetched only when `value_fetched_at` is set: a
+  transfer in a newer block moves `block_number` forward and clears
+  `value_fetched_at`, but keeps the previous `value` until the new balance is
+  read. `value` is `nil` while no balance was ever fetched; `retries_count` and
+  `refetch_after` then describe the backoff of failed fetches.
+  """
+  @type burn_address_balance :: %{
+          value: Decimal.t() | nil,
+          value_fetched_at: DateTime.t() | nil,
+          block_number: Block.block_number(),
+          retries_count: non_neg_integer() | nil,
+          refetch_after: DateTime.t() | nil
+        }
+
+  @doc """
+  Returns the current balance rows of `token_contract_address_hash` for the burn
+  addresses (#{Enum.join(SmartContract.burn_address_hash_strings(), ", ")}),
+  keyed by address hash. Addresses without a row are absent from the map; rows
+  whose balance is not fetched yet have a `nil` value.
+  """
+  @spec burn_address_balances(Hash.Address.t(), [Chain.api?()]) :: %{Hash.Address.t() => burn_address_balance()}
+  def burn_address_balances(token_contract_address_hash, options \\ []) do
+    burn_address_hashes = SmartContract.burn_address_hashes()
+
+    query =
+      from(
+        ctb in __MODULE__,
+        where: ctb.token_contract_address_hash == ^token_contract_address_hash,
+        where: ctb.address_hash in ^burn_address_hashes,
+        where: is_nil(ctb.token_id),
+        select:
+          {ctb.address_hash,
+           %{
+             value: ctb.value,
+             value_fetched_at: ctb.value_fetched_at,
+             block_number: ctb.block_number,
+             retries_count: ctb.retries_count,
+             refetch_after: ctb.refetch_after
+           }}
+      )
+
+    query
+    |> Chain.select_repo(options).all()
+    |> Map.new()
+  end
+
+  @doc """
+  Records failed backfill reads of current token balances: inserts the missing
+  rows as unfetched balances with the given `retries_count` and `refetch_after`,
+  and updates those two fields on rows that were never fetched (`value` and
+  `value_fetched_at` both `nil`).
+
+  A row that has a value, fetched before or meanwhile, is left unchanged, and so
+  is the retry state of a newer attempt: an update must raise `retries_count`,
+  or keep it and move `refetch_after` later.
+
+  ## Parameters
+  - `params`: maps with `address_hash` and `token_contract_address_hash` (hash
+    structs or hex strings), `token_type`, `block_number`, `retries_count` and
+    `refetch_after`, for balances without a token id.
+
+  ## Returns
+  - the number of inserted or updated rows.
+  """
+  @spec record_backfill_failures([map()]) :: non_neg_integer()
+  def record_backfill_failures([]), do: 0
+
+  def record_backfill_failures(params) do
+    now = DateTime.utc_now()
+
+    rows =
+      params
+      |> Enum.map(fn param ->
+        {:ok, address_hash} = Hash.Address.cast(param.address_hash)
+        {:ok, token_contract_address_hash} = Hash.Address.cast(param.token_contract_address_hash)
+
+        %{
+          address_hash: address_hash,
+          token_contract_address_hash: token_contract_address_hash,
+          token_type: param.token_type,
+          block_number: param.block_number
+        }
+        |> Map.merge(%{
+          token_id: nil,
+          value: nil,
+          value_fetched_at: nil,
+          retries_count: param.retries_count,
+          refetch_after: param.refetch_after,
+          inserted_at: now,
+          updated_at: now
+        })
+      end)
+      |> Enum.uniq_by(&{&1.address_hash, &1.token_contract_address_hash})
+      # Enforce CurrentTokenBalance ShareLocks order (see docs: sharelocks.md)
+      |> Enum.sort_by(&{&1.token_contract_address_hash, &1.token_id, &1.address_hash})
+
+    on_conflict =
+      from(
+        ctb in __MODULE__,
+        update: [
+          set: [
+            retries_count: fragment("EXCLUDED.retries_count"),
+            refetch_after: fragment("EXCLUDED.refetch_after"),
+            updated_at: fragment("EXCLUDED.updated_at")
+          ]
+        ],
+        where:
+          is_nil(ctb.value) and is_nil(ctb.value_fetched_at) and
+            fragment(
+              "(? IS NULL OR EXCLUDED.retries_count > ? OR (EXCLUDED.retries_count = ? AND EXCLUDED.refetch_after > ?))",
+              ctb.retries_count,
+              ctb.retries_count,
+              ctb.retries_count,
+              ctb.refetch_after
+            )
+      )
+
+    {count, _} =
+      Repo.insert_all(__MODULE__, rows,
+        on_conflict: on_conflict,
+        conflict_target: {:unsafe_fragment, ~s<(address_hash, token_contract_address_hash, COALESCE(token_id, -1))>}
+      )
+
+    count
+  end
+
+  @doc """
+  Returns the token types whose burn address balance is indexed and reported as
+  burned supply.
+  """
+  @spec fungible_token_types() :: [String.t()]
+  def fungible_token_types, do: @fungible_token_types
 
   @spec count_token_holders_from_token_hash(Hash.Address.t()) :: non_neg_integer()
   def count_token_holders_from_token_hash(contract_address_hash) do

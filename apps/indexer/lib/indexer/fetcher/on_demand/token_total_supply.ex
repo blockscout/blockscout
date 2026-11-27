@@ -126,10 +126,14 @@ defmodule Indexer.Fetcher.OnDemand.TokenTotalSupply do
   ## Implementation
 
   @spec do_fetch(Token.t()) :: :ok | :error | {:error, Ecto.Changeset.t()}
+  # The call is pinned to the latest indexed block, and that block is stored with
+  # the result, so `total_supply` can be compared with indexed balances
   defp do_fetch(%Token{contract_address_hash: contract_address_hash} = token) do
-    case MetadataRetriever.get_total_supply_of(to_string(contract_address_hash)) do
+    block_number = BlockNumber.get_max()
+
+    case MetadataRetriever.get_total_supply_of(to_string(contract_address_hash), block_number) do
       %{total_supply: _} = token_params ->
-        case Token.update(token, token_params) do
+        case Token.update(token, Map.put(token_params, :total_supply_updated_at_block, block_number)) do
           {:ok, updated_token} ->
             Publisher.broadcast(%{token_total_supply: [updated_token]}, :on_demand)
             :ok

@@ -6,6 +6,10 @@ defmodule Indexer.Transform.AddressTokenBalances do
 
   import Explorer.Chain.SmartContract, only: [burn_address_hash_string: 0]
 
+  alias Explorer.Chain.Address.CurrentTokenBalance
+
+  @fungible_token_types CurrentTokenBalance.fungible_token_types()
+
   def params_set(%{} = import_options) do
     Enum.reduce(import_options, MapSet.new(), &reducer/2)
   end
@@ -34,7 +38,13 @@ defmodule Indexer.Transform.AddressTokenBalances do
     end)
   end
 
-  defp add_token_balance_address(map_set, unquote(burn_address_hash_string()), _, _, _, _), do: map_set
+  # The zero address balance of a fungible token is the amount sent there without
+  # lowering `totalSupply()`, so it is indexed to report burned supply. NFT
+  # contracts usually revert on `balanceOf(0x0)`, so the zero address is skipped
+  # for them.
+  defp add_token_balance_address(map_set, unquote(burn_address_hash_string()), _, _, token_type, _)
+       when token_type not in @fungible_token_types,
+       do: map_set
 
   defp add_token_balance_address(map_set, address, token_contract_address, token_id, token_type, block_number) do
     MapSet.put(map_set, %{
