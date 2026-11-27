@@ -133,6 +133,14 @@ jobs:
                   continue;
                 }
 
+                // New commits get their own `license/cla` status; leave them to the next run.
+                const { data: currentPr } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+
+                if (currentPr.head.sha !== pr.head.sha) {
+                  core.info(`#${number}: head moved to ${currentPr.head.sha}, not closing.`);
+                  continue;
+                }
+
                 // Narrows (but cannot eliminate) the window in which the author signs
                 // the CLA between the first status read and the close request.
                 const latestStatus = await claStatus(pr.head.sha);
