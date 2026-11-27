@@ -4,6 +4,9 @@ defmodule Indexer.Fetcher.InternalTransaction do
   Fetches and indexes `t:Explorer.Chain.InternalTransaction.t/0`.
 
   See `async_fetch/1` for details on configuring limits.
+
+  When the internal transactions storage is disabled (see `Explorer.Chain.InternalTransaction.storage_disabled?/0`),
+  traces are fetched and processed in the same way, but only the internal transactions creating contracts are stored.
   """
 
   use Indexer.Fetcher, restart: :permanent

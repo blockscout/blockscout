@@ -27,7 +27,7 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
   alias Explorer.Migrator.DeleteZeroValueInternalTransactions
   alias Explorer.Prometheus.Instrumenter
   alias Explorer.Repo, as: ExplorerRepo
-  alias Explorer.Utility.{AddressIdToAddressHash, MissingBlockRange}
+  alias Explorer.Utility.{AddressIdToAddressHash, InternalTransactionsAddressPlaceholder, MissingBlockRange}
 
   import Ecto.Query
 
@@ -168,6 +168,18 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
         :internal_transactions
       )
     end)
+    |> Multi.run(:internal_transactions_address_placeholders, fn repo,
+                                                                 %{
+                                                                   valid_internal_transactions:
+                                                                     valid_internal_transactions
+                                                                 } ->
+      Instrumenter.block_import_stage_runner(
+        fn -> maybe_insert_address_placeholders(repo, valid_internal_transactions, insert_options) end,
+        :block_pending,
+        :internal_transactions,
+        :internal_transactions_address_placeholders
+      )
+    end)
     |> Multi.run(:update_transactions, fn repo,
                                           %{
                                             valid_internal_transactions: valid_internal_transactions,
@@ -269,6 +281,8 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       # Reject zero-value internal transactions only here, right before the DB write,
       # so it never affects block-completeness validation (see `prepare_data/1`).
       |> maybe_reject_zero_value()
+      # Same for the internal transactions storage switch: everything else in `run/3` still uses all of them.
+      |> maybe_keep_only_contract_creations()
       |> Enum.map(fn internal_transaction ->
         Map.put(internal_transaction, :trace_address, nil)
       end)
@@ -590,6 +604,42 @@ defmodule Explorer.Chain.Import.Runner.InternalTransactions do
       end)
     else
       _ -> internal_transactions
+    end
+  end
+
+  # With the storage disabled, only the internal transactions creating contracts are stored: they are the
+  # source of the creator and of the creation bytecode of contracts deployed by other contracts. The first
+  # trace (index 0) is skipped, since a contract creation transaction already holds the created contract
+  # address and the creation input.
+  defp maybe_keep_only_contract_creations(internal_transactions) do
+    if InternalTransaction.storage_disabled?() do
+      Enum.filter(internal_transactions, &contract_creation?/1)
+    else
+      internal_transactions
+    end
+  end
+
+  # `created_contract_address_id` is set only for successful creations: the changeset drops it for failed ones,
+  # and `Indexer.Fetcher.InternalTransaction` drops it when a parent call reverted.
+  defp contract_creation?(%{index: index, created_contract_address_id: created_contract_address_id})
+       when is_integer(index) and index > 0 and not is_nil(created_contract_address_id),
+       do: true
+
+  defp contract_creation?(_internal_transaction), do: false
+
+  # With the storage disabled, the internal transactions that are not stored are fetched on demand from the node
+  # by `Indexer.Fetcher.OnDemand.InternalTransaction`. To serve an address, it traces the blocks that these
+  # placeholders point at.
+  defp maybe_insert_address_placeholders(repo, valid_internal_transactions, %{timeout: timeout}) do
+    if InternalTransaction.storage_disabled?() do
+      count =
+        valid_internal_transactions
+        |> Enum.reject(&contract_creation?/1)
+        |> then(&InternalTransactionsAddressPlaceholder.insert_for_internal_transactions(repo, &1, timeout: timeout))
+
+      {:ok, count}
+    else
+      {:ok, 0}
     end
   end
 

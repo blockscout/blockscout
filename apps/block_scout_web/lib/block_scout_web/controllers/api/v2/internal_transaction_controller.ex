@@ -12,7 +12,8 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
     only: [
       paginate_list: 3,
       paging_options: 1,
-      fetch_internal_transactions: 1
+      fetch_internal_transactions: 1,
+      internal_transactions_next_page_params_from_block: 2
     ]
 
   action_fallback(BlockScoutWeb.API.V2.FallbackController)
@@ -65,9 +66,14 @@ defmodule BlockScoutWeb.API.V2.InternalTransactionController do
         })
 
       {internal_transactions, next_page_params} =
-        options
-        |> fetch_internal_transactions()
-        |> paginate_list(params, options[:paging_options])
+        case fetch_internal_transactions(options) do
+          {:ok, internal_transactions} ->
+            paginate_list(internal_transactions, params, options[:paging_options])
+
+          # fetched from the node, and the request stopped before `next_block_number`: the next page goes on with it
+          {:incomplete, internal_transactions, next_block_number} ->
+            {internal_transactions, internal_transactions_next_page_params_from_block(params, next_block_number)}
+        end
 
       pending_status? =
         pending_status?(internal_transactions, transaction_hash, options[:paging_options])
