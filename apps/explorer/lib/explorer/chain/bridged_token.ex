@@ -939,7 +939,7 @@ defmodule Explorer.Chain.BridgedToken do
 
     base_query_with_paging =
       base_query
-      |> SortingHelper.page_with_sorting(paging_options, sorting, Token.default_sorting())
+      |> SortingHelper.page_with_sorting(paging_options, sorting, Token.default_sorting(sorting))
       |> limit(^paging_options.page_size)
 
     query =

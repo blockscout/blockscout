@@ -132,6 +132,8 @@ for migrator <- [
       Explorer.Migrator.HeavyDbIndexOperation.CreateSmartContractAdditionalSourcesUniqueIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTokenInstancesTokenIdIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNamePartialFtsIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNoMarketDataHolderCountNameHashIndex,
+      Explorer.Migrator.HeavyDbIndexOperation.CreateTokensMarketDataPartialIndex,
       Explorer.Migrator.HeavyDbIndexOperation.CreateTransactionsCreatedContractAddressHashWPendingIndex,
       Explorer.Migrator.HeavyDbIndexOperation.DropTransactionsCreatedContractAddressHashWithPendingIndexA,
       Explorer.Migrator.HeavyDbIndexOperation.UpdateInternalTransactionsPrimaryKey,

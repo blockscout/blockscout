@@ -418,15 +418,11 @@ defmodule Explorer.Application do
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdMcapFiatHolderNameIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensNoMarketDataHolderCountNameHashIndex,
           :indexer
         ),
         configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdFiatHolderNameIndex,
-          :indexer
-        ),
-        configure_mode_dependent_process(
-          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensOrdHolderNameIndex,
+          Explorer.Migrator.HeavyDbIndexOperation.CreateTokensMarketDataPartialIndex,
           :indexer
         ),
         configure_mode_dependent_process(

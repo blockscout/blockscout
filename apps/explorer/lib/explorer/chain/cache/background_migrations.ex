@@ -65,9 +65,8 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     key: :heavy_indexes_drop_token_instances_token_id_index_finished,
     key: :heavy_indexes_drop_internal_transactions_created_contract_address_hash_partial_index_finished,
     key: :heavy_indexes_create_tokens_name_partial_fts_index_finished,
-    key: :heavy_indexes_create_idx_tokens_ord_mcap_fiat_holder_name_finished,
-    key: :heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished,
-    key: :heavy_indexes_create_idx_tokens_ord_holder_name_finished,
+    key: :heavy_indexes_create_tokens_no_market_data_holder_count_name_hash_index_finished,
+    key: :heavy_indexes_create_tokens_market_data_partial_index_finished,
     key: :heavy_indexes_update_internal_transactions_primary_key_finished,
     key: :heavy_indexes_update_logs_primary_key_finished,
     key: :empty_internal_transactions_data_finished,
@@ -126,10 +125,9 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     CreateLogsDepositsWithdrawalsIndexWithUpdatedPk,
     CreateLogsFirstTopicIdIndex,
     CreateSmartContractsLanguageIndex,
+    CreateTokensMarketDataPartialIndex,
     CreateTokensNamePartialFtsIndex,
-    CreateTokensOrdFiatHolderNameIndex,
-    CreateTokensOrdHolderNameIndex,
-    CreateTokensOrdMcapFiatHolderNameIndex,
+    CreateTokensNoMarketDataHolderCountNameHashIndex,
     CreateTransactionsCreatedContractAddressHashWPendingIndex,
     CreateTransactionsTokenTransferMethodIdOrderedIndex,
     DropInternalTransactionsCreatedContractAddressHashPartialIndex,
@@ -443,24 +441,17 @@ defmodule Explorer.Chain.Cache.BackgroundMigrations do
     )
   end
 
-  defp handle_fallback(:heavy_indexes_create_idx_tokens_ord_mcap_fiat_holder_name_finished) do
+  defp handle_fallback(:heavy_indexes_create_tokens_no_market_data_holder_count_name_hash_index_finished) do
     set_and_return_migration_status(
-      CreateTokensOrdMcapFiatHolderNameIndex,
-      &set_heavy_indexes_create_idx_tokens_ord_mcap_fiat_holder_name_finished/1
+      CreateTokensNoMarketDataHolderCountNameHashIndex,
+      &set_heavy_indexes_create_tokens_no_market_data_holder_count_name_hash_index_finished/1
     )
   end
 
-  defp handle_fallback(:heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished) do
+  defp handle_fallback(:heavy_indexes_create_tokens_market_data_partial_index_finished) do
     set_and_return_migration_status(
-      CreateTokensOrdFiatHolderNameIndex,
-      &set_heavy_indexes_create_idx_tokens_ord_fiat_holder_name_finished/1
-    )
-  end
-
-  defp handle_fallback(:heavy_indexes_create_idx_tokens_ord_holder_name_finished) do
-    set_and_return_migration_status(
-      CreateTokensOrdHolderNameIndex,
-      &set_heavy_indexes_create_idx_tokens_ord_holder_name_finished/1
+      CreateTokensMarketDataPartialIndex,
+      &set_heavy_indexes_create_tokens_market_data_partial_index_finished/1
     )
   end
 
