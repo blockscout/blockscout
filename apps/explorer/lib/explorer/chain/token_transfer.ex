@@ -143,7 +143,6 @@ defmodule Explorer.Chain.TokenTransfer do
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   use Utils.RuntimeEnvHelper,
-    chain_identity: [:explorer, :chain_identity],
     chain_type: [:explorer, :chain_type],
     arc_native_token_address: [:indexer, [:arc, :arc_native_token_address]],
     arc_native_token_system_address: [:indexer, [:arc, :arc_native_token_system_address]]
@@ -154,7 +153,7 @@ defmodule Explorer.Chain.TokenTransfer do
   import Explorer.Chain.Address.Reputation, only: [reputation_association: 0]
 
   alias Explorer.Chain
-  alias Explorer.Chain.{DenormalizationHelper, Hash, Log, Token, TokenTransfer}
+  alias Explorer.Chain.{DenormalizationHelper, Hash, Log, Token, TokenTransfer, Transaction}
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Explorer.Helper, as: ExplorerHelper
   alias Explorer.{PagingOptions, QueryHelper, Repo}
@@ -768,8 +767,8 @@ defmodule Explorer.Chain.TokenTransfer do
             @arc_native_coin_burned_event
           ])
 
-        # An address match gives `NULL` for logs that keep the address in the
-        # other field, and `NOT` would keep it `NULL` and drop such logs, so the
+        # `address_id` is nullable, an address match gives `NULL` for a log
+        # without it, and `NOT` would keep it `NULL` and drop such a log, so the
         # matches are coalesced to `false`.
         arc_native_token_filter =
           dynamic(coalesce(^Log.address_match_dynamic(arc_native_token_address()), false))
@@ -787,37 +786,30 @@ defmodule Explorer.Chain.TokenTransfer do
     end
   end
 
-  # Builds a query to check if a token transfer exists for a given log. Handles
-  # chain-specific logic for transaction_hash comparison.
+  # Builds a query to check if a token transfer exists for a given log.
   #
-  # For Celo epoch blocks, `transaction_hash` can be `nil` in both `Log` and
-  # `TokenTransfer`. A direct SQL comparison `NULL = NULL` evaluates to
-  # `UNKNOWN` (effectively false in this context). Therefore, we need a
-  # NULL-safe comparison for `transaction_hash`. Additionally, `block_hash` is
-  # included in the join condition to uniquely identify the token transfer, as
-  # `transaction_hash` (when nil) and `log_index` alone are insufficient.
+  # Logs are stored for consensus blocks only, so the token transfer is matched
+  # by `block_number`, `log_index` and the position of its transaction in the
+  # block: logs of different transactions can share an index within a block
+  # (see `Explorer.Chain.Log.Schema`), so the index alone doesn't identify the
+  # log. Celo epoch logs and their token transfers are not linked to a
+  # transaction.
+  # Token transfers of the blocks which lost consensus are kept, so only the
+  # consensus ones are matched (in both denormalization states, see
+  # `only_consensus_transfers_query/0`): otherwise a token transfer of a
+  # replaced block could be taken for the one of the consensus block at the
+  # same height.
   @spec token_transfer_exists_query() :: Ecto.Query.t()
   defp token_transfer_exists_query do
-    query =
-      from(tt in TokenTransfer,
-        where: tt.block_hash == parent_as(:log).block_hash,
-        where: tt.log_index == parent_as(:log).index
-      )
-
-    chain_identity()
-    |> case do
-      {:optimism, :celo} ->
-        query
-        |> where(
-          [tt],
-          tt.transaction_hash == parent_as(:log).transaction_hash or
-            (is_nil(parent_as(:log).transaction_hash) and is_nil(tt.transaction_hash))
-        )
-
-      _ ->
-        query
-        |> where([tt], tt.transaction_hash == parent_as(:log).transaction_hash)
-    end
+    from(tt in only_consensus_transfers_query(),
+      left_join: t in Transaction,
+      on: t.hash == tt.transaction_hash,
+      where: tt.block_number == parent_as(:log).block_number,
+      where: tt.log_index == parent_as(:log).index,
+      where:
+        t.index == parent_as(:log).transaction_index or
+          (is_nil(tt.transaction_hash) and is_nil(parent_as(:log).transaction_index))
+    )
   end
 
   @doc """

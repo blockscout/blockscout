@@ -390,10 +390,11 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
         log_from_node =
           build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 0
+            deposit_index: 0,
+            transaction: build(:transaction)
           )
 
-        deposit_signature = log_from_node.first_topic
+        deposit_signature = Deposit.event_signature()
         log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
         log_from_node_transaction_hash = log_from_node.transaction.hash
 
@@ -551,7 +552,7 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
             block: transaction_with_missing_logs.block
           )
 
-        deposit_signature = log_from_node.first_topic
+        deposit_signature = Deposit.event_signature()
         log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
         log_from_node_transaction_hash = log_from_node.transaction.hash
 
@@ -637,10 +638,11 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
         log_from_node =
           build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 0
+            deposit_index: 0,
+            transaction: build(:transaction)
           )
 
-        deposit_signature = log_from_node.first_topic
+        deposit_signature = Deposit.event_signature()
         log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
         log_from_node_transaction_hash = log_from_node.transaction.hash
 
@@ -787,10 +789,11 @@ defmodule Indexer.Fetcher.Beacon.DepositTest do
         log_from_node =
           build(:beacon_deposit_log,
             address: deposit_contract_address,
-            deposit_index: 1
+            deposit_index: 1,
+            transaction: build(:transaction)
           )
 
-        deposit_signature = log_from_node.first_topic
+        deposit_signature = Deposit.event_signature()
         log_from_node_block_number_quantity = EthereumJSONRPC.integer_to_quantity(log_from_node.block_number)
         log_from_node_transaction_hash = log_from_node.transaction.hash
 

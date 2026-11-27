@@ -12,9 +12,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.MessagesTest do
 
     describe "logs_for_missed_messages_from_l2/4" do
       test "restores the fields of logs stored in the optimized format" do
-        # logs without `first_topic` are found by `first_topic_id` only once the migration is started
-        set_fill_logs_optimized_fields_migration_started()
-
         transaction = :transaction |> insert() |> with_block()
         %Address{hash: arbsys_contract} = arbsys = insert(:address)
         {:ok, first_topic} = Hash.Full.cast(ArbitrumEvents.l2_to_l1())
@@ -34,7 +31,18 @@ defmodule Explorer.Chain.Arbitrum.Reader.Indexer.MessagesTest do
           compressed_data: data
         )
 
-        assert [%Log{address_hash: ^arbsys_contract, first_topic: ^first_topic, data: ^data}] =
+        transaction_hash = transaction.hash
+        block_hash = transaction.block_hash
+
+        assert [
+                 %Log{
+                   address_hash: ^arbsys_contract,
+                   first_topic: ^first_topic,
+                   data: ^data,
+                   transaction_hash: ^transaction_hash,
+                   block_hash: ^block_hash
+                 }
+               ] =
                  Messages.logs_for_missed_messages_from_l2(
                    transaction.block_number,
                    transaction.block_number,

@@ -44,7 +44,7 @@ defmodule Explorer.Chain.Token.Erc404 do
   require Logger
 
   alias Explorer.Chain.Address.{CurrentTokenBalance, TokenBalance}
-  alias Explorer.Chain.{Hash, Log, Token, TokenTransfer}
+  alias Explorer.Chain.{Hash, Log, Token, TokenTransfer, Transaction}
   alias Explorer.Repo
 
   @erc404 "ERC-404"
@@ -113,15 +113,19 @@ defmodule Explorer.Chain.Token.Erc404 do
       where: ^Log.address_match_dynamic(contract_address_hash),
       where: ^Log.topic_filter_dynamic(:first_topic, dedicated_events()),
       where: l.block_number >= ^from_block_number,
-      # a block keeps only one log with the given index, which is enough to tell
-      # whether the log has been cataloged; the block hash rules out the transfers
-      # of a reorged block with the same number
+      # logs are stored for consensus blocks only, so the log is cataloged when a
+      # consensus token transfer has its block number, index and transaction
+      # position: logs of different transactions can share an index within a
+      # block (see `Explorer.Chain.Log.Schema`), and the transfers of a reorged
+      # block with the same number are kept
       where:
         not exists(
-          from(tt in TokenTransfer,
+          from(tt in TokenTransfer.only_consensus_transfers_query(),
+            join: t in Transaction,
+            on: t.hash == tt.transaction_hash,
             where: tt.block_number == parent_as(:log).block_number,
-            where: tt.block_hash == parent_as(:log).block_hash,
-            where: tt.log_index == parent_as(:log).index
+            where: tt.log_index == parent_as(:log).index,
+            where: t.index == parent_as(:log).transaction_index
           )
         ),
       distinct: true,

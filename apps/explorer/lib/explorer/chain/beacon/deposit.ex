@@ -251,8 +251,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
   - A list of deposit event logs with the following fields:
     - Log fields: `first_topic`, `second_topic`, `third_topic`,
       `fourth_topic`, `data`, `index`, `block_number`, `block_hash`,
-      `transaction_hash`. `data` is filled from `compressed_data` for logs
-      stored in the compressed format.
+      `transaction_hash`. `data` is filled from `compressed_data`.
     - Transaction fields: `from_address_hash`, `block_timestamp`.
   """
   @spec get_logs_with_deposits(
@@ -265,7 +264,7 @@ defmodule Explorer.Chain.Beacon.Deposit do
             first_topic: Hash.Full.t(),
             first_topic_id: integer(),
             data: Data.t(),
-            compressed_data: Data.t() | nil,
+            compressed_data: Data.t(),
             index: non_neg_integer(),
             block_number: non_neg_integer(),
             block_hash: Hash.Full.t(),
@@ -275,37 +274,24 @@ defmodule Explorer.Chain.Beacon.Deposit do
           }
         ]
   def get_logs_with_deposits(deposit_contract_address_hash, log_block_number, log_index, limit) do
-    query =
-      Log.address_match_union_query(
-        deposit_contract_address_hash,
-        fn address_match_dynamic ->
-          Log
-          |> Log.join_transaction_query()
-          |> where(^address_match_dynamic)
-          |> where(as(:transaction).block_consensus == true)
-          |> Log.filter_by_topic_query(:first_topic, @deposit_event_signature)
-          |> where([log], {log.block_number, log.index} > {^log_block_number, ^log_index})
-          |> select([log], %{
-            first_topic: log.first_topic,
-            first_topic_id: log.first_topic_id,
-            data: log.data,
-            compressed_data: log.compressed_data,
-            index: log.index,
-            block_number: log.block_number,
-            block_hash: as(:transaction).block_hash,
-            transaction_hash: as(:transaction).hash,
-            from_address_hash: as(:transaction).from_address_hash,
-            block_timestamp: as(:transaction).block_timestamp
-          })
-        end,
-        fn query ->
-          query
-          |> order_by([log], asc: log.block_number, asc: log.index)
-          |> limit(^limit)
-        end
-      )
-
-    query
+    Log
+    |> Log.join_transaction_query()
+    |> Log.address_match_query(deposit_contract_address_hash)
+    |> where(as(:transaction).block_consensus == true)
+    |> Log.filter_by_topic_query(:first_topic, @deposit_event_signature)
+    |> where([log], {log.block_number, log.index} > {^log_block_number, ^log_index})
+    |> select([log], %{
+      first_topic_id: log.first_topic_id,
+      compressed_data: log.compressed_data,
+      index: log.index,
+      block_number: log.block_number,
+      block_hash: as(:transaction).block_hash,
+      transaction_hash: as(:transaction).hash,
+      from_address_hash: as(:transaction).from_address_hash,
+      block_timestamp: as(:transaction).block_timestamp
+    })
+    |> order_by([log], asc: log.block_number, asc: log.index)
+    |> limit(^limit)
     |> Repo.all()
     |> Log.prepare_data()
     |> Log.prepare_first_topic()

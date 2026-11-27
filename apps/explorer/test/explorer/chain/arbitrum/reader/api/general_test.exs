@@ -9,9 +9,6 @@ defmodule Explorer.Chain.Arbitrum.Reader.API.GeneralTest do
 
   describe "transaction_to_logs_by_topic0/2" do
     test "restores the fields of logs stored in the optimized format" do
-      # logs without `first_topic` are found by `first_topic_id` only once the migration is started
-      set_fill_logs_optimized_fields_migration_started()
-
       transaction = :transaction |> insert() |> with_block()
       %Address{hash: address_hash} = address = insert(:address)
       {:ok, first_topic} = Hash.Full.cast(ArbitrumEvents.l2_to_l1())

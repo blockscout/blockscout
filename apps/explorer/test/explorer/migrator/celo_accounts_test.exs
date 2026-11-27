@@ -67,9 +67,6 @@ defmodule Explorer.Migrator.CeloAccountsTest do
       end
 
       test "processes logs stored in the optimized format" do
-        # logs without `first_topic` are found by `first_topic_id` only once the migration is started
-        set_fill_logs_optimized_fields_migration_started()
-
         address_hash = Factory.address_hash()
         name_data = "0x" <> Base.encode16(ABI.encode("(string)", [{"validator"}]), case: :lower)
 

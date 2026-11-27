@@ -15,10 +15,6 @@ defmodule Indexer.Fetcher.Celo.EpochBlockOperations.ValidatorAndGroupPaymentsPos
 
     describe "fetch/1" do
       test "aborts when the block has `ValidatorEpochPaymentDistributed` logs stored in the optimized format" do
-        # logs without `address_hash` and `first_topic` are found by `address_id`
-        # and `first_topic_id` only once the migration is started
-        set_fill_logs_optimized_fields_migration_started()
-
         epoch_manager = insert(:address)
 
         old_env = Application.get_env(:explorer, :celo)

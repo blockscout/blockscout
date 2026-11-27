@@ -1116,77 +1116,6 @@ defmodule Explorer.Etherscan.LogsTest do
       assert found_log.index == consensus_log.index
     end
 
-    test "with address returns logs matched by address_id and by the legacy address_hash while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
-      contract_address = insert(:contract_address)
-
-      transaction =
-        %Transaction{block: block} =
-        :transaction
-        |> insert(to_address: contract_address)
-        |> with_block()
-
-      insert_log = fn attrs ->
-        insert(:log, attrs ++ [transaction: transaction, block: block, block_number: block.number])
-      end
-
-      # already migrated log, matched by `address_id`
-      insert_log.(address: contract_address, address_hash: nil, index: 1)
-      # not yet migrated log, matched by the legacy `address_hash`
-      insert_log.(address: contract_address, address_mapping: nil, index: 2)
-      # log re-imported before it is migrated: both fields match the address,
-      # and the log has to be returned once
-      insert_log.(address: contract_address, index: 3)
-      insert_log.(address: insert(:address), address_mapping: nil, index: 4)
-
-      filter = %{from_block: block.number, to_block: block.number, address_hash: contract_address.hash}
-
-      found_logs = Logs.list_logs(filter)
-
-      assert Enum.map(found_logs, & &1.index) == [1, 2, 3]
-      assert Enum.all?(found_logs, &(&1.address_hash == contract_address.hash))
-
-      next_page_params = %{block_number: block.number, log_index: 2}
-
-      assert filter |> Logs.list_logs(next_page_params) |> Enum.map(& &1.index) == [3]
-    end
-
-    test "with address and multiple values for a topic{x} while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
-      contract_address = insert(:contract_address)
-
-      transaction =
-        %Transaction{block: block} =
-        :transaction
-        |> insert(to_address: contract_address)
-        |> with_block()
-
-      insert_log = fn attrs ->
-        insert(:log, attrs ++ [transaction: transaction, block: block, block_number: block.number])
-      end
-
-      first_topic_1 = topic(@first_topic_hex_string_1)
-      first_topic_2 = topic(@first_topic_hex_string_2)
-      first_topic_3 = topic(@first_topic_hex_string_3)
-
-      # migrated and not yet migrated logs with each of the two requested topics, and one more topic
-      insert_log.(address: contract_address, address_hash: nil, first_topic: first_topic_1, index: 1)
-      insert_log.(address: contract_address, address_mapping: nil, first_topic: first_topic_2, index: 2)
-      insert_log.(address: contract_address, address_hash: nil, first_topic: first_topic_3, index: 3)
-      insert_log.(address: contract_address, address_mapping: nil, first_topic: first_topic_1, index: 4)
-
-      filter = %{
-        from_block: block.number,
-        to_block: block.number,
-        address_hash: contract_address.hash,
-        first_topic: [first_topic_1, first_topic_2]
-      }
-
-      assert filter |> Logs.list_logs() |> Enum.map(& &1.index) == [1, 2, 4]
-    end
-
     test "with address skips a full page of non-consensus logs and still returns later consensus logs" do
       contract_address = insert(:contract_address)
 
@@ -1242,8 +1171,7 @@ defmodule Explorer.Etherscan.LogsTest do
       assert found_log.index == consensus_log.index
     end
 
-    test "with address and topic{x}s while the optimized fields migration is in progress matches logs in both storage formats" do
-      set_fill_logs_optimized_fields_migration_started()
+    test "with address and topic{x}s matches string and hash topics" do
       set_transactions_denormalization_finished()
 
       contract_address = insert(:contract_address)
@@ -1275,22 +1203,9 @@ defmodule Explorer.Etherscan.LogsTest do
         )
       end
 
-      # migrated logs: `address_id`, `first_topic_id` and trimmed topics
-      insert_log.(address_hash: nil, index: 1)
-      insert_log.(address_hash: nil, third_topic: other_third_topic, index: 4)
-      # logs not migrated yet: `address_hash`, `first_topic` and full 32-byte topics
-      insert_log.(address_mapping: nil, index: 2)
-      insert_log.(address_mapping: nil, third_topic: other_third_topic, index: 5)
-      # log re-imported before it is migrated: both address fields and both first topic fields
+      insert_log.(index: 1)
+      insert_log.(third_topic: other_third_topic, index: 2)
       insert_log.(index: 3)
-
-      Repo.query!("UPDATE logs SET first_topic = NULL WHERE block_number = $1 AND index IN (1, 4)", [block.number])
-
-      Repo.query!(
-        "UPDATE logs SET first_topic_id = NULL, third_topic = CASE WHEN index = 2 THEN $1::bytea ELSE $2::bytea END " <>
-          "WHERE block_number = $3 AND index IN (2, 5)",
-        [third_topic.bytes, other_third_topic.bytes, block.number]
-      )
 
       filter = %{
         from_block: block.number,
@@ -1302,15 +1217,15 @@ defmodule Explorer.Etherscan.LogsTest do
       }
 
       # topics come as strings from the `getLogs` and `eth_getLogs` filters
-      assert filter |> Logs.list_logs() |> Enum.map(& &1.index) == [1, 2, 3]
+      assert filter |> Logs.list_logs() |> Enum.map(& &1.index) == [1, 3]
 
       assert %{filter | first_topic: first_topic, third_topic: third_topic}
              |> Logs.list_logs()
-             |> Enum.map(& &1.index) == [1, 2, 3]
+             |> Enum.map(& &1.index) == [1, 3]
 
       assert %{filter | third_topic: [@third_topic_hex_string_1, @third_topic_hex_string_3]}
              |> Logs.list_logs()
-             |> Enum.map(& &1.index) == [1, 2, 3]
+             |> Enum.map(& &1.index) == [1, 3]
 
       found_logs = Logs.list_logs(filter)
 
@@ -1321,175 +1236,35 @@ defmodule Explorer.Etherscan.LogsTest do
       assert Enum.all?(found_logs, &(&1.block_number == block.number))
     end
 
-    test "with address and topic{x}s after the optimized fields migration has finished" do
-      set_fill_logs_optimized_fields_migration_finished()
-
+    test "with address skips a log whose transaction is now in another block" do
       contract_address = insert(:contract_address)
 
+      block = insert(:block)
+      lost_block = insert(:block, number: block.number - 1, consensus: false)
+
       transaction =
-        %Transaction{block: block} =
         :transaction
         |> insert(to_address: contract_address)
-        |> with_block()
+        |> with_block(block)
 
-      first_topic = topic(@first_topic_hex_string_1)
-
-      for {third_topic_hex_string, index} <- [{@third_topic_hex_string_1, 1}, {@third_topic_hex_string_2, 2}] do
+      # a log left from a block that lost consensus, whose transaction is
+      # included again in the next block, and the log of that block
+      for {log_block, index} <- [{lost_block, 1}, {block, 2}] do
         insert(:log,
           address: contract_address,
-          address_hash: nil,
           transaction: transaction,
-          block: block,
-          block_number: block.number,
-          first_topic: first_topic,
-          third_topic: topic(third_topic_hex_string),
+          block: log_block,
+          block_number: log_block.number,
           index: index
         )
       end
 
-      filter = %{
-        from_block: block.number,
-        to_block: block.number,
-        address_hash: contract_address.hash,
-        first_topic: @first_topic_hex_string_1,
-        third_topic: @third_topic_hex_string_1,
-        topic0_2_opr: "and"
-      }
+      filter = %{from_block: lost_block.number, to_block: block.number, address_hash: contract_address.hash}
 
-      assert [%{index: 1, address_hash: address_hash}] = Logs.list_logs(filter)
-      assert address_hash == contract_address.hash
+      assert [%{index: 2, block_number: block_number, block_hash: block_hash}] = Logs.list_logs(filter)
+      assert block_number == block.number
+      assert block_hash == block.hash
     end
-
-    test "with address skips a log not migrated yet whose transaction is now in another block" do
-      set_fill_logs_optimized_fields_migration_started()
-
-      assert_skips_log_of_lost_block()
-    end
-
-    test "with address skips a log whose transaction is now in another block before the optimized fields migration has started" do
-      set_fill_logs_optimized_fields_migration_not_started()
-
-      assert_skips_log_of_lost_block()
-    end
-
-    if Application.compile_env(:explorer, :chain_identity) == {:optimism, :celo} do
-      test "with address returns a re-imported log with address_id but no transaction_index while the optimized fields migration is in progress" do
-        set_fill_logs_optimized_fields_migration_started()
-
-        contract_address = insert(:contract_address)
-
-        transaction =
-          %Transaction{block: block} =
-          :transaction
-          |> insert(to_address: contract_address)
-          |> with_block()
-
-        insert(:log,
-          address: contract_address,
-          transaction: transaction,
-          block: block,
-          block_number: block.number,
-          index: 1
-        )
-
-        # the upsert for the old primary key fills `address_id` of a log inserted
-        # before the `transaction_index` column existed, but not `transaction_index`
-        Repo.query!("UPDATE logs SET transaction_index = NULL WHERE block_number = $1 AND index = 1", [block.number])
-
-        filter = %{from_block: block.number, to_block: block.number, address_hash: contract_address.hash}
-
-        assert [%{index: 1, transaction_hash: transaction_hash}] = Logs.list_logs(filter)
-        assert transaction_hash == transaction.hash
-      end
-    end
-
-    test "topic-only logs with a string topic{x} match full 32-byte topics while the optimized fields migration is in progress" do
-      set_fill_logs_optimized_fields_migration_started()
-
-      transaction =
-        %Transaction{block: block} =
-        :transaction
-        |> insert()
-        |> with_block()
-
-      third_topic = topic(@third_topic_hex_string_1)
-
-      for {attrs, index} <- [{[address_mapping: nil], 1}, {[address_hash: nil], 2}] do
-        insert(
-          :log,
-          attrs ++
-            [
-              transaction: transaction,
-              block: block,
-              block_number: block.number,
-              third_topic: third_topic,
-              index: index
-            ]
-        )
-      end
-
-      # the log not migrated yet keeps its full 32-byte topic
-      Repo.query!("UPDATE logs SET third_topic = $1 WHERE block_number = $2 AND index = 1", [
-        third_topic.bytes,
-        block.number
-      ])
-
-      filter = %{from_block: block.number, to_block: block.number, third_topic: @third_topic_hex_string_1}
-
-      assert filter |> Logs.list_logs() |> Enum.map(& &1.index) == [1, 2]
-    end
-  end
-
-  # A log left from a block that lost consensus, whose transaction is included
-  # again in the next block, and the log of that block.
-  defp assert_skips_log_of_lost_block do
-    contract_address = insert(:contract_address)
-
-    block = insert(:block)
-    lost_block = insert(:block, number: block.number - 1, consensus: false)
-
-    transaction =
-      :transaction
-      |> insert(to_address: contract_address)
-      |> with_block(block)
-
-    for {log_block, index} <- [{lost_block, 1}, {block, 2}] do
-      insert(:log,
-        address: contract_address,
-        address_mapping: nil,
-        transaction: transaction,
-        block: log_block,
-        block_number: log_block.number,
-        index: index
-      )
-    end
-
-    filter = %{from_block: lost_block.number, to_block: block.number, address_hash: contract_address.hash}
-
-    assert [%{index: 2, block_number: block_number, block_hash: block_hash}] = Logs.list_logs(filter)
-    assert block_number == block.number
-    assert block_hash == block.hash
-  end
-
-  defp set_fill_logs_optimized_fields_migration_finished do
-    set_fill_logs_optimized_fields_migration_status(true, true)
-  end
-
-  defp set_fill_logs_optimized_fields_migration_not_started do
-    set_fill_logs_optimized_fields_migration_status(false, false)
-  end
-
-  defp set_fill_logs_optimized_fields_migration_status(started?, finished?) do
-    initial_started? = BackgroundMigrations.get_create_logs_first_topic_id_index_finished()
-    initial_finished? = BackgroundMigrations.get_fill_logs_optimized_fields_finished()
-
-    BackgroundMigrations.set_create_logs_first_topic_id_index_finished(started?)
-    BackgroundMigrations.set_fill_logs_optimized_fields_finished(finished?)
-
-    on_exit(fn ->
-      BackgroundMigrations.set_create_logs_first_topic_id_index_finished(initial_started?)
-      BackgroundMigrations.set_fill_logs_optimized_fields_finished(initial_finished?)
-    end)
   end
 
   defp set_transactions_denormalization_finished do

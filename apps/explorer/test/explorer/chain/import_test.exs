@@ -292,12 +292,7 @@ defmodule Explorer.Chain.ImportTest do
                     second_topic: ^second_topic,
                     third_topic: ^third_topic,
                     fourth_topic: nil,
-                    transaction_hash: %Hash{
-                      byte_count: 32,
-                      bytes:
-                        <<83, 189, 136, 72, 114, 222, 62, 72, 134, 146, 136, 27, 174, 236, 38, 46, 123, 149, 35, 77, 57,
-                          101, 36, 140, 57, 254, 153, 47, 255, 212, 51, 229>>
-                    },
+                    block_number: 37,
                     transaction_index: 0,
                     inserted_at: %{},
                     updated_at: %{}
@@ -364,17 +359,18 @@ defmodule Explorer.Chain.ImportTest do
     end
 
     test "refetch_needed is set if there was an exception in further steps" do
-      not_existing_block_hash = "0xf6b4b8c88df3ebd252ec476328334dc026cf66606a84fb769b3d3cbccc8471db"
-
+      # the same log imported twice makes the logs upsert fail with
+      # "ON CONFLICT DO UPDATE command cannot affect row a second time"
       incorrect_data =
-        update_in(@import_data, [:logs, :params], fn params ->
-          [params |> Enum.at(0) |> Map.put(:block_hash, not_existing_block_hash)]
+        update_in(@import_data, [:logs, :params], fn [log_params | _] ->
+          [log_params, log_params]
         end)
 
       Ecto.Adapters.SQL.Sandbox.mode(Explorer.Repo, :auto)
 
       on_exit(fn ->
         Repo.delete_all(Address)
+        Repo.delete_all(Log)
         Repo.delete_all(Transaction)
         Repo.delete_all(InternalTransaction)
         Repo.delete_all(TokenTransfer)
