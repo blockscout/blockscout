@@ -32,7 +32,6 @@ defmodule Explorer.Application do
 
   alias Explorer.Chain.Cache.AddressTags, as: AddressTagsCache
   alias Explorer.Chain.Cache.ContractMethods, as: ContractMethodsCache
-  alias Explorer.Chain.Optimism.InteropMessage, as: OptimismInteropMessage
   alias Explorer.Chain.Supply.RSK
 
   alias Explorer.Market.MarketHistoryCache
@@ -246,7 +245,6 @@ defmodule Explorer.Application do
           :shibarium
         ])
         |> only_in_mode(:indexer),
-        configure_chain_type_dependent_con_cache(),
         Explorer.Migrator.SanitizeDuplicatedLogIndexLogs
         |> configure_mode_dependent_process(:indexer)
         |> configure_chain_type_dependent_process([
@@ -674,19 +672,6 @@ defmodule Explorer.Application do
 
   defp configure_address_id_to_address_hash_cache do
     if AddressIdToAddressHashCache.enabled?(), do: AddressIdToAddressHashCache, else: []
-  end
-
-  defp configure_chain_type_dependent_con_cache do
-    case Application.get_env(:explorer, :chain_type) do
-      :optimism ->
-        [
-          con_cache_child_spec(OptimismInteropMessage.interop_instance_api_url_to_public_key_cache()),
-          con_cache_child_spec(OptimismInteropMessage.interop_chain_id_to_instance_info_cache())
-        ]
-
-      _ ->
-        []
-    end
   end
 
   defp configure_mode_dependent_process(process, mode) do

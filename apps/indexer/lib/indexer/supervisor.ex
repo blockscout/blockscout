@@ -190,22 +190,6 @@ defmodule Indexer.Supervisor do
           Indexer.Fetcher.Optimism.EIP1559ConfigUpdate.Supervisor,
           [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
         },
-        {
-          Indexer.Fetcher.Optimism.Interop.Message.Supervisor,
-          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
-        },
-        {
-          Indexer.Fetcher.Optimism.Interop.MessageFailed.Supervisor,
-          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
-        },
-        {
-          Indexer.Fetcher.Optimism.Interop.MessageQueue.Supervisor,
-          [[memory_monitor: memory_monitor, json_rpc_named_arguments: json_rpc_named_arguments]]
-        },
-        {
-          Indexer.Fetcher.Optimism.Interop.MultichainExport.Supervisor,
-          [[memory_monitor: memory_monitor]]
-        },
         {Indexer.Fetcher.Optimism.OperatorFee.Supervisor,
          [[json_rpc_named_arguments: json_rpc_named_arguments, memory_monitor: memory_monitor]]},
         configure(Indexer.Fetcher.Shibarium.L2.Supervisor, [

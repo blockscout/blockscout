@@ -140,10 +140,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
 
     get("/smart-contracts/:address_hash_param", V2.ImportController, :try_to_search_contract)
     post("/smart-contracts/:address_hash_param/audit-reports", V2.ImportController, :import_audit_report)
-
-    if @chain_type == :optimism do
-      post("/optimism/interop/", V2.OptimismController, :interop_import)
-    end
   end
 
   scope "/v2", as: :api_v2 do
@@ -324,10 +320,6 @@ defmodule BlockScoutWeb.Routers.ApiRouter do
         get("/withdrawals/count", V2.OptimismController, :withdrawals_count)
         get("/games", V2.OptimismController, :games)
         get("/games/count", V2.OptimismController, :games_count)
-        get("/interop/messages", V2.OptimismController, :interop_messages)
-        get("/interop/messages/count", V2.OptimismController, :interop_messages_count)
-        get("/interop/messages/:unique_id", V2.OptimismController, :interop_message)
-        get("/interop/public-key", V2.OptimismController, :interop_public_key)
       end
     end
 

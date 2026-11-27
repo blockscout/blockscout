@@ -40,7 +40,7 @@ Some data has to be extracted from already fetched data, and there are several t
 - `withdrawal`: optionally fetches withdrawals for blocks indexed before withdrawals support was added
 - `rootstock_data`: refetches Rootstock-specific block fields for blocks indexed before they were supported
 - L2 and sidechain fetchers, each started only for its chain type:
-  - `optimism/*`: transaction batches, output roots, dispute games, deposits, withdrawals, withdrawal events on L1, EIP-1559 config updates, operator fee, and interop messages
+  - `optimism/*`: transaction batches, output roots, dispute games, deposits, withdrawals, withdrawal events on L1, EIP-1559 config updates, and operator fee
   - `arbitrum/*`: batches and their statuses, messages between L1 and L2, data backfill
   - `zksync/*`: transaction batches and their statuses
   - `scroll/*`: batches, L1 and L2 bridge operations, L1 fee parameters
