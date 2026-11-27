@@ -133,7 +133,16 @@ jobs:
                   continue;
                 }
 
-                core.info(`#${number}: CLA ${status.state}, closing.`);
+                // Narrows (but cannot eliminate) the window in which the author signs
+                // the CLA between the first status read and the close request.
+                const latestStatus = await claStatus(pr.head.sha);
+
+                if (latestStatus?.state === "success") {
+                  core.info(`#${number}: CLA signed in the meantime, not closing.`);
+                  continue;
+                }
+
+                core.info(`#${number}: CLA ${latestStatus?.state ?? status.state}, closing.`);
 
                 await comment(
                   number,
