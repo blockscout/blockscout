@@ -56,7 +56,7 @@ defmodule EthereumJSONRPC.ReceiptTest do
   end
 
   # Regression test for https://github.com/blockscout/blockscout/issues/15047
-  test "converts a failed EIP-8430 receipt and ignores the fields specific to EIP-8430" do
+  test "converts a failed EIP-8430 receipt and keeps the resolved payer and the committed phases" do
     transaction_hash = "0xe1c5fe2f599fabab77717e0d0fcaf2ec56bca2df8df325c2d52ef4325d98d7aa"
     block_hash = "0x453ad0ed27870c01e0289e9ece6acf67fad9a0c67b2aa13714f8ccef8c5e3318"
 
@@ -109,9 +109,10 @@ defmodule EthereumJSONRPC.ReceiptTest do
         "type" => "0x79"
       })
 
-    refute Map.has_key?(receipt, "committedPhases")
+    assert receipt["type"] == 0x79
+    assert receipt["payer"] == "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
+    assert receipt["committedPhases"] == 2
     refute Map.has_key?(receipt, "phaseStatuses")
-    refute Map.has_key?(receipt, "payer")
     assert [%{"logIndex" => 0, "transactionHash" => ^transaction_hash}] = receipt["logs"]
 
     assert %{
@@ -121,7 +122,87 @@ defmodule EthereumJSONRPC.ReceiptTest do
              gas_used: 0x13CE8,
              status: :error,
              transaction_hash: ^transaction_hash,
-             transaction_index: 2
+             transaction_index: 2,
+             eip_8430_receipt_fields: %{
+               payer: "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+               committed_phases: 2
+             }
            } = Receipt.elixir_to_params(receipt)
+  end
+
+  describe "EIP-8430 receipt fields" do
+    test "are absent for a receipt of a different type that contains a payer" do
+      params =
+        %{"type" => "0x2", "payer" => "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f", "committedPhases" => "0x1"}
+        |> eip_8430_receipt()
+        |> Receipt.to_elixir()
+        |> Receipt.elixir_to_params()
+
+      refute Map.has_key?(params, :eip_8430_receipt_fields)
+    end
+
+    test "are absent for a receipt without a type" do
+      params =
+        %{}
+        |> eip_8430_receipt()
+        |> Map.delete("type")
+        |> Receipt.to_elixir()
+        |> Receipt.elixir_to_params()
+
+      refute Map.has_key?(params, :eip_8430_receipt_fields)
+    end
+
+    test "are nil if the node returns an EIP-8430 receipt without them" do
+      receipt = Map.drop(eip_8430_receipt(%{}), ["payer", "committedPhases"])
+
+      assert %{eip_8430_receipt_fields: %{payer: nil, committed_phases: nil}} =
+               receipt |> Receipt.to_elixir() |> Receipt.elixir_to_params()
+
+      assert %{eip_8430_receipt_fields: %{payer: nil, committed_phases: nil}} =
+               %{"payer" => nil, "committedPhases" => nil}
+               |> eip_8430_receipt()
+               |> Receipt.to_elixir()
+               |> Receipt.elixir_to_params()
+    end
+
+    test "keep a payer of an unexpected form without change" do
+      assert %{eip_8430_receipt_fields: %{payer: "garbage"}} =
+               %{"payer" => "garbage"} |> eip_8430_receipt() |> Receipt.to_elixir() |> Receipt.elixir_to_params()
+    end
+
+    test "have no committed phases if the value has no 0x prefix and is not a number" do
+      assert %{eip_8430_receipt_fields: %{committed_phases: nil}} =
+               %{"committedPhases" => "garbage"}
+               |> eip_8430_receipt()
+               |> Receipt.to_elixir()
+               |> Receipt.elixir_to_params()
+    end
+
+    test "raise for committed phases with the 0x prefix and no valid hex digits" do
+      for committed_phases <- ["0x", "0xzz"] do
+        assert_raise ArgumentError, fn ->
+          %{"committedPhases" => committed_phases} |> eip_8430_receipt() |> Receipt.to_elixir()
+        end
+      end
+    end
+  end
+
+  # A receipt of an EIP-8430 transaction with only the keys that `Receipt.elixir_to_params/1`
+  # needs and the two fields specific to EIP-8430.
+  defp eip_8430_receipt(overrides) do
+    Map.merge(
+      %{
+        "committedPhases" => "0x1",
+        "contractAddress" => nil,
+        "cumulativeGasUsed" => "0x1bc63",
+        "gasUsed" => "0x8c3c",
+        "payer" => "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f",
+        "status" => "0x1",
+        "transactionHash" => "0x3e9e6f89469aca60687eaab43e0a2436e5c23acbe3ccd9dd0342fa6004d99b1c",
+        "transactionIndex" => "0x2",
+        "type" => "0x79"
+      },
+      overrides
+    )
   end
 end

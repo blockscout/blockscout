@@ -9,6 +9,7 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
   alias Explorer.Repo
 
   @payer "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
+  @sender "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
   @sender_auth "0x0000000000000000000000000000000000000001f4646b5a9fcff6e29768f4d61a65b4479946e37a094a3116f5b76486ce466abf1a514af6b3ed852c8b30fcc82fb76a3e8bb6f9c92c2a77e7055c42bdbb8bdccc1b"
   @max_nonce_key Bitwise.bsl(1, 256) - 1
 
@@ -25,6 +26,8 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
       assert to_string(inserted.sender_auth) == @sender_auth
       assert inserted.metadata == %Data{bytes: <<>>}
       assert inserted.account_changes == []
+      assert to_string(inserted.resolved_payer_address_hash) == @payer
+      assert inserted.committed_phases_count == 1
     end
 
     test "inserts one row if the changes list contains the same transaction twice" do
@@ -50,7 +53,9 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
         nonce_key: 1,
         valid_before: 5,
         payer_type: :self,
-        payer: nil
+        payer: nil,
+        resolved_payer_address_hash: @sender,
+        committed_phases_count: 1
       )
 
       changes = %{
@@ -59,7 +64,9 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
           nonce_key: 2,
           valid_before: 7,
           payer_type: :open,
-          payer: "0x00"
+          payer: "0x00",
+          resolved_payer_address_hash: @payer,
+          committed_phases_count: 2
       }
 
       assert {:ok, %{eip_8430_transactions: [updated]}} = run([changes])
@@ -69,6 +76,8 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
       assert Decimal.eq?(updated.valid_before, 7)
       assert updated.payer_type == :open
       assert updated.payer == %Data{bytes: <<0>>}
+      assert to_string(updated.resolved_payer_address_hash) == @payer
+      assert updated.committed_phases_count == 2
 
       assert Repo.aggregate(EIP8430Transaction, :count) == 1
     end
@@ -126,8 +135,8 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
       assert changeset(%{params(transaction_hash) | payer_type: :unknown, payer: nil}).valid?
     end
 
-    test "rejects a row without a required quantity" do
-      for field <- [:nonce_key, :valid_after, :valid_before] do
+    test "rejects a row without a required value" do
+      for field <- [:nonce_key, :valid_after, :valid_before, :resolved_payer_address_hash, :committed_phases_count] do
         changeset = changeset(%{params(transaction_hash()) | field => nil})
 
         refute changeset.valid?
@@ -142,6 +151,19 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
         refute changeset.valid?
         assert Keyword.has_key?(changeset.errors, field)
       end
+    end
+
+    test "rejects a resolved payer that is not an address" do
+      for value <- ["garbage", "0x", "0x00", "0x0102", "0xzz8161ba9f012b85eeb347bf3326988cfbeb3b7a"] do
+        changeset = changeset(%{params(transaction_hash()) | resolved_payer_address_hash: value})
+
+        refute changeset.valid?
+        assert Keyword.has_key?(changeset.errors, :resolved_payer_address_hash)
+      end
+    end
+
+    test "accepts a failed transaction without committed phases" do
+      assert changeset(%{params(transaction_hash()) | committed_phases_count: 0}).valid?
     end
 
     test "accepts empty byte fields" do
@@ -180,6 +202,41 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
 
       assert to_string(imported.transaction_hash) == transaction_hash
       assert imported.payer_type == :named
+      assert to_string(imported.resolved_payer_address_hash) == @payer
+      assert imported.committed_phases_count == 1
+    end
+
+    test "does not import a block of data without the receipt values" do
+      from_address = insert(:address)
+      transaction_hash = to_string(transaction_hash())
+
+      row = %{params(transaction_hash) | resolved_payer_address_hash: nil, committed_phases_count: nil}
+
+      assert {:error, [%Ecto.Changeset{valid?: false} = changeset]} =
+               Chain.import(%{
+                 transactions: %{
+                   params: [
+                     %{
+                       from_address_hash: to_string(from_address.hash),
+                       gas: 0x1255C,
+                       gas_price: 0x7744D640,
+                       hash: transaction_hash,
+                       input: "0x",
+                       nonce: 0,
+                       r: 0,
+                       s: 0,
+                       v: 0,
+                       value: 0,
+                       type: 0x79
+                     }
+                   ]
+                 },
+                 eip_8430_transactions: %{params: [row]}
+               })
+
+      assert Keyword.has_key?(changeset.errors, :resolved_payer_address_hash)
+      assert Keyword.has_key?(changeset.errors, :committed_phases_count)
+      assert Repo.aggregate(EIP8430Transaction, :count) == 0
     end
 
     test "does not import a block of data with a malformed byte field" do
@@ -242,7 +299,9 @@ defmodule Explorer.Chain.Import.Runner.EIP8430TransactionsTest do
       payer: @payer,
       sender_auth: @sender_auth,
       payer_auth: "0x01",
-      account_changes: []
+      account_changes: [],
+      resolved_payer_address_hash: @payer,
+      committed_phases_count: 1
     }
   end
 end

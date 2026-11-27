@@ -101,13 +101,15 @@ defmodule Explorer.Chain.Import.Runner.EIP8430Transactions do
           sender_auth: fragment("EXCLUDED.sender_auth"),
           payer_auth: fragment("EXCLUDED.payer_auth"),
           account_changes: fragment("EXCLUDED.account_changes"),
+          resolved_payer_address_hash: fragment("EXCLUDED.resolved_payer_address_hash"),
+          committed_phases_count: fragment("EXCLUDED.committed_phases_count"),
           inserted_at: fragment("LEAST(?, EXCLUDED.inserted_at)", eip_8430_transaction.inserted_at),
           updated_at: fragment("GREATEST(?, EXCLUDED.updated_at)", eip_8430_transaction.updated_at)
         ]
       ],
       where:
         fragment(
-          "(EXCLUDED.has_named_sender, EXCLUDED.nonce_key, EXCLUDED.valid_after, EXCLUDED.valid_before, EXCLUDED.metadata, EXCLUDED.payer_type, EXCLUDED.payer, EXCLUDED.sender_auth, EXCLUDED.payer_auth, EXCLUDED.account_changes) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          "(EXCLUDED.has_named_sender, EXCLUDED.nonce_key, EXCLUDED.valid_after, EXCLUDED.valid_before, EXCLUDED.metadata, EXCLUDED.payer_type, EXCLUDED.payer, EXCLUDED.sender_auth, EXCLUDED.payer_auth, EXCLUDED.account_changes, EXCLUDED.resolved_payer_address_hash, EXCLUDED.committed_phases_count) IS DISTINCT FROM (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           eip_8430_transaction.has_named_sender,
           eip_8430_transaction.nonce_key,
           eip_8430_transaction.valid_after,
@@ -117,7 +119,9 @@ defmodule Explorer.Chain.Import.Runner.EIP8430Transactions do
           eip_8430_transaction.payer,
           eip_8430_transaction.sender_auth,
           eip_8430_transaction.payer_auth,
-          eip_8430_transaction.account_changes
+          eip_8430_transaction.account_changes,
+          eip_8430_transaction.resolved_payer_address_hash,
+          eip_8430_transaction.committed_phases_count
         )
     )
   end

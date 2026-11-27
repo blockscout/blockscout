@@ -1345,7 +1345,9 @@ defmodule Explorer.Factory do
       payer: nil,
       sender_auth: %Data{bytes: <<1>>},
       payer_auth: %Data{bytes: <<>>},
-      account_changes: []
+      account_changes: [],
+      resolved_payer_address_hash: address_hash(),
+      committed_phases_count: 1
     }
   end
 

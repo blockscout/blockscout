@@ -10,6 +10,9 @@ defmodule EthereumJSONRPC.Receipt do
 
   alias EthereumJSONRPC.Logs
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
   case @chain_type do
     :ethereum ->
       @chain_type_fields quote(
@@ -69,6 +72,11 @@ defmodule EthereumJSONRPC.Receipt do
    * `"to"` - The `EthereumJSONRPC.Transaction.t/0` `"to"` address hash.  **Geth-only.**
    * `"transactionHash"` - `t:EthereumJSONRPC.hash/0` the transaction.
    * `"transactionIndex"` - `t:EthereumJSONRPC.quantity/0` for the transaction index in the block.
+   * `"type"` - `t:EthereumJSONRPC.quantity/0` of the EIP-2718 transaction type.
+   * `"payer"` - `t:EthereumJSONRPC.address/0` of the resolved payer of an EIP-8430 transaction: the account that
+     pays the fee.
+   * `"committedPhases"` - `t:EthereumJSONRPC.quantity/0` of the call phases of an EIP-8430 transaction that
+     committed.
   """
   @type t :: %{
           String.t() =>
@@ -83,12 +91,24 @@ defmodule EthereumJSONRPC.Receipt do
   @type params :: %{
           unquote_splicing(@chain_type_fields),
           optional(:gas_price) => non_neg_integer(),
+          optional(:eip_8430_receipt_fields) => eip_8430_receipt_fields(),
           cumulative_gas_used: non_neg_integer(),
           gas_used: non_neg_integer(),
           created_contract_address_hash: EthereumJSONRPC.hash(),
           status: :ok | :error,
           transaction_hash: EthereumJSONRPC.hash(),
           transaction_index: non_neg_integer()
+        }
+
+  @typedoc """
+  The fields that only the receipts of EIP-8430 transactions (EIP-2718 type `0x79`) have, in
+  the form that the node returns. An absent field is `nil`.
+    * `payer` - the address of the resolved payer: the account that pays the fee.
+    * `committed_phases` - the number of call phases that committed.
+  """
+  @type eip_8430_receipt_fields :: %{
+          payer: String.t() | nil,
+          committed_phases: non_neg_integer() | nil
         }
 
   @doc """
@@ -207,6 +227,7 @@ defmodule EthereumJSONRPC.Receipt do
     elixir
     |> do_elixir_to_params()
     |> chain_type_fields(elixir)
+    |> transaction_type_fields(elixir)
   end
 
   def do_elixir_to_params(
@@ -284,6 +305,22 @@ defmodule EthereumJSONRPC.Receipt do
     _ ->
       defp chain_type_fields(params, _), do: params
   end
+
+  # Adds the receipt fields that only one transaction type has.
+  #
+  # For EIP-8430 transactions the fields go under the nested `:eip_8430_receipt_fields` key in
+  # the form that the node returns. The key is different from the `:eip_8430_fields` key of
+  # the transaction params: `Indexer.Block.Fetcher.Receipts.put/2` merges the two maps only at
+  # the top level, so with the same key the receipt map replaces the transaction map.
+  @spec transaction_type_fields(%{atom() => any()}, elixir()) :: %{atom() => any()}
+  defp transaction_type_fields(params, %{"type" => @eip_8430_transaction_type} = elixir) do
+    Map.put(params, :eip_8430_receipt_fields, %{
+      payer: Map.get(elixir, "payer"),
+      committed_phases: Map.get(elixir, "committedPhases")
+    })
+  end
+
+  defp transaction_type_fields(params, _elixir), do: params
 
   @doc """
   Decodes the stringly typed numerical fields to `t:non_neg_integer/0`.
@@ -399,14 +436,14 @@ defmodule EthereumJSONRPC.Receipt do
   # gas is passed in from the `t:EthereumJSONRPC.Transaction.params/0` to allow pre-Byzantium status to be derived
   defp entry_to_elixir({key, _} = entry)
        when key in ~w(blockHash contractAddress from gas logsBloom root to transactionHash
-                      revertReason type l1FeeScalar),
+                      revertReason l1FeeScalar payer),
        do: {:ok, entry}
 
   defp entry_to_elixir({key, quantity})
        when key in ~w(blockNumber cumulativeGasUsed gasUsed transactionIndex blobGasUsed
                       blobGasPrice l1Fee l1GasPrice l1GasUsed effectiveGasPrice gasUsedForL1
                       l1BlobBaseFeeScalar l1BlobBaseFee l1BaseFeeScalar operatorFeeScalar
-                      operatorFeeConstant daFootprintGasScalar) do
+                      operatorFeeConstant daFootprintGasScalar type committedPhases) do
     result =
       if is_nil(quantity) do
         nil
