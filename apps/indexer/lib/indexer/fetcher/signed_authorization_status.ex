@@ -20,15 +20,41 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   alias EthereumJSONRPC.Utility.RangesHelper
   alias Explorer.{Chain, Repo}
-  alias Explorer.Chain.{Address, Block, BlockNumberHelper, Hash, SignedAuthorization, Transaction}
+
+  alias Explorer.Chain.{
+    Address,
+    Block,
+    BlockNumberHelper,
+    EIP8430Transaction,
+    Hash,
+    SignedAuthorization,
+    Transaction
+  }
+
   alias Explorer.Chain.Cache.Accounts
   alias Explorer.Chain.SmartContract.Proxy.Models.Implementation
   alias Indexer.{BufferedTask, Tracer}
 
   @failed_to_import "failed to import signed_authorization status for transactions: "
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
+  @typedoc """
+  An entry of one block: a nonce change by a transaction, or a signed authorization.
+
+  A new `:transaction` entry has the `:hash` and the `:type` of the transaction.
+  `keep_account_nonce_transactions/1` uses them in `run/2` and then removes them. Thus an entry
+  that `run/2` returns for a retry has only `:authority` and `:nonce`.
+  """
   @type inner_entry ::
-          {:transaction, %{authority: Hash.Address.t(), nonce: non_neg_integer()}}
+          {:transaction,
+           %{
+             required(:authority) => Hash.Address.t(),
+             required(:nonce) => non_neg_integer(),
+             optional(:hash) => Hash.Full.t(),
+             optional(:type) => non_neg_integer() | nil
+           }}
           | {:authorization, SignedAuthorization.t()}
 
   @typedoc """
@@ -98,13 +124,22 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
 
   # Extract all nonce changes from transaction with signed authorizations.
   #
-  # Any transaction change the nonce of the transaction sender.
+  # A transaction changes the account nonce of the transaction sender. The only exception is an
+  # EIP-8430 transaction (EIP-2718 type `0x79`) with a `nonce_key` that is not `0`. This function
+  # sends no database query, so it keeps the entry of each transaction and adds the hash and the
+  # type to it. `keep_account_nonce_transactions/1` removes the entries of the exception later.
   #
   # Additionally, EIP7702 transactions may change the nonce of successful EIP7702 tuple authorities.
   @spec transaction_to_inner_entries(Transaction.t()) :: [inner_entry()]
   defp transaction_to_inner_entries(transaction) do
     [
-      {:transaction, %{authority: transaction.from_address_hash, nonce: transaction.nonce}}
+      {:transaction,
+       %{
+         authority: transaction.from_address_hash,
+         nonce: transaction.nonce,
+         hash: transaction.hash,
+         type: transaction.type
+       }}
       | transaction
         |> Map.get(:signed_authorizations, [])
         |> Enum.sort_by(& &1.index)
@@ -178,6 +213,10 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
     # preload transactions for init-generated entries, in case of retry, preloaded transactions are preserved
     entries = entries |> Enum.map(&preload_entries/1)
 
+    # keep only the transactions that change the account nonce of the sender. The error branches
+    # below return these entries for a retry, so the next `run/2` sends no query for them again.
+    entries = keep_account_nonce_transactions(entries)
+
     # compute pairs of block numbers and addresses for which don't know nonce at the start of the block
     missing_nonces_for = entries |> Enum.flat_map(&compute_missing_nonces/1)
 
@@ -188,13 +227,9 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
            |> Enum.unzip(),
          {:import, :ok} <- {:import, import_authorizations(List.flatten(updated_authorizations))} do
       entries_to_retry =
-        new_entries
-        |> Enum.filter(
-          &Enum.any?(&1, fn
-            {:authorization, %{status: nil}} -> true
-            _ -> false
-          end)
-        )
+        Enum.filter(new_entries, fn %{entries: inner_entries} ->
+          Enum.any?(inner_entries, &match?({:authorization, %{status: nil}}, &1))
+        end)
 
       if Enum.empty?(entries_to_retry) do
         :ok
@@ -236,6 +271,51 @@ defmodule Indexer.Fetcher.SignedAuthorizationStatus do
       |> Enum.flat_map(&transaction_to_inner_entries/1)
     )
   end
+
+  # Removes the `:transaction` entries of the transactions that do not change the account nonce of
+  # the sender, and brings all other `:transaction` entries to the form with `:authority` and
+  # `:nonce` only.
+  #
+  # The `nonce` of an EIP-8430 transaction (EIP-2718 type `0x79`) is the account nonce only if the
+  # `nonce_key` of the transaction is `0`. The function loads the `nonce_key` values of all
+  # EIP-8430 transactions of the batch in one query. If the batch has no such transaction, the
+  # function sends no query. An EIP-8430 transaction without a row in `eip_8430_transactions` has
+  # an unknown `nonce_key`, and its entry is removed also.
+  #
+  # An entry from a retry has no `:hash` and no `:type`, so the function does not change it.
+  @spec keep_account_nonce_transactions([entry()]) :: [entry()]
+  defp keep_account_nonce_transactions(entries) do
+    nonce_keys =
+      entries
+      |> Enum.flat_map(fn %{entries: inner_entries} ->
+        for {:transaction, %{type: @eip_8430_transaction_type, hash: hash}} <- inner_entries, do: hash
+      end)
+      |> EIP8430Transaction.transaction_hashes_to_nonce_keys()
+
+    Enum.map(entries, fn %{entries: inner_entries} = entry ->
+      %{entry | entries: Enum.flat_map(inner_entries, &account_nonce_inner_entries(&1, nonce_keys))}
+    end)
+  end
+
+  @spec account_nonce_inner_entries(inner_entry(), %{Hash.Full.t() => Decimal.t()}) :: [inner_entry()]
+  defp account_nonce_inner_entries(
+         {:transaction, %{type: @eip_8430_transaction_type, hash: hash} = transaction},
+         nonce_keys
+       ) do
+    case Map.get(nonce_keys, hash) do
+      nil ->
+        []
+
+      nonce_key ->
+        if Decimal.eq?(nonce_key, 0), do: [{:transaction, Map.take(transaction, [:authority, :nonce])}], else: []
+    end
+  end
+
+  defp account_nonce_inner_entries({:transaction, transaction}, _nonce_keys) do
+    [{:transaction, Map.take(transaction, [:authority, :nonce])}]
+  end
+
+  defp account_nonce_inner_entries(inner_entry, _nonce_keys), do: [inner_entry]
 
   # Compute pairs of block numbers and addresses for which don't know nonce at the start of the block.
   #
