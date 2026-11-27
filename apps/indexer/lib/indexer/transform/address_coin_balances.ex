@@ -79,9 +79,12 @@ defmodule Indexer.Transform.AddressCoinBalances do
        when is_list(block_second_degree_relations_params),
        do: initial
 
-  defp reducer({:withdrawals, withdrawals}, acc) when is_list(withdrawals) do
-    Enum.into(withdrawals, acc, fn %{address_hash: address_hash, block_number: block_number}
-                                   when is_binary(address_hash) and is_integer(block_number) ->
+  # The two entities are lists of an address and a block number. The resolved payer of an
+  # EIP-8430 transaction pays the fee in the native coin, so its balance changes in the block
+  # of the transaction.
+  defp reducer({key, params}, acc) when key in [:withdrawals, :eip_8430_resolved_payers] and is_list(params) do
+    Enum.into(params, acc, fn %{address_hash: address_hash, block_number: block_number}
+                              when is_binary(address_hash) and is_integer(block_number) ->
       %{address_hash: address_hash, block_number: block_number}
     end)
   end

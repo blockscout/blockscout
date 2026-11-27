@@ -296,6 +296,29 @@ defmodule Indexer.Transform.AddressesTest do
              }) == []
     end
 
+    test "resolved payers of EIP-8430 transactions are extracted with the coin balance block number" do
+      payer_hash = "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"
+
+      assert Addresses.extract_addresses(%{
+               eip_8430_resolved_payers: [%{address_hash: payer_hash, block_number: 34}]
+             }) == [%{hash: payer_hash, fetched_coin_balance_block_number: 34}]
+    end
+
+    test "resolved payers of EIP-8430 transactions without a `block_number` aren't extracted" do
+      assert Addresses.extract_addresses(%{
+               eip_8430_resolved_payers: [%{address_hash: "0xc4bb6341064b99ea7812777be8fd8fa8dfe50c7f"}]
+             }) == []
+    end
+
+    test "a resolved payer that is equal to the sender gives one address and keeps the fields of the transaction entry" do
+      sender_hash = "0x278161ba9f012b85eeb347bf3326988cfbeb3b7a"
+
+      assert Addresses.extract_addresses(%{
+               transactions: [%{block_number: 34, from_address_hash: sender_hash, nonce: 12}],
+               eip_8430_resolved_payers: [%{address_hash: sender_hash, block_number: 34}]
+             }) == [%{hash: sender_hash, fetched_coin_balance_block_number: 34, nonce: 12}]
+    end
+
     if @chain_type == :eden do
       test "recipients of the batched calls are extracted with the coin balance block number" do
         first_call_hash = "0x11f60a633dd30a8d1a26dd6e20167a9293fb4647"

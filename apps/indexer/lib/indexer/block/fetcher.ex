@@ -215,6 +215,7 @@ defmodule Indexer.Block.Fetcher do
            ArbitrumMessaging.parse(transactions_with_receipts, logs),
          %FetchedBeneficiaries{params_set: beneficiary_params_set, errors: beneficiaries_errors} =
            fetch_beneficiaries(blocks, transactions_with_receipts, json_rpc_named_arguments),
+         eip_8430_resolved_payers = EIP8430Transactions.resolved_payers(transactions_with_receipts),
          addresses =
            Addresses.extract_addresses(%{
              block_reward_contract_beneficiaries: MapSet.to_list(beneficiary_params_set),
@@ -225,6 +226,7 @@ defmodule Indexer.Block.Fetcher do
              token_transfers: token_transfers,
              transactions: transactions_with_receipts,
              withdrawals: withdrawals_params,
+             eip_8430_resolved_payers: eip_8430_resolved_payers,
              celo_pending_account_operations: celo_pending_account_operations
            }),
          coin_balances_params_set =
@@ -233,7 +235,8 @@ defmodule Indexer.Block.Fetcher do
              blocks_params: blocks,
              logs_params: logs,
              transactions_params: transactions_with_receipts,
-             withdrawals: withdrawals_params
+             withdrawals: withdrawals_params,
+             eip_8430_resolved_payers: eip_8430_resolved_payers
            }
            |> AddressCoinBalances.params_set(),
          beneficiaries_with_gas_payment =
