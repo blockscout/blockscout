@@ -92,5 +92,26 @@ defmodule Explorer.Chain.CsvExport.HelperTest do
       assert result =~ "a,b,c"
       assert result =~ "1,2,3"
     end
+
+    test "neutralizes text cells that spreadsheets would evaluate as formulas" do
+      rows = [
+        ["=1+1", "+SUM(A1:A2)", "-2+3", "@cmd", "\tvalue", "\rvalue", ~s|=HYPERLINK("https://example.com","x")|]
+      ]
+
+      result = rows |> Helper.dump_to_stream() |> Enum.join("")
+
+      assert result ==
+               ~s|'=1+1,'+SUM(A1:A2),'-2+3,'@cmd,'\tvalue,'\rvalue,"'=HYPERLINK(""https://example.com"",""x"")"\r\n|
+    end
+
+    test "keeps numeric values and regular text unchanged" do
+      rows = [
+        [-5, Decimal.new("-1.5"), "-42", "-0.001", "+7", "-1.5E+3", "100", "USDT", "a=b", ""]
+      ]
+
+      result = rows |> Helper.dump_to_stream() |> Enum.join("")
+
+      assert result == "-5,-1.5,-42,-0.001,+7,-1.5E+3,100,USDT,a=b,\r\n"
+    end
   end
 end

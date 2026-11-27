@@ -18,10 +18,31 @@ defmodule Explorer.Chain.CsvExport.Helper do
   @page_size 150
   @default_paging_options %PagingOptions{page_size: @page_size}
 
+  # Characters that make spreadsheet applications evaluate a cell as a formula
+  # (see OWASP "CSV Injection").
+  @formula_prefixes ["=", "+", "-", "@", "\t", "\r"]
+  @numeric_regex ~r/\A[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\z/
+
+  @doc """
+  Dumps rows into a CSV stream, neutralizing text cells that spreadsheet
+  applications would otherwise evaluate as formulas.
+  """
+  @spec dump_to_stream(Enumerable.t()) :: Enumerable.t()
   def dump_to_stream(items) do
     items
+    |> Stream.map(fn row -> Enum.map(row, &escape_formula/1) end)
     |> RFC4180.dump_to_stream()
   end
+
+  # Prefixes a single quote to string cells starting with a formula character,
+  # so they are shown as text. Numeric values (including numeric strings such
+  # as "-42") are kept as is, so that numeric columns stay numeric.
+  @spec escape_formula(any()) :: any()
+  defp escape_formula(<<first::binary-size(1), _::binary>> = value) when first in @formula_prefixes do
+    if Regex.match?(@numeric_regex, value), do: value, else: "'" <> value
+  end
+
+  defp escape_formula(value), do: value
 
   def page_size, do: @page_size
 
