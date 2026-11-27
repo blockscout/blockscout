@@ -66,16 +66,17 @@ RUN mkdir -p /opt/release && \
 ##############################################################
 FROM hexpm/elixir:1.20.5-erlang-29.1.2-alpine-3.24.3
 
-WORKDIR /app
-
-ARG BLOCKSCOUT_USER=blockscout
-ARG BLOCKSCOUT_GROUP=blockscout
-ARG BLOCKSCOUT_UID=10001
-ARG BLOCKSCOUT_GID=10001
+# Unprivileged runtime account. Fixed numeric IDs keep ownership of mounted volumes stable.
+ARG RUNTIME_USER=blockscout
+ARG RUNTIME_GROUP=blockscout
+ARG RUNTIME_UID=10001
+ARG RUNTIME_GID=10001
 
 RUN apk --no-cache --update add jq curl && \
-    addgroup --system --gid ${BLOCKSCOUT_GID} ${BLOCKSCOUT_GROUP} && \
-    adduser --system --uid ${BLOCKSCOUT_UID} --ingroup ${BLOCKSCOUT_GROUP} --disabled-password ${BLOCKSCOUT_USER}
+    addgroup -S -g "${RUNTIME_GID}" "${RUNTIME_GROUP}" && \
+    adduser -S -D -u "${RUNTIME_UID}" -G "${RUNTIME_GROUP}" "${RUNTIME_USER}"
+
+WORKDIR /app
 
 ENV DISABLE_WEBAPP=false
 ENV ADMIN_PANEL_ENABLED=false
@@ -97,12 +98,12 @@ ENV RELEASE_VERSION=${RELEASE_VERSION}
 ARG BLOCKSCOUT_VERSION
 ENV BLOCKSCOUT_VERSION=${BLOCKSCOUT_VERSION}
 
-COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /opt/release/blockscout .
-COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/apps/explorer/node_modules ./node_modules
-COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/config_helper.exs ./config/config_helper.exs
-COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/config_helper.exs /app/releases/${RELEASE_VERSION}/config_helper.exs
-COPY --from=builder --chown=${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app/config/assets/precompiles-arbitrum.json ./config/assets/precompiles-arbitrum.json
+COPY --from=builder --chown=${RUNTIME_UID}:${RUNTIME_GID} /opt/release/blockscout ./
+COPY --from=builder --chown=${RUNTIME_UID}:${RUNTIME_GID} /app/apps/explorer/node_modules ./node_modules/
+COPY --from=builder --chown=${RUNTIME_UID}:${RUNTIME_GID} /app/config/config_helper.exs ./config/
+COPY --from=builder --chown=${RUNTIME_UID}:${RUNTIME_GID} /app/config/config_helper.exs ./releases/${RELEASE_VERSION}/
+COPY --from=builder --chown=${RUNTIME_UID}:${RUNTIME_GID} /app/config/assets/precompiles-arbitrum.json ./config/assets/
 
-RUN mkdir dets && mkdir temp && chown -R ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP} /app
+RUN mkdir dets && mkdir temp && chown -R ${RUNTIME_UID}:${RUNTIME_GID} /app
 
-USER ${BLOCKSCOUT_USER}:${BLOCKSCOUT_GROUP}
+USER ${RUNTIME_UID}:${RUNTIME_GID}
