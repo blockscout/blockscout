@@ -1267,6 +1267,22 @@ defmodule BlockScoutWeb.API.V2.AddressControllerTest do
     end
   end
 
+  describe "/addresses/{address_hash}/transactions with an EIP-8430 transaction" do
+    test "returns the resolved payer as a full address object", %{conn: conn} do
+      address = insert(:address)
+      resolved_payer = insert(:contract_address)
+      transaction = :transaction |> insert(type: 0x79, from_address: address, to_address: nil) |> with_block()
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+
+      request = get(conn, "/api/v2/addresses/#{address.hash}/transactions")
+
+      assert %{"items" => [item]} = json_response(request, 200)
+      assert %{"resolved_payer" => rendered_payer} = item["eip_8430"]
+      assert rendered_payer["hash"] == Address.checksum(resolved_payer.hash)
+      assert rendered_payer["is_contract"] == true
+    end
+  end
+
   describe "/addresses/{address_hash}/token-transfers" do
     test "get token transfers with ok reputation", %{conn: conn} do
       init_value = Application.get_env(:block_scout_web, :hide_scam_addresses)

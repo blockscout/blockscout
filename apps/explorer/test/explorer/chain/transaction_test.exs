@@ -636,6 +636,112 @@ defmodule Explorer.Chain.TransactionTest do
     end
   end
 
+  describe "preload_eip_8430_transaction/2" do
+    test "loads the row of a mined EIP-8430 transaction and copies the resolved payer" do
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+      row = insert(:eip_8430_transaction, transaction: transaction)
+
+      assert %Transaction{eip_8430_transaction: loaded} =
+               preloaded = Transaction.preload_eip_8430_transaction(transaction, [])
+
+      assert loaded.transaction_hash == transaction.hash
+      assert preloaded.resolved_payer_address_hash == row.resolved_payer_address_hash
+      assert preloaded.resolved_payer_address == nil
+    end
+
+    test "loads the row of a pending EIP-8430 transaction" do
+      transaction = insert(:transaction, type: 0x79, to_address: nil)
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        resolved_payer_address_hash: nil,
+        committed_phases_count: nil
+      )
+
+      assert %Transaction{eip_8430_transaction: loaded, resolved_payer_address_hash: nil} =
+               Transaction.preload_eip_8430_transaction(transaction, [])
+
+      assert loaded.transaction_hash == transaction.hash
+    end
+
+    test "writes nil for an EIP-8430 transaction without a row" do
+      transaction = insert(:transaction, type: 0x79, to_address: nil)
+
+      assert %Transaction{eip_8430_transaction: nil, resolved_payer_address_hash: nil} =
+               Transaction.preload_eip_8430_transaction(transaction, [])
+    end
+
+    test "writes nil for a transaction of a different type and does not read the row" do
+      # The row cannot exist for such a transaction after an import. The test inserts it
+      # to show that the type of the transaction stops the query.
+      transaction = insert(:transaction, type: 2)
+      insert(:eip_8430_transaction, transaction: transaction)
+
+      assert %Transaction{eip_8430_transaction: nil, resolved_payer_address_hash: nil} =
+               Transaction.preload_eip_8430_transaction(transaction, [])
+    end
+  end
+
+  describe "preload_eip_8430_transactions/2" do
+    test "loads the rows of the EIP-8430 transactions of a list and keeps the order" do
+      first = insert(:transaction, type: 0x79, to_address: nil)
+      first_row = insert(:eip_8430_transaction, transaction: first)
+      regular = insert(:transaction, type: 2)
+      second = insert(:transaction, type: 0x79, to_address: nil)
+      second_row = insert(:eip_8430_transaction, transaction: second)
+      without_row = insert(:transaction, type: 0x79, to_address: nil)
+
+      assert [preloaded_first, preloaded_regular, preloaded_second, preloaded_without_row] =
+               Transaction.preload_eip_8430_transactions([first, regular, second, without_row], [])
+
+      assert preloaded_first.hash == first.hash
+      assert preloaded_first.eip_8430_transaction.transaction_hash == first.hash
+      assert preloaded_first.resolved_payer_address_hash == first_row.resolved_payer_address_hash
+
+      assert preloaded_regular.hash == regular.hash
+      assert preloaded_regular.eip_8430_transaction == nil
+      assert preloaded_regular.resolved_payer_address_hash == nil
+
+      assert preloaded_second.hash == second.hash
+      assert preloaded_second.eip_8430_transaction.transaction_hash == second.hash
+      assert preloaded_second.resolved_payer_address_hash == second_row.resolved_payer_address_hash
+
+      assert preloaded_without_row.hash == without_row.hash
+      assert preloaded_without_row.eip_8430_transaction == nil
+      assert preloaded_without_row.resolved_payer_address_hash == nil
+    end
+
+    test "returns an item that is not a transaction without change" do
+      transaction = insert(:transaction, type: 0x79, to_address: nil)
+      insert(:eip_8430_transaction, transaction: transaction)
+      other_item = {:emission_reward, :validator_reward}
+
+      assert [^other_item, %Transaction{eip_8430_transaction: %{}}] =
+               Transaction.preload_eip_8430_transactions([other_item, transaction], [])
+    end
+
+    test "returns an empty list for an empty list" do
+      assert Transaction.preload_eip_8430_transactions([], []) == []
+    end
+  end
+
+  describe "apply_filter_by_type_to_transactions/2" do
+    test "the contract_creation filter does not select an EIP-8430 transaction" do
+      insert(:transaction, type: 0x79, to_address: nil)
+      creation_with_type = insert(:transaction, type: 2, to_address: nil)
+      creation_without_type = insert(:transaction, type: nil, to_address: nil)
+      insert(:transaction, type: 2)
+
+      selected_hashes =
+        Transaction
+        |> Transaction.apply_filter_by_type_to_transactions([:contract_creation])
+        |> Repo.all()
+        |> Enum.map(& &1.hash)
+
+      assert Enum.sort(selected_hashes) == Enum.sort([creation_with_type.hash, creation_without_type.hash])
+    end
+  end
+
   describe "Utils.JSON.encode!/1" do
     test "encodes transaction input" do
       assert %{

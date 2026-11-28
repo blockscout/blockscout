@@ -31,6 +31,9 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   @api_true api?: true
   @items_limit 50
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
   case @chain_type do
     :filecoin ->
       @chain_type_token_necessity_by_association %{contract_address: :optional}
@@ -72,6 +75,8 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     with {:enabled, true} <- {:enabled, enabled?()},
          {:success_transaction, true} <-
            {:success_transaction, success_transaction_or_user_op?(transaction_or_map)},
+         {:eip_8430_transaction, false} <-
+           {:eip_8430_transaction, eip_8430_transaction?(transaction_or_map)},
          {:cache, :no_cached_data} <-
            {:cache, try_get_cached_value(get_hash(transaction_or_map))} do
       case request_builder.(transaction_or_map) do
@@ -81,6 +86,7 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
     else
       {:cache, {:ok, _response} = result} -> result
       {:success_transaction, false} -> {:ok, nil}
+      {:eip_8430_transaction, true} -> {:ok, nil}
       {:enabled, false} -> {{:error, :disabled}, 403}
     end
   end
@@ -496,4 +502,10 @@ defmodule BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation do
   defp success_transaction_or_user_op?(%Transaction{status: :ok}), do: true
   defp success_transaction_or_user_op?(%{"hash" => _hash}), do: true
   defp success_transaction_or_user_op?(_), do: false
+
+  # Blockscout does not store the `calls` field of an EIP-8430 transaction
+  # (EIP-2718 type `0x79`), so the request body cannot describe such a
+  # transaction correctly. A wrong summary is worse than no summary.
+  defp eip_8430_transaction?(%Transaction{type: @eip_8430_transaction_type}), do: true
+  defp eip_8430_transaction?(_), do: false
 end

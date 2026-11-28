@@ -112,10 +112,14 @@ defmodule BlockScoutWeb.Notifier do
     proxy_implementations_association() => :optional
   }
 
+  # The last pair is the resolved payer of an EIP-8430 transaction. Its hash is
+  # a virtual field that `Transaction.preload_eip_8430_transactions/2` fills.
+  # Without that call the hash is `nil`, and the pair adds no address to the query.
   @transaction_address_fields [
     {:from_address_hash, :from_address},
     {:to_address_hash, :to_address},
-    {:created_contract_address_hash, :created_contract_address}
+    {:created_contract_address_hash, :created_contract_address},
+    {:resolved_payer_address_hash, :resolved_payer_address}
   ]
 
   @token_transfer_address_fields [
@@ -838,6 +842,10 @@ defmodule BlockScoutWeb.Notifier do
             transactions:
               relevant_transactions
               |> Repo.preload(transaction_broadcast_associations())
+              # The rows come from the primary repo, as the other preloads of the
+              # broadcast do. The replica can be behind for a transaction that the
+              # import wrote a moment before.
+              |> Transaction.preload_eip_8430_transactions([])
               |> preload_participants(@transaction_address_fields)
               |> maybe_preload_participants_enrichment(:transactions),
             conn: nil

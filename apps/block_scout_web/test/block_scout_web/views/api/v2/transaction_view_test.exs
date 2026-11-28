@@ -194,6 +194,28 @@ defmodule BlockScoutWeb.API.V2.TransactionViewTest do
     refute captured_log =~ "Error determining value json"
   end
 
+  describe "transaction_types/3 for an EIP-8430 transaction" do
+    test "adds eip_8430_transaction and does not add contract_creation" do
+      transaction = %Transaction{type: 0x79, to_address_hash: nil, value: %Wei{value: Decimal.new(0)}}
+
+      types = TransactionView.transaction_types(transaction)
+
+      assert :eip_8430_transaction in types
+      refute :contract_creation in types
+    end
+
+    test "keeps contract_creation for a transaction of a different type without a recipient" do
+      value = %Wei{value: Decimal.new(0)}
+
+      for type <- [nil, 2] do
+        types = TransactionView.transaction_types(%Transaction{type: type, to_address_hash: nil, value: value})
+
+        assert :contract_creation in types
+        refute :eip_8430_transaction in types
+      end
+    end
+  end
+
   describe "decode_logs/2" do
     test "doesn't use decoding candidate event with different 2nd, 3d or 4th topic" do
       insert(:contract_method,

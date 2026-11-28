@@ -46,7 +46,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   alias Explorer.Chain
   alias Explorer.Chain.Arbitrum.Reader.API.Settlement, as: ArbitrumSettlementReader
   alias Explorer.Chain.Beacon.Deposit
-  alias Explorer.Chain.{Block, InternalTransaction}
+  alias Explorer.Chain.{Block, InternalTransaction, Transaction}
   alias Explorer.Chain.Cache.{BlockNumber, Counters.AverageBlockTime}
   alias Explorer.Chain.Optimism.TransactionBatch, as: OptimismTransactionBatch
   alias Explorer.Chain.Scroll.Reader, as: ScrollReader
@@ -113,6 +113,19 @@ defmodule BlockScoutWeb.API.V2.BlockController do
   ]
 
   @api_true [api?: true]
+
+  # The resolved payer of an EIP-8430 transaction. Its hash is a virtual field
+  # that `Transaction.preload_eip_8430_transactions/2` fills, so
+  # `necessity_by_association` cannot load the address.
+  @resolved_payer_address_fields [{:resolved_payer_address_hash, :resolved_payer_address}]
+
+  # The same address associations as `from_address` and `to_address` have in
+  # `transaction_necessity_by_association/0`.
+  @resolved_payer_necessity_by_association %{
+    :scam_badge => :optional,
+    :names => :optional,
+    proxy_implementations_association() => :optional
+  }
 
   @block_params [
     necessity_by_association:
@@ -427,7 +440,7 @@ defmodule BlockScoutWeb.API.V2.BlockController do
       |> put_status(200)
       |> put_view(TransactionView)
       |> render(:transactions, %{
-        transactions: transactions |> maybe_preload_ens_and_metadata(:transactions),
+        transactions: transactions |> preload_resolved_payers() |> maybe_preload_ens_and_metadata(:transactions),
         next_page_params: next_page_params
       })
     end
@@ -690,6 +703,22 @@ defmodule BlockScoutWeb.API.V2.BlockController do
         next_page_params: next_page_params
       })
     end
+  end
+
+  # Loads the rows of the EIP-8430 transactions with one query for the page,
+  # and then the addresses of their resolved payers.
+  #
+  # Runs before `maybe_preload_ens_and_metadata/2`, which writes ENS and metadata
+  # into the very address structs assigned here.
+  @spec preload_resolved_payers([Transaction.t()]) :: [Transaction.t()]
+  defp preload_resolved_payers(transactions) do
+    transactions
+    |> Transaction.preload_eip_8430_transactions(@api_true)
+    |> Chain.preload_address_participants(
+      @resolved_payer_address_fields,
+      @resolved_payer_necessity_by_association,
+      @api_true
+    )
   end
 
   defp transaction_necessity_by_association do

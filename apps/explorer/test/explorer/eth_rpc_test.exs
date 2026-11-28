@@ -4,6 +4,7 @@ defmodule Explorer.EthRPCTest do
 
   import Mox
 
+  alias Explorer.Chain.Data
   alias Explorer.EthRPC
   alias Explorer.Utility.LogFirstTopic
 
@@ -254,9 +255,147 @@ defmodule Explorer.EthRPCTest do
       assert rendered_transaction["type"] == "0x4"
       assert rendered_transaction["authorizationList"] == []
     end
+
+    test "renders the fields of an EIP-8430 transaction with a named sender" do
+      transaction = :transaction |> insert(type: 0x79, to_address: nil, r: 0, s: 0, v: 0) |> with_block()
+      payer = insert(:address)
+      {:ok, payer_data} = Data.cast(to_string(payer.hash))
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        has_named_sender: true,
+        nonce_key: 5,
+        valid_after: 0,
+        valid_before: 0x1A1C2B2A0B1,
+        metadata: %Data{bytes: <<0xAB, 0xCD>>},
+        payer_type: :named,
+        payer: payer_data,
+        sender_auth: %Data{bytes: <<1, 2>>},
+        payer_auth: %Data{bytes: <<3>>},
+        account_changes: [%{"type" => "0x1"}]
+      )
+
+      assert {:ok, rendered_transaction} = EthRPC.eth_get_transaction_by_hash(to_string(transaction.hash))
+
+      assert rendered_transaction["type"] == "0x79"
+      assert rendered_transaction["to"] == nil
+
+      for key <- ~w(r s v yParity accessList) do
+        refute Map.has_key?(rendered_transaction, key)
+      end
+
+      assert rendered_transaction["sender"] == transaction.from_address_hash
+      assert rendered_transaction["nonceKey"] == "0x5"
+      assert rendered_transaction["validAfter"] == "0x0"
+      assert rendered_transaction["validBefore"] == "0x1a1c2b2a0b1"
+      assert to_string(rendered_transaction["metadata"]) == "0xabcd"
+      assert to_string(rendered_transaction["payer"]) == to_string(payer.hash)
+      assert to_string(rendered_transaction["senderAuth"]) == "0x0102"
+      assert to_string(rendered_transaction["payerAuth"]) == "0x03"
+      assert rendered_transaction["accountChanges"] == [%{"type" => "0x1"}]
+    end
+
+    test "renders null for an empty sender and for nil values of an EIP-8430 transaction" do
+      transaction = :transaction |> insert(type: 0x79, to_address: nil, r: 0, s: 0, v: 0) |> with_block()
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        has_named_sender: false,
+        metadata: nil,
+        payer_type: :self,
+        payer: nil,
+        sender_auth: nil,
+        payer_auth: nil,
+        account_changes: nil
+      )
+
+      assert {:ok, rendered_transaction} = EthRPC.eth_get_transaction_by_hash(to_string(transaction.hash))
+
+      for key <- ~w(sender metadata payer senderAuth payerAuth accountChanges) do
+        assert Map.has_key?(rendered_transaction, key)
+        assert rendered_transaction[key] == nil
+      end
+
+      assert rendered_transaction["nonceKey"] == "0x0"
+    end
+
+    test "renders an EIP-8430 transaction without a row" do
+      transaction = :transaction |> insert(type: 0x79, to_address: nil, r: 0, s: 0, v: 0) |> with_block()
+
+      assert {:ok, rendered_transaction} = EthRPC.eth_get_transaction_by_hash(to_string(transaction.hash))
+
+      assert rendered_transaction["type"] == "0x79"
+
+      for key <- ~w(r s v yParity accessList) do
+        refute Map.has_key?(rendered_transaction, key)
+      end
+
+      for key <- ~w(sender nonceKey validAfter validBefore metadata payer senderAuth payerAuth accountChanges) do
+        refute Map.has_key?(rendered_transaction, key)
+      end
+    end
+
+    test "renders the signature fields of a transaction of a different type" do
+      transaction = :transaction |> insert(type: 2) |> with_block()
+
+      assert {:ok, rendered_transaction} = EthRPC.eth_get_transaction_by_hash(to_string(transaction.hash))
+
+      for key <- ~w(r s v yParity accessList) do
+        assert Map.has_key?(rendered_transaction, key)
+      end
+
+      refute Map.has_key?(rendered_transaction, "nonceKey")
+    end
   end
 
   describe "eth_getTransactionReceipt" do
+    test "renders payer, committedPhases and metadata of an EIP-8430 transaction" do
+      transaction =
+        :transaction |> insert(type: 0x79, to_address: nil) |> with_block(status: :ok)
+
+      resolved_payer = insert(:address)
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        metadata: %Data{bytes: <<0xAB, 0xCD>>},
+        resolved_payer_address_hash: resolved_payer.hash,
+        committed_phases_count: 3
+      )
+
+      assert {:ok, receipt} = EthRPC.eth_get_transaction_receipt(to_string(transaction.hash))
+
+      assert receipt["type"] == "0x79"
+      assert receipt["payer"] == resolved_payer.hash
+      assert receipt["committedPhases"] == "0x3"
+      assert to_string(receipt["metadata"]) == "0xabcd"
+    end
+
+    test "renders no metadata key for an empty metadata of an EIP-8430 transaction" do
+      transaction =
+        :transaction |> insert(type: 0x79, to_address: nil) |> with_block(status: :ok)
+
+      insert(:eip_8430_transaction, transaction: transaction, metadata: %Data{bytes: <<>>})
+
+      assert {:ok, receipt} = EthRPC.eth_get_transaction_receipt(to_string(transaction.hash))
+
+      assert Map.has_key?(receipt, "payer")
+      assert Map.has_key?(receipt, "committedPhases")
+      refute Map.has_key?(receipt, "metadata")
+    end
+
+    test "renders the receipt of an EIP-8430 transaction without a row" do
+      transaction =
+        :transaction |> insert(type: 0x79, to_address: nil) |> with_block(status: :ok)
+
+      assert {:ok, receipt} = EthRPC.eth_get_transaction_receipt(to_string(transaction.hash))
+
+      assert receipt["type"] == "0x79"
+
+      for key <- ~w(payer committedPhases metadata) do
+        refute Map.has_key?(receipt, key)
+      end
+    end
+
     test "renders logs and logsBloom of a transaction with already migrated logs" do
       address = insert(:address, hash: @log_address_hash_string)
 

@@ -38,10 +38,13 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
     api?: true
   ]
 
+  # The last pair is the resolved payer of an EIP-8430 transaction. Its hash is
+  # a virtual field that `Transaction.preload_eip_8430_transactions/2` fills.
   @transaction_address_fields [
     {:from_address_hash, :from_address},
     {:to_address_hash, :to_address},
-    {:created_contract_address_hash, :created_contract_address}
+    {:created_contract_address_hash, :created_contract_address},
+    {:resolved_payer_address_hash, :resolved_payer_address}
   ]
 
   @transaction_participant_necessity_by_association %{
@@ -128,6 +131,7 @@ defmodule BlockScoutWeb.API.V2.MainPageController do
   # metadata into the very address structs assigned here.
   defp preload_transaction_participants(transactions) do
     transactions
+    |> Transaction.preload_eip_8430_transactions(@api_true)
     |> Chain.preload_address_participants(
       @transaction_address_fields,
       @transaction_participant_necessity_by_association,

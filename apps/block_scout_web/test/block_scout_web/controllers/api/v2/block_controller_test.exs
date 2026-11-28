@@ -795,6 +795,37 @@ defmodule BlockScoutWeb.API.V2.BlockControllerTest do
     end
   end
 
+  describe "/blocks/{block_hash_or_number}/transactions with an EIP-8430 transaction" do
+    test "returns the resolved payer as a full address object", %{conn: conn} do
+      block = insert(:block)
+      resolved_payer = insert(:contract_address)
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block(block)
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+      regular = :transaction |> insert(type: 2) |> with_block(block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/transactions")
+
+      assert %{"items" => items} = json_response(request, 200)
+      items_by_hash = Map.new(items, &{&1["hash"], &1})
+
+      assert %{"resolved_payer" => rendered_payer} = items_by_hash[to_string(transaction.hash)]["eip_8430"]
+      assert rendered_payer["hash"] == Explorer.Chain.Address.checksum(resolved_payer.hash)
+      assert rendered_payer["is_contract"] == true
+      assert items_by_hash[to_string(regular.hash)]["eip_8430"] == nil
+    end
+
+    test "the contract_creation type filter does not select an EIP-8430 transaction", %{conn: conn} do
+      block = insert(:block)
+      :transaction |> insert(type: 0x79, to_address: nil) |> with_block(block)
+      creation = :transaction |> insert(type: 2, to_address: nil) |> with_block(block)
+
+      request = get(conn, "/api/v2/blocks/#{block.hash}/transactions", %{"type" => "contract_creation"})
+
+      assert %{"items" => [item]} = json_response(request, 200)
+      assert item["hash"] == to_string(creation.hash)
+    end
+  end
+
   describe "/blocks/{block_hash_or_number}/withdrawals" do
     test "return 422 on invalid parameter", %{conn: conn} do
       request_1 = get(conn, "/api/v2/blocks/0x123123/withdrawals")
