@@ -4,6 +4,17 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
 
   alias Explorer.Chain.InternalTransaction
 
+  # The tests of this module send more requests in one second than the default
+  # GraphQL rate limit accepts, so the limit is off for the module.
+  setup do
+    graphql_config = Application.get_env(:block_scout_web, Api.GraphQL)
+    Application.put_env(:block_scout_web, Api.GraphQL, Keyword.put(graphql_config, :rate_limit_disabled?, true))
+
+    on_exit(fn ->
+      Application.put_env(:block_scout_web, Api.GraphQL, graphql_config)
+    end)
+  end
+
   describe "transaction field" do
     test "with valid argument 'hash', returns all expected fields", %{conn: conn} do
       block = insert(:block)
@@ -117,6 +128,90 @@ defmodule BlockScoutWeb.GraphQL.Schema.Query.TransactionTest do
 
       assert %{"errors" => [error]} = json_response(conn, 200)
       assert error["message"] =~ ~s(Argument "hash" has invalid value)
+    end
+  end
+
+  describe "transaction field for an EIP-8430 transaction" do
+    @eip_8430_query """
+    query ($hash: FullHash!) {
+      transaction(hash: $hash) {
+        hash
+        type
+        r
+        s
+        v
+        nonce_key
+        resolved_payer_address_hash
+      }
+    }
+    """
+
+    test "returns the nonce channel and the resolved payer, and null in r, s and v", %{conn: conn} do
+      resolved_payer = insert(:address)
+      transaction = :transaction |> insert(type: 0x79, to_address: nil, r: 0, s: 0, v: 0) |> with_block()
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        nonce_key: 5,
+        resolved_payer_address_hash: resolved_payer.hash
+      )
+
+      variables = %{"hash" => to_string(transaction.hash)}
+      conn = get(conn, "/api/v1/graphql", query: @eip_8430_query, variables: variables)
+
+      assert json_response(conn, 200) == %{
+               "data" => %{
+                 "transaction" => %{
+                   "hash" => to_string(transaction.hash),
+                   "type" => 0x79,
+                   "r" => nil,
+                   "s" => nil,
+                   "v" => nil,
+                   "nonce_key" => "5",
+                   "resolved_payer_address_hash" => to_string(resolved_payer.hash)
+                 }
+               }
+             }
+    end
+
+    test "returns null in the new fields for an EIP-8430 transaction without a row", %{conn: conn} do
+      transaction = :transaction |> insert(type: 0x79, to_address: nil, r: 0, s: 0, v: 0) |> with_block()
+
+      variables = %{"hash" => to_string(transaction.hash)}
+      conn = get(conn, "/api/v1/graphql", query: @eip_8430_query, variables: variables)
+
+      assert %{
+               "data" => %{
+                 "transaction" => %{
+                   "r" => nil,
+                   "s" => nil,
+                   "v" => nil,
+                   "nonce_key" => nil,
+                   "resolved_payer_address_hash" => nil
+                 }
+               }
+             } = json_response(conn, 200)
+    end
+
+    test "returns r, s and v, and null in the new fields for a transaction of a different type", %{conn: conn} do
+      transaction = :transaction |> insert(type: 2) |> with_block()
+
+      variables = %{"hash" => to_string(transaction.hash)}
+      conn = get(conn, "/api/v1/graphql", query: @eip_8430_query, variables: variables)
+
+      assert json_response(conn, 200) == %{
+               "data" => %{
+                 "transaction" => %{
+                   "hash" => to_string(transaction.hash),
+                   "type" => 2,
+                   "r" => to_string(transaction.r),
+                   "s" => to_string(transaction.s),
+                   "v" => to_string(transaction.v),
+                   "nonce_key" => nil,
+                   "resolved_payer_address_hash" => nil
+                 }
+               }
+             }
     end
   end
 

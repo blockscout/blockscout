@@ -3,7 +3,7 @@ defmodule Explorer.Chain.Address.MetadataPreloaderTest do
   use ExUnit.Case, async: false
 
   alias Explorer.Chain
-  alias Explorer.Chain.Address
+  alias Explorer.Chain.{Address, Transaction}
   alias Explorer.Chain.Address.MetadataPreloader
   alias Explorer.MicroserviceInterfaces.{BENS, Metadata}
   alias Plug.Conn
@@ -100,6 +100,31 @@ defmodule Explorer.Chain.Address.MetadataPreloaderTest do
     test "skips both microservices when there are no address hashes" do
       # any request to the bypass would fail the test, since nothing is expected
       assert MetadataPreloader.maybe_preload_ens_and_metadata([]) == []
+    end
+
+    test "preloads ENS name and metadata to the resolved payer of a transaction", %{bypass: bypass} do
+      expect_both_microservices(bypass)
+
+      resolved_payer = address()
+
+      transaction = %Transaction{
+        token_transfers: [],
+        resolved_payer_address_hash: resolved_payer.hash,
+        resolved_payer_address: resolved_payer
+      }
+
+      [transaction_with_meta] = MetadataPreloader.maybe_preload_ens_and_metadata([transaction], :transactions)
+
+      assert %Address{ens_domain_name: @ens_name, metadata: %{"tags" => [@metadata_tag]}} =
+               transaction_with_meta.resolved_payer_address
+    end
+
+    test "does not change a transaction without a resolved payer" do
+      # any request to the bypass would fail the test, since nothing is expected
+      transaction = %Transaction{token_transfers: []}
+
+      assert [%Transaction{resolved_payer_address: nil}] =
+               MetadataPreloader.maybe_preload_ens_and_metadata([transaction], :transactions)
     end
   end
 

@@ -27,6 +27,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     Address,
     Block,
     DecodingHelper,
+    EIP8430Transaction,
     Log,
     SignedAuthorization,
     SmartContract,
@@ -46,6 +47,9 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   import BlockScoutWeb.Account.AuthController, only: [current_user: 1]
 
   @api_true [api?: true]
+
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
 
   def render("message.json", assigns) do
     ApiView.render("message.json", assigns)
@@ -642,6 +646,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
       "has_error_in_internal_transactions" => transaction.has_error_in_internal_transactions,
       "authorization_list" => authorization_list(transaction.signed_authorizations),
       "is_pending_update" => transaction_pending_update?(transaction),
+      "eip_8430" => eip_8430(transaction, conn, single_transaction?, tags_data),
       "fhe_operations_count" => fhe_operations_count_display(transaction)
     }
 
@@ -653,16 +658,72 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     transaction.block && transaction.block.base_fee_per_gas
   end
 
-  # Fetches tags for from/to/created addresses with one query per tag type
-  # instead of up to three queries per address.
+  # Fetches tags for from/to/created addresses and for the resolved payer of an
+  # EIP-8430 transaction with one query per tag type instead of up to three
+  # queries per address.
   defp batched_address_tags(transaction, conn) do
     address_hashes =
-      [transaction.from_address_hash, transaction.to_address_hash, transaction.created_contract_address_hash]
+      [
+        transaction.from_address_hash,
+        transaction.to_address_hash,
+        transaction.created_contract_address_hash,
+        transaction.resolved_payer_address_hash
+      ]
       |> Enum.reject(&is_nil/1)
       |> Enum.uniq()
 
     {:address_tags, GetAddressTags.get_address_tags_batch(address_hashes, current_user(conn), @api_true)}
   end
+
+  # Builds the nested object with the fields that only an EIP-8430 transaction
+  # (EIP-2718 type `0x79`) has.
+  #
+  # The view sends no query. The callers load the row in `eip_8430_transactions`
+  # with `Transaction.preload_eip_8430_transaction/2` or
+  # `Transaction.preload_eip_8430_transactions/2`, and they load the address of
+  # the resolved payer. Without a loaded row the function returns `nil`: for a
+  # transaction of a different type and for an EIP-8430 transaction without a row.
+  #
+  # One transaction gets the full object. An item of a list gets only the
+  # resolved payer, to keep the list responses small.
+  @spec eip_8430(Transaction.t(), Plug.Conn.t() | nil, boolean(), term()) :: map() | nil
+  defp eip_8430(
+         %Transaction{eip_8430_transaction: %EIP8430Transaction{} = eip_8430_transaction} = transaction,
+         conn,
+         single_transaction?,
+         tags_data
+       ) do
+    resolved_payer =
+      Helper.address_with_info(
+        single_transaction? && conn,
+        transaction.resolved_payer_address,
+        transaction.resolved_payer_address_hash,
+        single_transaction?,
+        tags_data
+      )
+
+    if single_transaction? do
+      %{
+        "resolved_payer" => resolved_payer,
+        "payer_type" => eip_8430_transaction.payer_type,
+        "nonce_key" => decimal_to_integer_string(eip_8430_transaction.nonce_key),
+        "valid_after" => decimal_to_integer_string(eip_8430_transaction.valid_after),
+        "valid_before" => decimal_to_integer_string(eip_8430_transaction.valid_before),
+        "committed_phases_count" => eip_8430_transaction.committed_phases_count,
+        "metadata" => eip_8430_transaction.metadata,
+        "account_changes" => eip_8430_transaction.account_changes,
+        "has_named_sender" => eip_8430_transaction.has_named_sender
+      }
+    else
+      %{"resolved_payer" => resolved_payer}
+    end
+  end
+
+  defp eip_8430(_transaction, _conn, _single_transaction?, _tags_data), do: nil
+
+  # Writes the integer without an exponent, also for a value with trailing zeros.
+  @spec decimal_to_integer_string(Decimal.t()) :: String.t()
+  defp decimal_to_integer_string(%Decimal{} = decimal), do: Decimal.to_string(decimal, :normal)
 
   defp gas_price_for_display(transaction) do
     transaction.gas_price || Transaction.effective_gas_price(transaction)
@@ -896,6 +957,7 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
                | :blob_transaction
                | :set_code_transaction
                | :sponsored_transaction
+               | :eip_8430_transaction
                | :op_stack_l1_attributes_transaction
                | :op_stack_post_exec_transaction
   def transaction_types(transaction, types \\ [], stage \\ :op_stack_l1_attributes_transaction)
@@ -935,6 +997,19 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
     types =
       if chain_type() == :eden and type == 118 do
         [:sponsored_transaction | types]
+      else
+        types
+      end
+
+    transaction_types(transaction, types, :eip_8430_transaction)
+  end
+
+  def transaction_types(%Transaction{type: type} = transaction, types, :eip_8430_transaction) do
+    # EIP-8430 transaction type. The value names the type of the transaction,
+    # not the sponsorship: the sender can also pay for such a transaction.
+    types =
+      if type == @eip_8430_transaction_type do
+        [:eip_8430_transaction | types]
       else
         types
       end
@@ -994,12 +1069,14 @@ defmodule BlockScoutWeb.API.V2.TransactionView do
   end
 
   def transaction_types(
-        %Transaction{to_address_hash: to_address_hash} = transaction,
+        %Transaction{to_address_hash: to_address_hash, type: type} = transaction,
         types,
         :contract_creation
       ) do
+    # An EIP-8430 transaction has no `to` value, because its recipients are in
+    # the `calls` field. It is not a contract creation.
     types =
-      if is_nil(to_address_hash) do
+      if is_nil(to_address_hash) and type != @eip_8430_transaction_type do
         [:contract_creation | types]
       else
         types

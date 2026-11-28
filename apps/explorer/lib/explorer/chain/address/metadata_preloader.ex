@@ -301,6 +301,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
          to_address_hash: to_address_hash,
          created_contract_address_hash: created_contract_address_hash,
          from_address_hash: from_address_hash,
+         resolved_payer_address_hash: resolved_payer_address_hash,
          token_transfers: token_transfers
        }) do
     token_transfers_addresses =
@@ -312,7 +313,7 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
           []
       end
 
-    ([to_address_hash, created_contract_address_hash, from_address_hash]
+    ([to_address_hash, created_contract_address_hash, from_address_hash, resolved_payer_address_hash]
      |> Enum.reject(&is_nil/1)
      |> Enum.map(&to_string/1)) ++ token_transfers_addresses
   end
@@ -392,7 +393,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
          %Transaction{
            to_address_hash: to_address_hash,
            created_contract_address_hash: created_contract_address_hash,
-           from_address_hash: from_address_hash
+           from_address_hash: from_address_hash,
+           resolved_payer_address_hash: resolved_payer_address_hash
          } = transaction,
          names,
          field_to_put_info
@@ -412,6 +414,8 @@ defmodule Explorer.Chain.Address.MetadataPreloader do
         created_contract_address:
           alter_address(transaction.created_contract_address, created_contract_address_hash, names, field_to_put_info),
         from_address: alter_address(transaction.from_address, from_address_hash, names, field_to_put_info),
+        resolved_payer_address:
+          alter_address(transaction.resolved_payer_address, resolved_payer_address_hash, names, field_to_put_info),
         token_transfers: token_transfers
     }
   end

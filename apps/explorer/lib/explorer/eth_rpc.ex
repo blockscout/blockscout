@@ -16,6 +16,7 @@ defmodule Explorer.EthRPC do
     Block,
     Data,
     DenormalizationHelper,
+    EIP8430Transaction,
     Hash,
     Hash.Address,
     Log,
@@ -39,6 +40,9 @@ defmodule Explorer.EthRPC do
   @invalid_block_number_message "Invalid block number"
   @incorrect_number_of_params_message "Incorrect number of params"
   @something_went_wrong_message "Something went wrong"
+
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
 
   @type error :: %{code: integer(), message: String.t()}
 
@@ -134,6 +138,8 @@ defmodule Explorer.EthRPC do
     "eth_getTransactionByHash" => %{
       action: :eth_get_transaction_by_hash,
       notes: """
+      For an EIP-8430 transaction (type 0x79), the response is not equal to the response of the node.
+      The response does not contain the calls field, because Blockscout does not store it.
       """,
       example: """
       {"jsonrpc": "2.0", "id": 4, "method": "eth_getTransactionByHash", "params": ["0x98318a5a22e363928d4565382c1022a8aed169b6a657f639c2f5c6e2c5114e4c"]}
@@ -1118,9 +1124,12 @@ defmodule Explorer.EthRPC do
   def eth_get_transaction_by_hash(transaction_hash_string) do
     # `signed_authorizations` are preloaded separately, only for EIP-7702
     # (type 4) transactions, to skip the query for every other type.
+    # The row in `eip_8430_transactions` is preloaded the same way, only for
+    # EIP-8430 (type `0x79`) transactions.
     render_func = fn transaction ->
       transaction
       |> Transaction.preload_signed_authorizations(api?: true)
+      |> Transaction.preload_eip_8430_transaction(api?: true)
       |> render_transaction()
     end
 
@@ -1145,16 +1154,15 @@ defmodule Explorer.EthRPC do
         "transactionIndex" => encode_quantity(transaction.index),
         "value" => transaction.value |> Wei.to(:wei) |> encode_quantity(),
         "type" => encode_quantity(transaction.type) || "0x0",
-        "chainId" => chain_id(),
-        "v" => encode_quantity(transaction.v),
-        "r" => encode_quantity(transaction.r),
-        "s" => encode_quantity(transaction.s)
+        "chainId" => chain_id()
       }
+      |> maybe_add_signature_fields(transaction)
       |> maybe_add_eip_1559_fields(transaction)
       |> maybe_add_y_parity(transaction)
       |> maybe_add_signed_authorizations(transaction)
       |> maybe_add_chain_type_extra_transaction_info_properties(transaction)
       |> maybe_add_access_list(transaction)
+      |> maybe_add_eip_8430_transaction_fields(transaction)
 
     {:ok, result}
   end
@@ -1168,7 +1176,15 @@ defmodule Explorer.EthRPC do
       %{block: :optional, logs: :optional}
       |> Map.merge(chain_type_transaction_necessity_by_association())
 
-    validate_and_render_transaction(transaction_hash_string, &render_transaction_receipt/1,
+    # The row in `eip_8430_transactions` is preloaded separately, only for
+    # EIP-8430 (type `0x79`) transactions, to skip the query for every other type.
+    render_func = fn transaction ->
+      transaction
+      |> Transaction.preload_eip_8430_transaction(api?: true)
+      |> render_transaction_receipt()
+    end
+
+    validate_and_render_transaction(transaction_hash_string, render_func,
       api?: true,
       necessity_by_association: necessity_by_association
     )
@@ -1214,9 +1230,73 @@ defmodule Explorer.EthRPC do
         "type" => encode_quantity(transaction.type) || "0x0"
       }
       |> maybe_add_chain_type_extra_receipt_properties(transaction)
+      |> maybe_add_eip_8430_receipt_fields(transaction)
 
     {:ok, props}
   end
+
+  # An EIP-8430 transaction (type `0x79`) has no `v`, `r` and `s` fields. The
+  # database contains zero compatibility values for it, so the type of the
+  # transaction decides that the fields are absent.
+  defp maybe_add_signature_fields(props, %Transaction{type: @eip_8430_transaction_type}), do: props
+
+  defp maybe_add_signature_fields(props, %Transaction{} = transaction) do
+    props
+    |> Map.put("v", encode_quantity(transaction.v))
+    |> Map.put("r", encode_quantity(transaction.r))
+    |> Map.put("s", encode_quantity(transaction.s))
+  end
+
+  # Adds the fields that only an EIP-8430 transaction (type `0x79`) has, from
+  # its row in `eip_8430_transactions`. A `nil` value of the row gives `null`.
+  # Without a row, the response has no such keys.
+  #
+  # The row stores only the `has_named_sender` flag. A named sender is equal to
+  # `from`, and an empty sender gives `null`. `payer` is the value of the node
+  # without change. It is not the resolved payer.
+  defp maybe_add_eip_8430_transaction_fields(props, %Transaction{
+         type: @eip_8430_transaction_type,
+         from_address_hash: from_address_hash,
+         eip_8430_transaction: %EIP8430Transaction{} = eip_8430_transaction
+       }) do
+    sender = if eip_8430_transaction.has_named_sender, do: from_address_hash
+
+    Map.merge(props, %{
+      "sender" => sender,
+      "nonceKey" => encode_quantity(eip_8430_transaction.nonce_key),
+      "validAfter" => encode_quantity(eip_8430_transaction.valid_after),
+      "validBefore" => encode_quantity(eip_8430_transaction.valid_before),
+      "metadata" => eip_8430_transaction.metadata,
+      "payer" => eip_8430_transaction.payer,
+      "senderAuth" => eip_8430_transaction.sender_auth,
+      "payerAuth" => eip_8430_transaction.payer_auth,
+      "accountChanges" => eip_8430_transaction.account_changes
+    })
+  end
+
+  defp maybe_add_eip_8430_transaction_fields(props, _transaction), do: props
+
+  # Adds the receipt fields that only an EIP-8430 transaction (type `0x79`)
+  # has. Here `payer` is the resolved payer: the account that pays the fee.
+  # Without a row in `eip_8430_transactions`, the response has no such keys.
+  defp maybe_add_eip_8430_receipt_fields(props, %Transaction{
+         type: @eip_8430_transaction_type,
+         eip_8430_transaction: %EIP8430Transaction{} = eip_8430_transaction
+       }) do
+    props
+    |> Map.put("payer", eip_8430_transaction.resolved_payer_address_hash)
+    |> Map.put("committedPhases", encode_quantity(eip_8430_transaction.committed_phases_count))
+    |> maybe_add_receipt_metadata(eip_8430_transaction.metadata)
+  end
+
+  defp maybe_add_eip_8430_receipt_fields(props, _transaction), do: props
+
+  # The receipt contains `metadata` only if the value is not empty.
+  defp maybe_add_receipt_metadata(props, %Data{bytes: bytes} = metadata) when byte_size(bytes) > 0 do
+    Map.put(props, "metadata", metadata)
+  end
+
+  defp maybe_add_receipt_metadata(props, _metadata), do: props
 
   defp maybe_add_eip_1559_fields(props, %Transaction{
          max_fee_per_gas: max_fee_per_gas,
@@ -1231,6 +1311,9 @@ defmodule Explorer.EthRPC do
   defp maybe_add_eip_1559_fields(props, _), do: props
 
   # yParity shouldn't be added for legacy (type 0) and is_nil(type) transactions
+  # An EIP-8430 transaction (type `0x79`) has no `yParity` field.
+  defp maybe_add_y_parity(props, %Transaction{type: @eip_8430_transaction_type}), do: props
+
   defp maybe_add_y_parity(props, %Transaction{type: type, v: v}) when not is_nil(type) and type > 0 do
     props
     |> Map.put("yParity", encode_quantity(v))
@@ -1262,6 +1345,9 @@ defmodule Explorer.EthRPC do
   end
 
   defp maybe_add_signed_authorizations(props, _transaction), do: props
+
+  # An EIP-8430 transaction (type `0x79`) has no `accessList` field.
+  defp maybe_add_access_list(props, %Transaction{type: @eip_8430_transaction_type}), do: props
 
   defp maybe_add_access_list(props, %Transaction{type: type}) when not is_nil(type) and type > 0 do
     props

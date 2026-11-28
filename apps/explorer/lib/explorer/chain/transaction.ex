@@ -17,6 +17,7 @@ defmodule Explorer.Chain.Transaction.Schema do
     Beacon.BlobTransaction,
     Block,
     Data,
+    EIP8430Transaction,
     Hash,
     InternalTransaction,
     Log,
@@ -252,6 +253,12 @@ defmodule Explorer.Chain.Transaction.Schema do
         field(:transaction_fee_log, :any, virtual: true)
         field(:transaction_fee_token, :any, virtual: true)
 
+        # EIP-8430 virtual fields. `Explorer.Chain.Transaction.preload_eip_8430_transaction/2`
+        # and `preload_eip_8430_transactions/2` copy the hash of the resolved payer from the
+        # row in `eip_8430_transactions`. The callers load the address separately.
+        field(:resolved_payer_address_hash, Hash.Address, virtual: true)
+        field(:resolved_payer_address, :any, virtual: true)
+
         # A transient field for deriving old block hash during transaction upserts.
         # Used to force refetch of a block in case a transaction is re-collated
         # in a different block. See: https://github.com/blockscout/blockscout/issues/1911
@@ -298,6 +305,8 @@ defmodule Explorer.Chain.Transaction.Schema do
         )
 
         has_one(:pending_operation, PendingTransactionOperation, foreign_key: :transaction_hash, references: :hash)
+
+        has_one(:eip_8430_transaction, EIP8430Transaction, foreign_key: :transaction_hash, references: :hash)
 
         unquote_splicing(@chain_type_fields)
         unquote_splicing(@chain_identity_fields)
@@ -2373,6 +2382,9 @@ defmodule Explorer.Chain.Transaction do
   # EIP-7702 set code transaction type: the only type carrying an authorization list.
   @set_code_transaction_type 4
 
+  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
+  @eip_8430_transaction_type 0x79
+
   @doc """
   Preloads `signed_authorizations` for a transaction, but only when it can have
   any: EIP-7702 set code transactions (type #{@set_code_transaction_type}).
@@ -2411,6 +2423,98 @@ defmodule Explorer.Chain.Transaction do
 
   def preload_signed_authorizations(%__MODULE__{} = transaction, _options) do
     %{transaction | signed_authorizations: []}
+  end
+
+  @doc """
+  Loads the row in `eip_8430_transactions` for one transaction.
+
+  The function sends a query only for an EIP-8430 transaction (EIP-2718 type
+  `0x79`). It also loads the row of a pending transaction. The function always
+  writes a loaded value to `eip_8430_transaction`: the row, or `nil` for an
+  EIP-8430 transaction without a row and for a transaction of a different type.
+
+  The function also copies `resolved_payer_address_hash` from the row to the
+  virtual field of the transaction. It does not load the address of the
+  resolved payer.
+
+  ## Parameters
+  - `transaction`: The transaction to preload.
+  - `options`: Keyword list with `api?` used to pick the replica repo.
+
+  ## Returns
+  - The transaction with `eip_8430_transaction` loaded (or set to `nil`).
+  """
+  @spec preload_eip_8430_transaction(t(), Keyword.t()) :: t()
+  def preload_eip_8430_transaction(%__MODULE__{type: @eip_8430_transaction_type, hash: hash} = transaction, options) do
+    eip_8430_transaction = Chain.select_repo(options).get_by(EIP8430Transaction, transaction_hash: hash)
+
+    put_eip_8430_transaction(transaction, eip_8430_transaction)
+  end
+
+  def preload_eip_8430_transaction(%__MODULE__{} = transaction, _options) do
+    put_eip_8430_transaction(transaction, nil)
+  end
+
+  @doc """
+  Loads the rows in `eip_8430_transactions` for a list of transactions with one
+  query.
+
+  The function sends the query only if the list has an EIP-8430 transaction
+  (EIP-2718 type `0x79`). Each transaction gets the same values as from
+  `preload_eip_8430_transaction/2`. An item that is not a transaction stays
+  without change.
+
+  ## Parameters
+  - `items`: The list of transactions. It can contain items of other kinds.
+  - `options`: Keyword list with `api?` used to pick the replica repo.
+
+  ## Returns
+  - The list in the same order, with `eip_8430_transaction` loaded (or set to
+    `nil`) in each transaction.
+  """
+  @spec preload_eip_8430_transactions([item], Keyword.t()) :: [item] when item: term()
+  def preload_eip_8430_transactions(items, options) when is_list(items) do
+    transaction_hashes = for %__MODULE__{type: @eip_8430_transaction_type, hash: hash} <- items, do: hash
+
+    eip_8430_transactions = transaction_hashes_to_eip_8430_transactions(transaction_hashes, options)
+
+    Enum.map(items, fn
+      %__MODULE__{hash: hash} = transaction ->
+        put_eip_8430_transaction(transaction, Map.get(eip_8430_transactions, hash))
+
+      item ->
+        item
+    end)
+  end
+
+  @spec transaction_hashes_to_eip_8430_transactions([Hash.Full.t()], Keyword.t()) :: %{
+          Hash.Full.t() => EIP8430Transaction.t()
+        }
+  defp transaction_hashes_to_eip_8430_transactions([], _options), do: %{}
+
+  defp transaction_hashes_to_eip_8430_transactions(transaction_hashes, options) do
+    query =
+      from(eip_8430_transaction in EIP8430Transaction,
+        where: eip_8430_transaction.transaction_hash in ^transaction_hashes
+      )
+
+    query
+    |> Chain.select_repo(options).all()
+    |> Map.new(&{&1.transaction_hash, &1})
+  end
+
+  @spec put_eip_8430_transaction(t(), EIP8430Transaction.t() | nil) :: t()
+  defp put_eip_8430_transaction(transaction, nil) do
+    %{transaction | eip_8430_transaction: nil, resolved_payer_address_hash: nil, resolved_payer_address: nil}
+  end
+
+  defp put_eip_8430_transaction(transaction, %EIP8430Transaction{} = eip_8430_transaction) do
+    %{
+      transaction
+      | eip_8430_transaction: eip_8430_transaction,
+        resolved_payer_address_hash: eip_8430_transaction.resolved_payer_address_hash,
+        resolved_payer_address: nil
+    }
   end
 
   @doc """
@@ -2935,7 +3039,15 @@ defmodule Explorer.Chain.Transaction do
   defp apply_filter_by_type_to_transactions_inner(dynamic_query, _, query), do: {dynamic_query, query}
 
   defp filter_contract_creation_dynamic(dynamic) do
-    dynamic([transaction], ^dynamic or is_nil(transaction.to_address_hash))
+    # An EIP-8430 transaction (EIP-2718 type `0x79`) has no `to` value, because its recipients
+    # are in the `calls` field. It is not a contract creation. `type` is `NULL` for old
+    # transactions, so the condition accepts `NULL` explicitly.
+    dynamic(
+      [transaction],
+      ^dynamic or
+        (is_nil(transaction.to_address_hash) and
+           (is_nil(transaction.type) or transaction.type != ^@eip_8430_transaction_type))
+    )
   end
 
   defp filter_transaction_dynamic(dynamic) do
@@ -2983,9 +3095,6 @@ defmodule Explorer.Chain.Transaction do
     |> limit(^@limit_showing_transactions)
     |> Repo.aggregate(:count, :hash)
   end
-
-  # EIP-2718 type of the EIP-8430 transaction: `0x79`.
-  @eip_8430_transaction_type 0x79
 
   # The `nonce_key` value of the nonce-free mode of EIP-8430: `2^256 - 1`.
   @nonce_free_nonce_key Decimal.new(Bitwise.bsl(1, 256) - 1)

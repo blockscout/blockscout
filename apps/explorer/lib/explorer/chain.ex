@@ -1174,6 +1174,12 @@ defmodule Explorer.Chain do
   `Explorer.Chain.SmartContract.association_without_abi/0`). The `to_address`
   additionally gets the full `:smart_contract` association when it is a
   contract, since transaction input and revert-reason decoding need its `abi`.
+
+  The resolved payer of an EIP-8430 transaction is also a participant. The
+  function reads its hash from the virtual `resolved_payer_address_hash` and
+  writes the address to the virtual `resolved_payer_address`. Call
+  `Explorer.Chain.Transaction.preload_eip_8430_transaction/2` before this
+  function, because it fills the virtual hash.
   """
   @spec preload_transaction_participants(Transaction.t(), %{any() => :optional | :required}, [api?]) ::
           Transaction.t()
@@ -1184,7 +1190,8 @@ defmodule Explorer.Chain do
       [
         transaction.from_address_hash,
         transaction.to_address_hash,
-        transaction.created_contract_address_hash
+        transaction.created_contract_address_hash,
+        transaction.resolved_payer_address_hash
         | Enum.flat_map(token_transfers, &[&1.from_address_hash, &1.to_address_hash])
       ]
       |> Enum.reject(&is_nil/1)
@@ -1202,6 +1209,7 @@ defmodule Explorer.Chain do
       | from_address: Map.get(addresses, transaction.from_address_hash),
         to_address: to_address,
         created_contract_address: Map.get(addresses, transaction.created_contract_address_hash),
+        resolved_payer_address: Map.get(addresses, transaction.resolved_payer_address_hash),
         token_transfers:
           Enum.map(token_transfers, fn %TokenTransfer{} = token_transfer ->
             %TokenTransfer{

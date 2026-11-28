@@ -122,10 +122,13 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
     proxy_implementations_association() => :optional
   }
 
+  # The last pair is the resolved payer of an EIP-8430 transaction. Its hash is
+  # a virtual field that `Transaction.preload_eip_8430_transactions/2` fills.
   @transaction_address_fields [
     {:from_address_hash, :from_address},
     {:to_address_hash, :to_address},
-    {:created_contract_address_hash, :created_contract_address}
+    {:created_contract_address_hash, :created_contract_address},
+    {:resolved_payer_address_hash, :resolved_payer_address}
   ]
 
   @token_transfers_necessity_by_association %{
@@ -225,6 +228,7 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
 
     with {:ok, transaction, _transaction_hash} <- validate_transaction(transaction_hash_string, params, options),
          preloaded <- Transaction.preload_signed_authorizations(transaction, @api_true),
+         preloaded <- Transaction.preload_eip_8430_transaction(preloaded, @api_true),
          preloaded <-
            Chain.preload_token_transfers(
              preloaded,
@@ -329,10 +333,14 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
   # `necessity_by_association` instead repeats the `address_names`, scam badge
   # and proxy implementation queries once per role.
   #
+  # The rows of the EIP-8430 transactions are loaded first, with one query for
+  # the page, because they give the hash of the resolved payer.
+  #
   # Runs before `maybe_preload_ens_and_metadata/2`, which writes ENS and metadata
   # into the very address structs assigned here.
   defp preload_transaction_list_participants(transactions) do
     transactions
+    |> Transaction.preload_eip_8430_transactions(@api_true)
     |> Chain.preload_address_participants(
       @transaction_address_fields,
       @transaction_list_participant_necessity_by_association,
@@ -1007,7 +1015,10 @@ defmodule BlockScoutWeb.API.V2.TransactionController do
            anyOf: [
              Schemas.Transaction.Summary,
              Schemas.Transaction.SummaryJustRequestBody
-           ]
+           ],
+           nullable: true,
+           description:
+             "`null` for a transaction that is not successful and for an EIP-8430 transaction (type 0x79), because no summary is available for them."
          }},
       not_found: NotFoundResponse.response(),
       unprocessable_entity: JsonErrorResponse.response()

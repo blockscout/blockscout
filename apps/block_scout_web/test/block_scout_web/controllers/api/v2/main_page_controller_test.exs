@@ -55,6 +55,21 @@ defmodule BlockScoutWeb.API.V2.MainPageControllerTest do
     end
   end
 
+  describe "/main-page/transactions with an EIP-8430 transaction" do
+    test "returns the resolved payer as a full address object", %{conn: conn} do
+      resolved_payer = insert(:contract_address)
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+
+      request = get(conn, "/api/v2/main-page/transactions")
+
+      assert [item] = json_response(request, 200)
+      assert %{"resolved_payer" => rendered_payer} = item["eip_8430"]
+      assert rendered_payer["hash"] == Explorer.Chain.Address.checksum(resolved_payer.hash)
+      assert rendered_payer["is_contract"] == true
+    end
+  end
+
   describe "/main-page/transactions/watchlist" do
     test "unauthorized", %{conn: conn} do
       request = get(conn, "/api/v2/main-page/transactions/watchlist")

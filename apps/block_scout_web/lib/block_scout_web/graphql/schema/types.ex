@@ -4,6 +4,7 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
   use Utils.CompileTimeEnvHelper, chain_identity: [:explorer, :chain_identity]
 
   alias BlockScoutWeb.GraphQL.Resolvers.{Block, InternalTransaction}
+  alias BlockScoutWeb.GraphQL.Resolvers.Transaction, as: TransactionResolver
 
   case @chain_identity do
     {:optimism, :celo} ->
@@ -29,10 +30,21 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
         field(:index, :integer)
         field(:input, :string)
         field(:nonce, :nonce_hash)
-        field(:r, :decimal)
-        field(:s, :decimal)
+
+        field :r, :decimal do
+          resolve(&TransactionResolver.signature_field/3)
+        end
+
+        field :s, :decimal do
+          resolve(&TransactionResolver.signature_field/3)
+        end
+
         field(:status, :status)
-        field(:v, :decimal)
+
+        field :v, :decimal do
+          resolve(&TransactionResolver.signature_field/3)
+        end
+
         field(:value, :wei)
         field(:block_hash, :full_hash)
         field(:block_number, :integer)
@@ -45,6 +57,14 @@ defmodule BlockScoutWeb.GraphQL.Schema.Transaction do
         field(:max_fee_per_gas, :wei)
         field(:type, :integer)
         field(:has_error_in_internal_transactions, :boolean)
+
+        field :nonce_key, :decimal do
+          resolve(&TransactionResolver.eip_8430_field/3)
+        end
+
+        field :resolved_payer_address_hash, :address_hash do
+          resolve(&TransactionResolver.eip_8430_field/3)
+        end
 
         field :block, :block do
           resolve(&Block.get_by/3)

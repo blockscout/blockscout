@@ -796,6 +796,51 @@ defmodule Explorer.ChainTest do
     end
   end
 
+  describe "preload_transaction_participants/3" do
+    test "loads the resolved payer of an EIP-8430 transaction" do
+      resolved_payer = insert(:address)
+      transaction = insert(:transaction, type: 0x79, to_address: nil)
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+
+      preloaded =
+        transaction
+        |> Transaction.preload_eip_8430_transaction([])
+        |> Chain.preload_transaction_participants(%{names: :optional}, [])
+
+      assert %Address{hash: resolved_payer_hash, names: []} = preloaded.resolved_payer_address
+      assert resolved_payer_hash == resolved_payer.hash
+      assert preloaded.from_address.hash == transaction.from_address_hash
+      assert preloaded.to_address == nil
+    end
+
+    test "loads one address for a resolved payer that is equal to the sender" do
+      transaction = insert(:transaction, type: 0x79, to_address: nil)
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        resolved_payer_address_hash: transaction.from_address_hash
+      )
+
+      preloaded =
+        transaction
+        |> Transaction.preload_eip_8430_transaction([])
+        |> Chain.preload_transaction_participants(%{}, [])
+
+      assert preloaded.resolved_payer_address.hash == transaction.from_address_hash
+      assert preloaded.from_address.hash == transaction.from_address_hash
+    end
+
+    test "writes nil for a transaction without a resolved payer" do
+      transaction = insert(:transaction)
+
+      preloaded = Chain.preload_transaction_participants(transaction, %{}, [])
+
+      assert preloaded.resolved_payer_address == nil
+      assert preloaded.from_address.hash == transaction.from_address_hash
+      assert preloaded.to_address.hash == transaction.to_address_hash
+    end
+  end
+
   describe "hashes_to_transactions/2" do
     test "with transaction with block required without block returns nil" do
       [%Transaction{hash: hash_with_block1}, %Transaction{hash: hash_with_block2}] =

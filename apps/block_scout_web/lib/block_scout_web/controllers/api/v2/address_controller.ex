@@ -98,10 +98,13 @@ defmodule BlockScoutWeb.API.V2.AddressController do
     proxy_implementations_association() => :optional
   }
 
+  # The last pair is the resolved payer of an EIP-8430 transaction. Its hash is
+  # a virtual field that `Transaction.preload_eip_8430_transactions/2` fills.
   @transaction_address_fields [
     {:from_address_hash, :from_address},
     {:to_address_hash, :to_address},
-    {:created_contract_address_hash, :created_contract_address}
+    {:created_contract_address_hash, :created_contract_address},
+    {:resolved_payer_address_hash, :resolved_payer_address}
   ]
 
   @token_transfer_address_fields [
@@ -486,6 +489,7 @@ defmodule BlockScoutWeb.API.V2.AddressController do
           |> render(:transactions, %{
             transactions:
               transactions
+              |> Transaction.preload_eip_8430_transactions(@api_true)
               |> Chain.preload_address_participants(
                 @transaction_address_fields,
                 @transaction_participant_necessity_by_association,

@@ -162,6 +162,40 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     end
   end
 
+  describe "/transactions with EIP-8430 transactions" do
+    test "returns only the resolved payer as a full address object", %{conn: conn} do
+      resolved_payer = insert(:contract_address)
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+
+      request = get(conn, "/api/v2/transactions")
+
+      assert %{"items" => [item]} = json_response(request, 200)
+      assert item["hash"] == to_string(transaction.hash)
+      assert %{"resolved_payer" => rendered_payer} = item["eip_8430"]
+      assert Map.keys(item["eip_8430"]) == ["resolved_payer"]
+      assert rendered_payer["hash"] == Address.checksum(resolved_payer.hash)
+      assert rendered_payer["is_contract"] == true
+      assert "eip_8430_transaction" in item["transaction_types"]
+      refute "contract_creation" in item["transaction_types"]
+    end
+
+    test "returns null for an EIP-8430 transaction without a row and for a different type", %{conn: conn} do
+      without_row = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+      regular = :transaction |> insert(type: 2) |> with_block()
+
+      request = get(conn, "/api/v2/transactions")
+
+      assert %{"items" => items} = json_response(request, 200)
+      items_by_hash = Map.new(items, &{&1["hash"], &1})
+
+      assert items_by_hash[to_string(without_row.hash)]["eip_8430"] == nil
+      assert "eip_8430_transaction" in items_by_hash[to_string(without_row.hash)]["transaction_types"]
+      assert items_by_hash[to_string(regular.hash)]["eip_8430"] == nil
+      refute "eip_8430_transaction" in items_by_hash[to_string(regular.hash)]["transaction_types"]
+    end
+  end
+
   describe "/transactions/watchlist" do
     test "unauthorized", %{conn: conn} do
       request = get(conn, "/api/v2/transactions/watchlist")
@@ -680,6 +714,100 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
         assert %{"op_interop_messages" => [%{"payload" => "0x30787849009c24f10a91a327a9f2ed94ebc49ee9"}]} =
                  json_response(request, 200)
       end
+    end
+  end
+
+  describe "/transactions/{transaction_hash} for an EIP-8430 transaction" do
+    test "returns the full object", %{conn: conn} do
+      resolved_payer = insert(:address)
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        has_named_sender: false,
+        nonce_key: Bitwise.bsl(1, 256) - 1,
+        valid_after: 1000,
+        valid_before: 0x1A1C2B2A0B1,
+        metadata: %Explorer.Chain.Data{bytes: <<0xAB, 0xCD>>},
+        payer_type: :open,
+        account_changes: [%{"type" => "0x1"}],
+        resolved_payer_address_hash: resolved_payer.hash,
+        committed_phases_count: 2
+      )
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert %{
+               "resolved_payer" => rendered_payer,
+               "payer_type" => "open",
+               "nonce_key" => "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+               "valid_after" => "1000",
+               "valid_before" => "1794267848881",
+               "committed_phases_count" => 2,
+               "metadata" => "0xabcd",
+               "account_changes" => [%{"type" => "0x1"}],
+               "has_named_sender" => false
+             } = response["eip_8430"]
+
+      assert rendered_payer["hash"] == Address.checksum(resolved_payer.hash)
+      assert rendered_payer["is_contract"] == false
+      assert rendered_payer["public_tags"] == []
+      assert "eip_8430_transaction" in response["transaction_types"]
+      refute "contract_creation" in response["transaction_types"]
+    end
+
+    test "returns the public tags of the resolved payer", %{conn: conn} do
+      resolved_payer = insert(:address)
+      tag = insert(:address_tag)
+      insert(:address_to_tag, tag: tag, address: resolved_payer)
+
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert [%{"display_name" => display_name}] = response["eip_8430"]["resolved_payer"]["public_tags"]
+      assert display_name == tag.display_name
+    end
+
+    test "returns null in the receipt fields of a pending transaction", %{conn: conn} do
+      transaction = insert(:transaction, type: 0x79, to_address: nil)
+
+      insert(:eip_8430_transaction,
+        transaction: transaction,
+        nonce_key: 7,
+        resolved_payer_address_hash: nil,
+        committed_phases_count: nil
+      )
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert %{"resolved_payer" => nil, "committed_phases_count" => nil, "nonce_key" => "7"} = response["eip_8430"]
+    end
+
+    test "returns null for an EIP-8430 transaction without a row", %{conn: conn} do
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert response["eip_8430"] == nil
+      assert "eip_8430_transaction" in response["transaction_types"]
+      refute "contract_creation" in response["transaction_types"]
+    end
+
+    test "returns null for a transaction of a different type", %{conn: conn} do
+      transaction = :transaction |> insert(type: 2) |> with_block()
+
+      request = get(conn, "/api/v2/transactions/#{transaction.hash}")
+      response = json_response(request, 200)
+
+      assert Map.has_key?(response, "eip_8430")
+      assert response["eip_8430"] == nil
+      refute "eip_8430_transaction" in response["transaction_types"]
     end
   end
 
@@ -3069,6 +3197,43 @@ defmodule BlockScoutWeb.API.V2.TransactionControllerTest do
     )
 
     transaction
+  end
+
+  describe "/transactions/{transaction_hash}/summary for an EIP-8430 transaction" do
+    setup do
+      original_config =
+        Application.get_env(:block_scout_web, BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation)
+
+      bypass = Bypass.open()
+
+      Application.put_env(
+        :block_scout_web,
+        BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+        Keyword.merge(original_config || [], enabled: true, service_url: "http://localhost:#{bypass.port}")
+      )
+
+      on_exit(fn ->
+        Bypass.down(bypass)
+
+        Application.put_env(
+          :block_scout_web,
+          BlockScoutWeb.MicroserviceInterfaces.TransactionInterpretation,
+          original_config
+        )
+      end)
+
+      {:ok, bypass: bypass}
+    end
+
+    test "returns null and sends no request to the service", %{conn: conn} do
+      # A request to the bypass fails the test, because the test expects no request.
+      transaction = :transaction |> insert(type: 0x79, to_address: nil) |> with_block(status: :ok)
+      insert(:eip_8430_transaction, transaction: transaction)
+
+      request = get(conn, "/api/v2/transactions/#{to_string(transaction.hash)}/summary")
+
+      assert json_response(request, 200) == nil
+    end
   end
 
   describe "/transactions/{transaction_hash}/summary?just_request_body=true" do

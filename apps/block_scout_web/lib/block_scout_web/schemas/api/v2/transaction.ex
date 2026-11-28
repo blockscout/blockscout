@@ -333,7 +333,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
   require OpenApiSpex
 
   alias BlockScoutWeb.Schemas.API.V2.{Address, General, SignedAuthorization, TokenTransfer}
-  alias BlockScoutWeb.Schemas.API.V2.Transaction.{ChainTypeCustomizations, Fee}
+  alias BlockScoutWeb.Schemas.API.V2.Transaction.{ChainTypeCustomizations, EIP8430, Fee}
   alias OpenApiSpex.Schema
 
   OpenApiSpex.schema(
@@ -442,7 +442,8 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
               "token_transfer",
               "blob_transaction",
               "set_code_transaction",
-              "sponsored_transaction"
+              "sponsored_transaction",
+              "eip_8430_transaction"
             ]
           }
         },
@@ -455,6 +456,11 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         has_error_in_internal_transactions: %Schema{type: :boolean, nullable: true},
         authorization_list: %Schema{type: :array, items: SignedAuthorization, nullable: true},
         is_pending_update: %Schema{type: :boolean, nullable: true},
+        eip_8430: %Schema{
+          allOf: [EIP8430],
+          nullable: true,
+          description: "Fields of an EIP-8430 transaction (type 0x79). `null` for a transaction of a different type."
+        },
         fhe_operations_count: %Schema{
           type: :integer,
           description: "Number of FHE (Fully Homomorphic Encryption) operations in the transaction",
@@ -498,6 +504,7 @@ defmodule BlockScoutWeb.Schemas.API.V2.Transaction do
         :has_error_in_internal_transactions,
         :authorization_list,
         :is_pending_update,
+        :eip_8430,
         :fhe_operations_count
       ],
       additionalProperties: false

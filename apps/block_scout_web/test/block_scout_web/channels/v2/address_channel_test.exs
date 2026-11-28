@@ -87,6 +87,32 @@ defmodule BlockScoutWeb.V2.AddressChannelTest do
       assert List.first(payload.transactions)["hash"] == transaction.hash
     end
 
+    test "the transaction message contains the resolved payer of an EIP-8430 transaction",
+         %{address: address, topic: topic} do
+      resolved_payer = insert(:contract_address)
+
+      transaction =
+        :transaction
+        |> insert(type: 0x79, from_address: address, to_address: nil)
+        |> with_block()
+
+      insert(:eip_8430_transaction, transaction: transaction, resolved_payer_address_hash: resolved_payer.hash)
+
+      Notifier.handle_event({:chain_event, :transactions, :realtime, [transaction]})
+
+      assert_receive %Phoenix.Socket.Broadcast{
+                       topic: ^topic,
+                       event: "transaction",
+                       payload: %{transactions: [rendered_transaction]}
+                     },
+                     :timer.seconds(5)
+
+      assert rendered_transaction["hash"] == transaction.hash
+      assert %{"resolved_payer" => rendered_payer} = rendered_transaction["eip_8430"]
+      assert rendered_payer["hash"] == Address.checksum(resolved_payer.hash)
+      assert rendered_payer["is_contract"] == true
+    end
+
     test "notified of new_transaction for matching to_address", %{address: address, topic: topic} do
       transaction =
         :transaction
